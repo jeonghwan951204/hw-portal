@@ -251,7 +251,14 @@ export default function LmePage() {
       [RATE_FIELDS.baseRate]: 1451.30,
       [RATE_FIELDS.buyRate]:  1470.55,
       [RATE_FIELDS.sellRate]: 1432.05,
-      updatedAt: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+      updatedAt: new Date().toLocaleTimeString("ko-KR",
+          { year: "2-digit",
+            month: "2-digit",
+            day: "2-digit",
+            hour12: false,
+            hour: "numeric",
+            minute: "2-digit"
+          }),
     });
     setRateLoading(false);
     // ── fetch (백엔드 연결 시 사용) ─────────────────────────────────────────
@@ -434,7 +441,7 @@ export default function LmePage() {
             <div className="flex items-center gap-3">
               {liveRate && (
                 <span className="text-[11px] text-slate-400">
-                  기준 {liveRate.updatedAt} 조회
+                  {liveRate.updatedAt} 조회
                 </span>
               )}
               <button
