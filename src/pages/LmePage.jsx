@@ -24,9 +24,17 @@ const AVG_FIELDS = {
   avgClose: "avgClose",        // LME 구리 평균가 ($/t)
 };
 
+/** 환율 조회 응답 (하나은행 API) */
+const RATE_FIELDS = {
+  baseRate: "baseRate",        // 매매기준율
+  buyRate:  "buyRate",         // 살 때 (현찰 매도율)
+  sellRate: "sellRate",        // 파실 때 (현찰 매입율)
+};
+
 // ─── 임시 데이터 ──────────────────────────────────────────────────────────────
 // TODO: 백엔드 연결 시 MOCK_DATA 블록 전체 삭제 후 fetch 로직 주석 해제
-
+//https://www.hanabank.com/cms/rate/wpfxd651_01i_01.do?ajax=true&curCd=USD&tmpInqStrDt=2026-03-18&pbldDvCd=0&pbldSqn=&hid_key_data=&inqStrDt=20260319&inqKindCd=1&hid_enc_data=&requestTarget=searchContentDiv
+// 하나은행 환율 api
 const MOCK_DATA = [
   { id:  1, date: "2026.02.02", closePrice: 8812.50, priceChange: +28.50, exchangeRate: 1468.20 },
   { id:  2, date: "2026.02.03", closePrice: 8784.00, priceChange:  -28.50, exchangeRate: 1472.50 },
@@ -65,7 +73,7 @@ const MOCK_DATA = [
 
 // 달러 소수점 2자리 포맷
 const formatUSD = (value) =>
-  `$${Number(value).toLocaleString("en-US", {
+  `${Number(value).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -164,6 +172,10 @@ export default function LmePage() {
   const [avgResult, setAvgResult] = useState(null); // { avgClose, count }
   const [currentRate, setCurrentRate] = useState("");
 
+  // ── 현재 환율 상태 ────────────────────────────────────────────────────────
+  const [liveRate, setLiveRate] = useState(null);   // { baseRate, buyRate, sellRate, updatedAt }
+  const [rateLoading, setRateLoading] = useState(false);
+
   // ── 내역 조회 ─────────────────────────────────────────────────────────────
   // TODO: 백엔드 연결 시 mock 블록 삭제 후 아래 fetch 블록 주석 해제
   const fetchHistory = useCallback(
@@ -229,6 +241,40 @@ export default function LmePage() {
     // }
   };
 
+  // ── 현재 환율 조회 ────────────────────────────────────────────────────────
+  // TODO: 백엔드 연결 시 mock 블록 삭제 후 아래 fetch 블록 주석 해제
+  const fetchLiveRate = useCallback(async () => {
+    setRateLoading(true);
+    // ── mock ────────────────────────────────────────────────────────────────
+    await new Promise((r) => setTimeout(r, 300)); // 로딩 느낌
+    setLiveRate({
+      [RATE_FIELDS.baseRate]: 1451.30,
+      [RATE_FIELDS.buyRate]:  1470.55,
+      [RATE_FIELDS.sellRate]: 1432.05,
+      updatedAt: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    });
+    setRateLoading(false);
+    // ── fetch (백엔드 연결 시 사용) ─────────────────────────────────────────
+    // try {
+    //   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    //   const res  = await fetch(
+    //     `/api/exchange/rate?curCd=USD&inqStrDt=${today}`
+    //     // 하나은행: https://www.hanabank.com/cms/rate/wpfxd651_01i_01.do
+    //   );
+    //   const data = await res.json();
+    //   setLiveRate({
+    //     [RATE_FIELDS.baseRate]: data[RATE_FIELDS.baseRate],
+    //     [RATE_FIELDS.buyRate]:  data[RATE_FIELDS.buyRate],
+    //     [RATE_FIELDS.sellRate]: data[RATE_FIELDS.sellRate],
+    //     updatedAt: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    //   });
+    // } catch (err) {
+    //   console.error("환율 조회 실패:", err);
+    // } finally {
+    //   setRateLoading(false);
+    // }
+  }, []);
+
   // ── 테이블 필터 초기화 ────────────────────────────────────────────────────
   const handleResetFilters = () => {
     setTableStartDate("");
@@ -239,6 +285,7 @@ export default function LmePage() {
   // ── 초기 데이터 로드 ──────────────────────────────────────────────────────
   useEffect(() => {
     fetchHistory(1);
+    fetchLiveRate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -373,6 +420,93 @@ export default function LmePage() {
                 </div>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* ── 현재 환율 섹션 ── */}
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          {/* 섹션 헤더 */}
+          <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <h2 className="font-semibold flex items-center gap-2 text-slate-700">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block" />
+              현재 환율 (USD/KRW)
+            </h2>
+            <div className="flex items-center gap-3">
+              {liveRate && (
+                <span className="text-[11px] text-slate-400">
+                  기준 {liveRate.updatedAt} 조회
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={fetchLiveRate}
+                disabled={rateLoading}
+                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 border border-slate-200 rounded-lg px-3 py-1.5 transition-all hover:bg-slate-50 disabled:opacity-40"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`w-3.5 h-3.5 ${rateLoading ? "animate-spin" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                새로고침
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {rateLoading && !liveRate ? (
+              <div className="flex justify-center items-center py-6 text-slate-400 text-sm gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                환율 불러오는 중...
+              </div>
+            ) : liveRate ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* 매매기준율 */}
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                  <p className="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wide">
+                    매매기준율
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-slate-800">
+                    {formatRate(liveRate[RATE_FIELDS.baseRate])}
+                    <span className="text-sm font-normal text-slate-400 ml-1">₩</span>
+                  </p>
+                </div>
+
+                {/* 살 때 */}
+                <div className="bg-red-50 rounded-xl p-5 border border-red-100">
+                  <p className="text-xs text-red-400 font-semibold mb-2 uppercase tracking-wide">
+                    살 때
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-red-600">
+                    {formatRate(liveRate[RATE_FIELDS.buyRate])}
+                    <span className="text-sm font-normal text-red-300 ml-1">₩</span>
+                  </p>
+                  <p className="text-[11px] text-red-300 mt-2">
+                    기준율 대비 +{formatRate(liveRate[RATE_FIELDS.buyRate] - liveRate[RATE_FIELDS.baseRate])}
+                  </p>
+                </div>
+
+                {/* 파실 때 */}
+                <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
+                  <p className="text-xs text-blue-400 font-semibold mb-2 uppercase tracking-wide">
+                    파실 때
+                  </p>
+                  <p className="text-2xl font-bold font-mono text-blue-600">
+                    {formatRate(liveRate[RATE_FIELDS.sellRate])}
+                    <span className="text-sm font-normal text-blue-300 ml-1">₩</span>
+                  </p>
+                  <p className="text-[11px] text-blue-300 mt-2">
+                    기준율 대비 {formatRate(liveRate[RATE_FIELDS.sellRate] - liveRate[RATE_FIELDS.baseRate])}
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
 
