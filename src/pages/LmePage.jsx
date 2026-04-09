@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import Header from "../components/Header";
+import Pagination from "../components/Pagination";
+import { formatUSD, formatRate, formatKRW } from "../utils/format";
 
 // ─── 상수 정의 ────────────────────────────────────────────────────────────────
 
@@ -69,93 +71,6 @@ const MOCK_DATA = [
   { id: 33, date: "2026.03.17", closePrice: 9134.50, priceChange: -132.50, exchangeRate: 1444.80 },
   { id: 34, date: "2026.03.18", closePrice: 9056.00, priceChange:  -78.50, exchangeRate: 1451.30 },
 ];
-
-// ─── 유틸 함수 ────────────────────────────────────────────────────────────────
-
-// 달러 소수점 2자리 포맷
-const formatUSD = (value) =>
-  `${Number(value).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-
-// 환율 (소수점 2자리)
-const formatRate = (value) =>
-  Number(value).toLocaleString("ko-KR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
-// 원화 포맷
-const formatKRW = (value) => `${Math.round(value).toLocaleString()}원`;
-
-// ─── 하위 컴포넌트 ────────────────────────────────────────────────────────────
-
-/** 페이지네이션 버튼 그룹 */
-function Pagination({ totalPages, currentPage, onPageChange }) {
-  if (totalPages <= 1) return null;
-
-  const getPageNumbers = () => {
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-        pages.push(i);
-      } else if (i === currentPage - 2 || i === currentPage + 2) {
-        pages.push("...");
-      }
-    }
-    return pages.filter((p, idx) => !(p === "..." && pages[idx - 1] === "..."));
-  };
-
-  const btnBase =
-    "w-9 h-9 flex items-center justify-center rounded-lg text-sm transition-all border border-slate-200";
-
-  return (
-    <div className="flex justify-center items-center gap-2 py-4">
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className={`${btnBase} ${currentPage === 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-slate-100"}`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-
-      {getPageNumbers().map((p, idx) =>
-        p === "..." ? (
-          <span key={`ellipsis-${idx}`} className="text-slate-300">...</span>
-        ) : (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onPageChange(p)}
-            className={`${btnBase} ${
-              p === currentPage
-                ? "bg-blue-600 text-white border-blue-600"
-                : "hover:bg-slate-100"
-            }`}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className={`${btnBase} ${currentPage === totalPages ? "opacity-30 cursor-not-allowed" : "hover:bg-slate-100"}`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
-  );
-}
-
 
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────────────────
 
@@ -387,14 +302,10 @@ export default function LmePage() {
                     기간 평균 환율
                   </p>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={currentRate}
-                      onChange={(e) => setCurrentRate(e.target.value)}
-                      placeholder="1300"
-                      className="w-full text-xl font-bold font-mono border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white text-slate-800"
-                    />
-                    <span className="text-sm text-slate-400 whitespace-nowrap font-medium">₩/$</span>
+                    <p className="text-2xl font-bold text-slate-800 font-mono">
+                      {formatRate(currentRate)}
+                      <span className="text-sm font-normal text-slate-400 ml-1">₩/$</span>
+                    </p>
                   </div>
                 </div>
 
