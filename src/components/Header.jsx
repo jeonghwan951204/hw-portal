@@ -3,8 +3,14 @@ import { NavLink, useLocation } from "react-router-dom";
 
 const NAV_ITEMS = [
   { label: "사이트 관리", to: "/" },
-  { label: "LME 구리 가격", to: "/lme" },
   { label: "공지사항", to: "/notice" },
+  {
+    label: "단가조회",
+    children: [
+      { label: "LME 조회", to: "/lme" },
+      { label: "계약별 조회", to: "/contract" },
+    ],
+  },
   {
     label: "재고/물류",
     children: [

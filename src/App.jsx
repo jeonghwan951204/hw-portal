@@ -6,6 +6,7 @@ import NoticePage from "./pages/NoticePage";
 import InventoryPage from "./pages/InventoryPage";
 import WeighingPage from "./pages/WeighingPage";
 import DocumentsPage from "./pages/DocumentsPage";
+import ContractPage from "./pages/ContractPage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/weighing" element={<WeighingPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/contract" element={<ContractPage />} />
       </Routes>
     </BrowserRouter>
   );
