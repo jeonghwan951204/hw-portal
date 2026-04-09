@@ -22,6 +22,7 @@ const LIST_FIELDS = {
 /** 평균 조회 응답 (GET /api/lme/price/average) */
 const AVG_FIELDS = {
   avgClose: "avgClose",        // LME 구리 평균가 ($/t)
+  avgRate:  "avgRate",         // 기간 평균 환율 (₩/$)
 };
 
 /** 환율 조회 응답 (하나은행 API) */
@@ -228,14 +229,15 @@ export default function LmePage() {
       return;
     }
     const avg = filtered.reduce((sum, r) => sum + r[LIST_FIELDS.closePrice], 0) / filtered.length;
-    setAvgResult({ avgClose: avg });
-    setCurrentRate("");
+    const avgRate = filtered.reduce((sum, r) => sum + r[LIST_FIELDS.exchangeRate], 0) / filtered.length;
+    setAvgResult({ avgClose: avg, avgRate });
+    setCurrentRate(String(avgRate.toFixed(2)));
     // ── fetch (백엔드 연결 시 사용) ─────────────────────────────────────────
     // try {
     //   const res  = await fetch(`/api/lme/price/average?startDt=${avgStartDate}&endDt=${avgEndDate}`);
     //   const data = await res.json();
-    //   setAvgResult({ avgClose: data[AVG_FIELDS.avgClose] });
-    //   setCurrentRate("");
+    //   setAvgResult({ avgClose: data[AVG_FIELDS.avgClose], avgRate: data[AVG_FIELDS.avgRate] });
+    //   setCurrentRate(String(data[AVG_FIELDS.avgRate].toFixed(2)));
     // } catch (err) {
     //   console.error("평균 조회 실패:", err);
     // }
@@ -379,10 +381,10 @@ export default function LmePage() {
                   </p>
                 </div>
 
-                {/* 현재 환율 입력 */}
+                {/* 기간 평균 환율 */}
                 <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
                   <p className="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wide">
-                    현재 환율
+                    기간 평균 환율
                   </p>
                   <div className="flex items-center gap-2">
                     <input
