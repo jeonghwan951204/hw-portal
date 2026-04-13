@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import Header from "../components/Header";
 import Pagination from "../components/Pagination";
 import { formatUSD, formatRate, formatKRW } from "../utils/format";
+import { apiFetch } from "../utils/api";
 
 // ─── 상수 정의 ────────────────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ const LIST_FIELDS = {
   content: "content",          // 목록 배열 키
   totalPages: "totalPages",    // 페이지 정보 경로: data.page.totalPages
   id: "id",                    // 레코드 고유 ID
-  date: "date",                // 날짜 (yyyy.mm.dd)
+  baseDate: "date",                // 날짜 (yyyy.mm.dd)
   closePrice: "closePrice",    // LME 구리 종가 ($/t)
   priceChange: "priceChange",  // 전일 대비 등락폭 (양수=상승, 음수=하락, null=첫날)
   exchangeRate: "exchangeRate",// 환율 (₩/$)
@@ -38,6 +39,57 @@ const RATE_FIELDS = {
 // TODO: 백엔드 연결 시 MOCK_DATA 블록 전체 삭제 후 fetch 로직 주석 해제
 //https://www.hanabank.com/cms/rate/wpfxd651_01i_01.do?ajax=true&curCd=USD&tmpInqStrDt=2026-03-18&pbldDvCd=0&pbldSqn=&hid_key_data=&inqStrDt=20260319&inqKindCd=1&hid_enc_data=&requestTarget=searchContentDiv
 // 하나은행 환율 api
+
+/** 환율 전용 데이터 (LME 휴장일 포함) */
+// TODO: 백엔드 연결 시 삭제
+const MOCK_RATE_DATA = [
+  { date: "2026.02.02", exchangeRate: 1468.20 },
+  { date: "2026.02.03", exchangeRate: 1472.50 },
+  { date: "2026.02.04", exchangeRate: 1471.80 }, // LME 휴장
+  { date: "2026.02.05", exchangeRate: 1470.10 }, // LME 휴장
+  { date: "2026.02.06", exchangeRate: 1465.80 },
+  { date: "2026.02.07", exchangeRate: 1470.30 },
+  { date: "2026.02.08", exchangeRate: 1462.10 },
+  { date: "2026.02.09", exchangeRate: 1478.90 },
+  { date: "2026.02.10", exchangeRate: 1481.20 },
+  { date: "2026.02.11", exchangeRate: 1480.00 }, // LME 휴장
+  { date: "2026.02.12", exchangeRate: 1479.30 }, // LME 휴장
+  { date: "2026.02.13", exchangeRate: 1479.60 },
+  { date: "2026.02.14", exchangeRate: 1466.40 },
+  { date: "2026.02.15", exchangeRate: 1455.70 },
+  { date: "2026.02.16", exchangeRate: 1451.30 },
+  { date: "2026.02.17", exchangeRate: 1453.80 },
+  { date: "2026.02.18", exchangeRate: 1452.90 }, // LME 휴장
+  { date: "2026.02.19", exchangeRate: 1451.50 }, // LME 휴장
+  { date: "2026.02.20", exchangeRate: 1448.20 },
+  { date: "2026.02.21", exchangeRate: 1442.60 },
+  { date: "2026.02.22", exchangeRate: 1446.10 },
+  { date: "2026.02.23", exchangeRate: 1437.90 },
+  { date: "2026.02.24", exchangeRate: 1441.50 },
+  { date: "2026.02.25", exchangeRate: 1440.20 }, // LME 휴장
+  { date: "2026.02.26", exchangeRate: 1439.80 }, // LME 휴장
+  { date: "2026.02.27", exchangeRate: 1447.80 },
+  { date: "2026.02.28", exchangeRate: 1436.20 },
+  { date: "2026.03.01", exchangeRate: 1435.10 }, // LME 휴장 (삼일절)
+  { date: "2026.03.02", exchangeRate: 1434.50 }, // LME 휴장
+  { date: "2026.03.03", exchangeRate: 1421.30 },
+  { date: "2026.03.04", exchangeRate: 1424.80 },
+  { date: "2026.03.05", exchangeRate: 1431.60 },
+  { date: "2026.03.06", exchangeRate: 1441.20 },
+  { date: "2026.03.07", exchangeRate: 1435.70 },
+  { date: "2026.03.08", exchangeRate: 1434.90 }, // LME 휴장
+  { date: "2026.03.09", exchangeRate: 1433.60 }, // LME 휴장
+  { date: "2026.03.10", exchangeRate: 1417.40 },
+  { date: "2026.03.11", exchangeRate: 1412.10 },
+  { date: "2026.03.12", exchangeRate: 1414.90 },
+  { date: "2026.03.13", exchangeRate: 1422.30 },
+  { date: "2026.03.14", exchangeRate: 1433.60 },
+  { date: "2026.03.15", exchangeRate: 1432.10 }, // LME 휴장
+  { date: "2026.03.16", exchangeRate: 1431.00 }, // LME 휴장
+  { date: "2026.03.17", exchangeRate: 1444.80 },
+  { date: "2026.03.18", exchangeRate: 1451.30 },
+];
+
 const MOCK_DATA = [
   { id:  1, date: "2026.02.02", closePrice: 8812.50, priceChange: +28.50, exchangeRate: 1468.20 },
   { id:  2, date: "2026.02.03", closePrice: 8784.00, priceChange:  -28.50, exchangeRate: 1472.50 },
@@ -72,6 +124,120 @@ const MOCK_DATA = [
   { id: 34, date: "2026.03.18", closePrice: 9056.00, priceChange:  -78.50, exchangeRate: 1451.30 },
 ];
 
+// ─── 환율 모달 ────────────────────────────────────────────────────────────────
+
+function RateModal({ onClose }) {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE = 15;
+
+  const filtered = MOCK_RATE_DATA.filter((row) => {
+    const d = row.date.replace(/\./g, "-");
+    if (startDate && d < startDate) return false;
+    if (endDate   && d > endDate)   return false;
+    return true;
+  });
+  const totalPages = Math.ceil(filtered.length / PAGE);
+  const sliced = filtered.slice((page - 1) * PAGE, page * PAGE);
+
+  const handleReset = () => { setStartDate(""); setEndDate(""); setPage(1); };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 모달 헤더 */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block" />
+            환율 내역 조회
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 필터 */}
+        <div className="px-6 py-3 border-b border-slate-100 flex flex-wrap items-end gap-2 bg-white">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">시작일</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all bg-white"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">종료일</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+              className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all bg-white"
+            />
+          </div>
+          {(startDate || endDate) && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="text-xs text-slate-400 hover:text-slate-600 underline py-1.5 px-1 transition-colors"
+            >
+              초기화
+            </button>
+          )}
+          <span className="ml-auto text-xs text-slate-400 py-1.5">{filtered.length}건</span>
+        </div>
+
+        {/* 테이블 */}
+        <div className="overflow-y-auto flex-1">
+          {sliced.length === 0 ? (
+            <div className="py-16 text-center text-slate-400 text-sm">데이터가 없습니다.</div>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0">
+                <tr>
+                  <th className="py-2.5 px-6 text-left border-r border-slate-200">날짜</th>
+                  <th className="py-2.5 px-6 text-right">환율 (₩/$)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {sliced.map((row) => (
+                  <tr key={row.date} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-2.5 px-6 border-r border-slate-100 text-slate-500 text-xs font-medium tabular-nums">
+                      {row.date}
+                    </td>
+                    <td className="py-2.5 px-6 text-right font-mono text-slate-700 font-semibold">
+                      {formatRate(row.exchangeRate)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* 페이지네이션 */}
+        <div className="border-t border-slate-100">
+          <Pagination totalPages={totalPages} currentPage={page} onPageChange={setPage} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────────────────
 
 export default function LmePage() {
@@ -92,37 +258,40 @@ export default function LmePage() {
   const [liveRate, setLiveRate] = useState(null);   // { baseRate, buyRate, sellRate, updatedAt }
   const [rateLoading, setRateLoading] = useState(false);
 
+  // ── 환율 모달 상태 ────────────────────────────────────────────────────────
+  const [rateModalOpen, setRateModalOpen] = useState(false);
+
   // ── 내역 조회 ─────────────────────────────────────────────────────────────
   // TODO: 백엔드 연결 시 mock 블록 삭제 후 아래 fetch 블록 주석 해제
   const fetchHistory = useCallback(
-    (page = 1, start = tableStartDate, end = tableEndDate) => {
+    async (page = 1, start = tableStartDate, end = tableEndDate) => {
       // ── mock ──────────────────────────────────────────────────────────────
-      const filtered = MOCK_DATA.filter((row) => {
-        const d = row[LIST_FIELDS.date].replace(/\./g, "-"); // yyyy.mm.dd → yyyy-mm-dd
-        if (start && d < start) return false;
-        if (end   && d > end)   return false;
-        return true;
-      });
-      const total = Math.ceil(filtered.length / PAGE_SIZE);
-      const sliced = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-      setHistory(sliced);
-      setTotalPages(total);
-      setCurrentPage(page);
+      // const filtered = MOCK_DATA.filter((row) => {
+      //   const d = row[LIST_FIELDS.date].replace(/\./g, "-"); // yyyy.mm.dd → yyyy-mm-dd
+      //   if (start && d < start) return false;
+      //   if (end   && d > end)   return false;
+      //   return true;
+      // });
+      // const total = Math.ceil(filtered.length / PAGE_SIZE);
+      // const sliced = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+      // setHistory(sliced);
+      // setTotalPages(total);
+      // setCurrentPage(page);
       // ── fetch (백엔드 연결 시 사용) ───────────────────────────────────────
-      // let url = `/api/lme/price?page=${page}&size=${PAGE_SIZE}`;
-      // if (start) url += `&startDt=${start}`;
-      // if (end)   url += `&endDt=${end}`;
-      // try {
-      //   const res  = await fetch(url);
-      //   const data = await res.json();
-      //   setHistory(data[LIST_FIELDS.content] ?? []);
-      //   setTotalPages(data.page?.[LIST_FIELDS.totalPages] ?? 0);
-      //   setCurrentPage(page);
-      // } catch (err) {
-      //   console.error("데이터 조회 실패:", err);
-      //   setHistory([]);
-      //   setTotalPages(0);
-      // }
+      let url = `/api/price?page=${page}&size=${PAGE_SIZE}`;
+      if (start) url += `&startDt=${start}`;
+      if (end) url += `&endDt=${end}`;
+      try {
+        const res = await apiFetch(url);
+        const data = await res.json();
+        setHistory(data["content"] ?? []);
+        setTotalPages(data.page? data.totalPages : 0);
+        setCurrentPage(page);
+      } catch (err) {
+        console.error("데이터 조회 실패:", err);
+        setHistory([]);
+        setTotalPages(0);
+      }
     },
     [tableStartDate, tableEndDate]
   );
@@ -224,6 +393,7 @@ export default function LmePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Header />
+      {rateModalOpen && <RateModal onClose={() => setRateModalOpen(false)} />}
 
       {/* ── 본문 ── */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-8">
@@ -347,11 +517,21 @@ export default function LmePage() {
         <section className="space-y-4">
           {/* 섹션 헤더 + 필터 */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1">
-            <div className="flex items-center gap-2 text-slate-500">
+            <div className="flex items-center gap-3 text-slate-500">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4v16M14 4v16" />
               </svg>
               <h2 className="font-bold text-slate-700 text-lg">LME 구리 가격 내역</h2>
+              <button
+                type="button"
+                onClick={() => setRateModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-all active:scale-95"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                환율 내역
+              </button>
             </div>
 
             {/* 날짜 필터 */}
@@ -438,12 +618,12 @@ export default function LmePage() {
                         >
                           {/* 날짜 */}
                           <td className="py-3 px-6 border-r border-slate-100 text-slate-500 text-xs font-medium tabular-nums">
-                            {row[LIST_FIELDS.date]}
+                            {row["baseDate"]}
                           </td>
                           {/* LME 종가 + 등락 */}
                           <td className="py-3 px-6 border-r border-slate-100 text-right font-mono font-bold text-blue-600">
                             <span className="inline-flex items-center justify-end gap-2">
-                              {formatUSD(row[LIST_FIELDS.closePrice])}
+                              {formatUSD(row["price"])}
                               {isUp && (
                                 <span className="inline-flex items-center gap-0.5 text-xs font-bold text-red-500">
                                   (
@@ -468,7 +648,7 @@ export default function LmePage() {
                           </td>
                           {/* 환율 */}
                           <td className="py-3 px-6 text-right font-mono text-slate-700 font-semibold">
-                            {formatRate(row[LIST_FIELDS.exchangeRate])}
+                            {formatRate(row["rate"])}
                           </td>
                         </tr>
                       );

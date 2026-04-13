@@ -7,10 +7,11 @@ export const formatUSD = (value) =>
 
 // 환율 (소수점 2자리)
 export const formatRate = (value) =>
+    value ?
   Number(value).toLocaleString("ko-KR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  }) : "N/A";
 
 // 원화 포맷
 export const formatKRW = (value) => `${Math.round(value).toLocaleString()}원`;
