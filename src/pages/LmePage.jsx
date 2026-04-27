@@ -24,8 +24,9 @@ const LIST_FIELDS = {
 
 /** 평균 조회 응답 (GET /api/lme/price/average) */
 const AVG_FIELDS = {
-  avgClose: "avgClose",        // LME 구리 평균가 ($/t)
-  avgRate:  "avgRate",         // 기간 평균 환율 (₩/$)
+  avgClose: "averageLme",        // LME 구리 평균가 ($/t)
+  avgRate:  "averageExchange",         // 기간 평균 환율 (₩/$)
+  avgKrw: "averagePrice"
 };
 
 /** 환율 조회 응답 (하나은행 API) */
@@ -253,10 +254,8 @@ export default function LmePage() {
   const [avgEndDate, setAvgEndDate] = useState("");
   const [avgResult, setAvgResult] = useState(null); // { avgClose, count }
   const [currentRate, setCurrentRate] = useState("");
+  const [avgKrw, setAvgKrw] = useState("");
 
-  // ── 현재 환율 상태 ────────────────────────────────────────────────────────
-  const [liveRate, setLiveRate] = useState(null);   // { baseRate, buyRate, sellRate, updatedAt }
-  const [rateLoading, setRateLoading] = useState(false);
 
   // ── 환율 모달 상태 ────────────────────────────────────────────────────────
   const [rateModalOpen, setRateModalOpen] = useState(false);
@@ -279,8 +278,8 @@ export default function LmePage() {
       // setCurrentPage(page);
       // ── fetch (백엔드 연결 시 사용) ───────────────────────────────────────
       let url = `/api/price?page=${page}&size=${PAGE_SIZE}`;
-      if (start) url += `&startDt=${start}`;
-      if (end) url += `&endDt=${end}`;
+      if (start) url += `&startDate=${start}`;
+      if (end) url += `&endDate=${end}`;
       try {
         const res = await apiFetch(url);
         const data = await res.json();
@@ -298,75 +297,26 @@ export default function LmePage() {
 
   // ── 기간 평균 조회 ────────────────────────────────────────────────────────
   // TODO: 백엔드 연결 시 mock 블록 삭제 후 아래 fetch 블록 주석 해제
-  const fetchAverage = () => {
+  const fetchAverage = async () => {
     if (!avgStartDate || !avgEndDate) {
       alert("시작일과 종료일을 모두 입력해주세요.");
       return;
     }
-    // ── mock ────────────────────────────────────────────────────────────────
-    const filtered = MOCK_DATA.filter((row) => {
-      const d = row[LIST_FIELDS.date].replace(/\./g, "-");
-      return d >= avgStartDate && d <= avgEndDate;
-    });
-    if (filtered.length === 0) {
-      alert("해당 기간에 데이터가 없습니다.");
-      return;
+    // const avg = filtered.reduce((sum, r) => sum + r[LIST_FIELDS.closePrice], 0) / filtered.length;
+    // const avgRate = filtered.reduce((sum, r) => sum + r[LIST_FIELDS.exchangeRate], 0) / filtered.length;
+    // setAvgResult({ avgClose: avg, avgRate });
+    // setCurrentRate(String(avgRate.toFixed(2)));
+    // ── fetch (백엔드 연결 시 사용) ─────────────────────────────────────────
+    try {
+      const res = await apiFetch(`/api/price/average?startDate=${avgStartDate}&endDate=${avgEndDate}`);
+      const data = await res.json();
+      setAvgResult({avgClose: data[AVG_FIELDS.avgClose], avgRate: data[AVG_FIELDS.avgRate]});
+      setCurrentRate(String(data[AVG_FIELDS.avgRate].toFixed(2)));
+      setAvgKrw(String(Math.floor(data[AVG_FIELDS.avgKrw])))
+    } catch (err) {
+      console.error("평균 조회 실패:", err);
     }
-    const avg = filtered.reduce((sum, r) => sum + r[LIST_FIELDS.closePrice], 0) / filtered.length;
-    const avgRate = filtered.reduce((sum, r) => sum + r[LIST_FIELDS.exchangeRate], 0) / filtered.length;
-    setAvgResult({ avgClose: avg, avgRate });
-    setCurrentRate(String(avgRate.toFixed(2)));
-    // ── fetch (백엔드 연결 시 사용) ─────────────────────────────────────────
-    // try {
-    //   const res  = await fetch(`/api/lme/price/average?startDt=${avgStartDate}&endDt=${avgEndDate}`);
-    //   const data = await res.json();
-    //   setAvgResult({ avgClose: data[AVG_FIELDS.avgClose], avgRate: data[AVG_FIELDS.avgRate] });
-    //   setCurrentRate(String(data[AVG_FIELDS.avgRate].toFixed(2)));
-    // } catch (err) {
-    //   console.error("평균 조회 실패:", err);
-    // }
   };
-
-  // ── 현재 환율 조회 ────────────────────────────────────────────────────────
-  // TODO: 백엔드 연결 시 mock 블록 삭제 후 아래 fetch 블록 주석 해제
-  const fetchLiveRate = useCallback(async () => {
-    setRateLoading(true);
-    // ── mock ────────────────────────────────────────────────────────────────
-    await new Promise((r) => setTimeout(r, 300)); // 로딩 느낌
-    setLiveRate({
-      [RATE_FIELDS.baseRate]: 1451.30,
-      [RATE_FIELDS.buyRate]:  1470.55,
-      [RATE_FIELDS.sellRate]: 1432.05,
-      updatedAt: new Date().toLocaleTimeString("ko-KR",
-          { year: "2-digit",
-            month: "2-digit",
-            day: "2-digit",
-            hour12: false,
-            hour: "numeric",
-            minute: "2-digit"
-          }),
-    });
-    setRateLoading(false);
-    // ── fetch (백엔드 연결 시 사용) ─────────────────────────────────────────
-    // try {
-    //   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    //   const res  = await fetch(
-    //     `/api/exchange/rate?curCd=USD&inqStrDt=${today}`
-    //     // 하나은행: https://www.hanabank.com/cms/rate/wpfxd651_01i_01.do
-    //   );
-    //   const data = await res.json();
-    //   setLiveRate({
-    //     [RATE_FIELDS.baseRate]: data[RATE_FIELDS.baseRate],
-    //     [RATE_FIELDS.buyRate]:  data[RATE_FIELDS.buyRate],
-    //     [RATE_FIELDS.sellRate]: data[RATE_FIELDS.sellRate],
-    //     updatedAt: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-    //   });
-    // } catch (err) {
-    //   console.error("환율 조회 실패:", err);
-    // } finally {
-    //   setRateLoading(false);
-    // }
-  }, []);
 
   // ── 테이블 필터 초기화 ────────────────────────────────────────────────────
   const handleResetFilters = () => {
@@ -378,15 +328,9 @@ export default function LmePage() {
   // ── 초기 데이터 로드 ──────────────────────────────────────────────────────
   useEffect(() => {
     fetchHistory(1);
-    fetchLiveRate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── 원화 환산가 ───────────────────────────────────────────────────────────
-  const krwValue =
-    avgResult && currentRate
-      ? avgResult.avgClose * Number(currentRate)
-      : null;
 
   // ─── 렌더링 ──────────────────────────────────────────────────────────────
 
@@ -482,27 +426,27 @@ export default function LmePage() {
                 {/* 원화 환산가 */}
                 <div
                   className={`rounded-xl p-5 border transition-all ${
-                    krwValue
+                    avgKrw
                       ? "bg-emerald-50 border-emerald-100"
                       : "bg-slate-50 border-slate-200"
                   }`}
                 >
                   <p
                     className={`text-xs font-semibold mb-2 uppercase tracking-wide ${
-                      krwValue ? "text-emerald-500" : "text-slate-400"
+                        avgKrw ? "text-emerald-500" : "text-slate-400"
                     }`}
                   >
                     원화 환산가
                   </p>
                   <p
                     className={`text-2xl font-bold font-mono ${
-                      krwValue ? "text-emerald-700" : "text-slate-300"
+                        avgKrw ? "text-emerald-700" : "text-slate-300"
                     }`}
                   >
-                    {krwValue ? formatKRW(krwValue) : "—"}
-                    {krwValue && <span className="text-sm font-normal text-emerald-400 ml-1">/t</span>}
+                    {avgKrw ? formatKRW(avgKrw) : "—"}
+                    {avgKrw && <span className="text-sm font-normal text-emerald-400 ml-1">/kg</span>}
                   </p>
-                  {krwValue && (
+                  {avgKrw && (
                     <p className="text-xs text-emerald-400 mt-2">
                       {formatUSD(avgResult.avgClose)} × {Number(currentRate).toLocaleString()}
                     </p>
@@ -607,7 +551,7 @@ export default function LmePage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {history.map((row, idx) => {
-                      const diff   = row[LIST_FIELDS.priceChange];
+                      const diff   = row["priceChange"];
                       const isUp   = diff !== null && diff > 0;
                       const isDown = diff !== null && diff < 0;
 
