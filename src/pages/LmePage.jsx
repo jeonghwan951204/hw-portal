@@ -29,6 +29,11 @@ const AVG_FIELDS = {
   avgKrw: "averagePrice"
 };
 
+const parsePercentRate = (value) => {
+  const numericValue = Number(String(value).replace(/[%\s,]/g, ""));
+  return Number.isFinite(numericValue) ? numericValue / 100 : 0;
+};
+
 /** 환율 조회 응답 (하나은행 API) */
 const RATE_FIELDS = {
   baseRate: "baseRate",        // 매매기준율
@@ -254,7 +259,7 @@ export default function LmePage() {
   const [avgEndDate, setAvgEndDate] = useState("");
   const [avgResult, setAvgResult] = useState(null); // { avgClose, count }
   const [currentRate, setCurrentRate] = useState("");
-  const [avgKrw, setAvgKrw] = useState("");
+  const [ratePercent, setRatePercent] = useState("100");
 
 
   // ── 환율 모달 상태 ────────────────────────────────────────────────────────
@@ -312,7 +317,6 @@ export default function LmePage() {
       const data = await res.json();
       setAvgResult({avgClose: data[AVG_FIELDS.avgClose], avgRate: data[AVG_FIELDS.avgRate]});
       setCurrentRate(String(data[AVG_FIELDS.avgRate].toFixed(2)));
-      setAvgKrw(String(Math.floor(data[AVG_FIELDS.avgKrw])))
     } catch (err) {
       console.error("평균 조회 실패:", err);
     }
@@ -330,6 +334,12 @@ export default function LmePage() {
     fetchHistory(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const rateMultiplier = parsePercentRate(ratePercent);
+  const calculatedAvgKrw =
+    avgResult && Number(currentRate) && rateMultiplier
+      ? Math.floor((Number(avgResult.avgClose) * Number(currentRate) * rateMultiplier) / 1000)
+      : "";
 
 
   // ─── 렌더링 ──────────────────────────────────────────────────────────────
@@ -395,7 +405,7 @@ export default function LmePage() {
 
             {/* 결과 카드 */}
             {avgResult && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
                 {/* LME 평균가 */}
                 <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
                   <p className="text-xs text-blue-500 font-semibold mb-2 uppercase tracking-wide">
@@ -424,31 +434,51 @@ export default function LmePage() {
                 </div>
 
                 {/* 원화 환산가 */}
+                <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
+                  <label className="text-xs text-amber-600 font-semibold mb-2 uppercase tracking-wide block">
+                    요율
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={ratePercent}
+                      onChange={(e) => setRatePercent(e.target.value.replace(/%/g, ""))}
+                      placeholder="100"
+                      className="w-full min-w-0 text-2xl font-bold text-amber-700 font-mono bg-white/70 border border-amber-200 rounded-lg pl-3 pr-9 py-1.5 outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg font-bold text-amber-500 pointer-events-none">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-500 mt-2">예: 95, 87.5</p>
+                </div>
+
                 <div
                   className={`rounded-xl p-5 border transition-all ${
-                    avgKrw
+                    calculatedAvgKrw
                       ? "bg-emerald-50 border-emerald-100"
                       : "bg-slate-50 border-slate-200"
                   }`}
                 >
                   <p
                     className={`text-xs font-semibold mb-2 uppercase tracking-wide ${
-                        avgKrw ? "text-emerald-500" : "text-slate-400"
+                        calculatedAvgKrw ? "text-emerald-500" : "text-slate-400"
                     }`}
                   >
                     원화 환산가
                   </p>
                   <p
                     className={`text-2xl font-bold font-mono ${
-                        avgKrw ? "text-emerald-700" : "text-slate-300"
+                        calculatedAvgKrw ? "text-emerald-700" : "text-slate-300"
                     }`}
                   >
-                    {avgKrw ? formatKRW(avgKrw) : "—"}
-                    {avgKrw && <span className="text-sm font-normal text-emerald-400 ml-1">/kg</span>}
+                    {calculatedAvgKrw ? formatKRW(calculatedAvgKrw) : "—"}
+                    {calculatedAvgKrw && <span className="text-sm font-normal text-emerald-400 ml-1">/kg</span>}
                   </p>
-                  {avgKrw && (
+                  {calculatedAvgKrw && (
                     <p className="text-xs text-emerald-400 mt-2">
-                      {formatUSD(avgResult.avgClose)} × {Number(currentRate).toLocaleString()}
+                      {formatUSD(avgResult.avgClose)} × {Number(currentRate).toLocaleString()} × {ratePercent}%
                     </p>
                   )}
                 </div>
@@ -544,6 +574,9 @@ export default function LmePage() {
                       <th className="py-3 px-6 text-right border-r border-slate-200">
                         LME 구리 종가 ($/t)
                       </th>
+                      <th className="py-3 px-6 text-right border-r border-slate-200">
+                        변동폭
+                      </th>
                       <th className="py-3 px-6 text-right">
                         환율 (₩/$)
                       </th>
@@ -564,30 +597,30 @@ export default function LmePage() {
                           <td className="py-3 px-6 border-r border-slate-100 text-slate-500 text-xs font-medium tabular-nums">
                             {row["baseDate"]}
                           </td>
-                          {/* LME 종가 + 등락 */}
+                          {/* LME 종가 */}
                           <td className="py-3 px-6 border-r border-slate-100 text-right font-mono font-bold text-blue-600">
-                            <span className="inline-flex items-center justify-end gap-2">
-                              {formatUSD(row["price"])}
+                            {formatUSD(row["price"])}
+                          </td>
+                          {/* 변동폭 */}
+                          <td className="py-3 px-6 border-r border-slate-100 text-right font-mono">
+                            <span className="inline-flex items-center justify-end gap-1">
                               {isUp && (
                                 <span className="inline-flex items-center gap-0.5 text-xs font-bold text-red-500">
-                                  (
                                   <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M12 4l8 16H4L12 4z" />
                                   </svg>
                                   {diff.toFixed(2)}
-                                  )
                                 </span>
                               )}
                               {isDown && (
                                 <span className="inline-flex items-center gap-0.5 text-xs font-bold text-blue-500">
-                                  (
                                   <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M12 20l-8-16h16L12 20z" />
                                   </svg>
                                   {Math.abs(diff).toFixed(2)}
-                                  )
                                 </span>
                               )}
+                              {!isUp && !isDown && <span className="text-slate-400">-</span>}
                             </span>
                           </td>
                           {/* 환율 */}
