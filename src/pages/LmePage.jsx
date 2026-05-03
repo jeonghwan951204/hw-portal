@@ -41,94 +41,6 @@ const RATE_FIELDS = {
   sellRate: "sellRate",        // 파실 때 (현찰 매입율)
 };
 
-// ─── 임시 데이터 ──────────────────────────────────────────────────────────────
-// TODO: 백엔드 연결 시 MOCK_DATA 블록 전체 삭제 후 fetch 로직 주석 해제
-//https://www.hanabank.com/cms/rate/wpfxd651_01i_01.do?ajax=true&curCd=USD&tmpInqStrDt=2026-03-18&pbldDvCd=0&pbldSqn=&hid_key_data=&inqStrDt=20260319&inqKindCd=1&hid_enc_data=&requestTarget=searchContentDiv
-// 하나은행 환율 api
-
-/** 환율 전용 데이터 (LME 휴장일 포함) */
-// TODO: 백엔드 연결 시 삭제
-const MOCK_RATE_DATA = [
-  { date: "2026.02.02", exchangeRate: 1468.20 },
-  { date: "2026.02.03", exchangeRate: 1472.50 },
-  { date: "2026.02.04", exchangeRate: 1471.80 }, // LME 휴장
-  { date: "2026.02.05", exchangeRate: 1470.10 }, // LME 휴장
-  { date: "2026.02.06", exchangeRate: 1465.80 },
-  { date: "2026.02.07", exchangeRate: 1470.30 },
-  { date: "2026.02.08", exchangeRate: 1462.10 },
-  { date: "2026.02.09", exchangeRate: 1478.90 },
-  { date: "2026.02.10", exchangeRate: 1481.20 },
-  { date: "2026.02.11", exchangeRate: 1480.00 }, // LME 휴장
-  { date: "2026.02.12", exchangeRate: 1479.30 }, // LME 휴장
-  { date: "2026.02.13", exchangeRate: 1479.60 },
-  { date: "2026.02.14", exchangeRate: 1466.40 },
-  { date: "2026.02.15", exchangeRate: 1455.70 },
-  { date: "2026.02.16", exchangeRate: 1451.30 },
-  { date: "2026.02.17", exchangeRate: 1453.80 },
-  { date: "2026.02.18", exchangeRate: 1452.90 }, // LME 휴장
-  { date: "2026.02.19", exchangeRate: 1451.50 }, // LME 휴장
-  { date: "2026.02.20", exchangeRate: 1448.20 },
-  { date: "2026.02.21", exchangeRate: 1442.60 },
-  { date: "2026.02.22", exchangeRate: 1446.10 },
-  { date: "2026.02.23", exchangeRate: 1437.90 },
-  { date: "2026.02.24", exchangeRate: 1441.50 },
-  { date: "2026.02.25", exchangeRate: 1440.20 }, // LME 휴장
-  { date: "2026.02.26", exchangeRate: 1439.80 }, // LME 휴장
-  { date: "2026.02.27", exchangeRate: 1447.80 },
-  { date: "2026.02.28", exchangeRate: 1436.20 },
-  { date: "2026.03.01", exchangeRate: 1435.10 }, // LME 휴장 (삼일절)
-  { date: "2026.03.02", exchangeRate: 1434.50 }, // LME 휴장
-  { date: "2026.03.03", exchangeRate: 1421.30 },
-  { date: "2026.03.04", exchangeRate: 1424.80 },
-  { date: "2026.03.05", exchangeRate: 1431.60 },
-  { date: "2026.03.06", exchangeRate: 1441.20 },
-  { date: "2026.03.07", exchangeRate: 1435.70 },
-  { date: "2026.03.08", exchangeRate: 1434.90 }, // LME 휴장
-  { date: "2026.03.09", exchangeRate: 1433.60 }, // LME 휴장
-  { date: "2026.03.10", exchangeRate: 1417.40 },
-  { date: "2026.03.11", exchangeRate: 1412.10 },
-  { date: "2026.03.12", exchangeRate: 1414.90 },
-  { date: "2026.03.13", exchangeRate: 1422.30 },
-  { date: "2026.03.14", exchangeRate: 1433.60 },
-  { date: "2026.03.15", exchangeRate: 1432.10 }, // LME 휴장
-  { date: "2026.03.16", exchangeRate: 1431.00 }, // LME 휴장
-  { date: "2026.03.17", exchangeRate: 1444.80 },
-  { date: "2026.03.18", exchangeRate: 1451.30 },
-];
-
-const MOCK_DATA = [
-  { id:  1, date: "2026.02.02", closePrice: 8812.50, priceChange: +28.50, exchangeRate: 1468.20 },
-  { id:  2, date: "2026.02.03", closePrice: 8784.00, priceChange:  -28.50, exchangeRate: 1472.50 },
-  { id:  3, date: "2026.02.06", closePrice: 8901.00, priceChange: +117.00, exchangeRate: 1465.80 },
-  { id:  4, date: "2026.02.07", closePrice: 8856.50, priceChange:  -44.50, exchangeRate: 1470.30 },
-  { id:  5, date: "2026.02.08", closePrice: 8923.00, priceChange:  +66.50, exchangeRate: 1462.10 },
-  { id:  6, date: "2026.02.09", closePrice: 8745.50, priceChange: -177.50, exchangeRate: 1478.90 },
-  { id:  7, date: "2026.02.10", closePrice: 8688.00, priceChange:  -57.50, exchangeRate: 1481.20 },
-  { id:  8, date: "2026.02.13", closePrice: 8712.50, priceChange:  +24.50, exchangeRate: 1479.60 },
-  { id:  9, date: "2026.02.14", closePrice: 8834.00, priceChange: +121.50, exchangeRate: 1466.40 },
-  { id: 10, date: "2026.02.15", closePrice: 8967.50, priceChange: +133.50, exchangeRate: 1455.70 },
-  { id: 11, date: "2026.02.16", closePrice: 9012.00, priceChange:  +44.50, exchangeRate: 1451.30 },
-  { id: 12, date: "2026.02.17", closePrice: 8989.50, priceChange:  -22.50, exchangeRate: 1453.80 },
-  { id: 13, date: "2026.02.20", closePrice: 9045.00, priceChange:  +55.50, exchangeRate: 1448.20 },
-  { id: 14, date: "2026.02.21", closePrice: 9123.50, priceChange:  +78.50, exchangeRate: 1442.60 },
-  { id: 15, date: "2026.02.22", closePrice: 9078.00, priceChange:  -45.50, exchangeRate: 1446.10 },
-  { id: 16, date: "2026.02.23", closePrice: 9201.50, priceChange: +123.50, exchangeRate: 1437.90 },
-  { id: 17, date: "2026.02.24", closePrice: 9156.00, priceChange:  -45.50, exchangeRate: 1441.50 },
-  { id: 18, date: "2026.02.27", closePrice: 9089.00, priceChange:  -67.00, exchangeRate: 1447.80 },
-  { id: 19, date: "2026.02.28", closePrice: 9234.50, priceChange: +145.50, exchangeRate: 1436.20 },
-  { id: 23, date: "2026.03.03", closePrice: 9401.50, priceChange:  +56.50, exchangeRate: 1421.30 },
-  { id: 24, date: "2026.03.04", closePrice: 9367.00, priceChange:  -34.50, exchangeRate: 1424.80 },
-  { id: 25, date: "2026.03.05", closePrice: 9289.50, priceChange:  -77.50, exchangeRate: 1431.60 },
-  { id: 26, date: "2026.03.06", closePrice: 9156.00, priceChange: -133.50, exchangeRate: 1441.20 },
-  { id: 27, date: "2026.03.07", closePrice: 9223.50, priceChange:  +67.50, exchangeRate: 1435.70 },
-  { id: 28, date: "2026.03.10", closePrice: 9445.00, priceChange: +221.50, exchangeRate: 1417.40 },
-  { id: 29, date: "2026.03.11", closePrice: 9512.50, priceChange:  +67.50, exchangeRate: 1412.10 },
-  { id: 30, date: "2026.03.12", closePrice: 9478.00, priceChange:  -34.50, exchangeRate: 1414.90 },
-  { id: 31, date: "2026.03.13", closePrice: 9389.50, priceChange:  -88.50, exchangeRate: 1422.30 },
-  { id: 32, date: "2026.03.14", closePrice: 9267.00, priceChange: -122.50, exchangeRate: 1433.60 },
-  { id: 33, date: "2026.03.17", closePrice: 9134.50, priceChange: -132.50, exchangeRate: 1444.80 },
-  { id: 34, date: "2026.03.18", closePrice: 9056.00, priceChange:  -78.50, exchangeRate: 1451.30 },
-];
 
 // ─── 환율 모달 ────────────────────────────────────────────────────────────────
 
@@ -144,6 +56,7 @@ function RateModal({ onClose }) {
     if (endDate   && d > endDate)   return false;
     return true;
   });
+
   const totalPages = Math.ceil(filtered.length / PAGE);
   const sliced = filtered.slice((page - 1) * PAGE, page * PAGE);
 
@@ -269,18 +182,6 @@ export default function LmePage() {
   // TODO: 백엔드 연결 시 mock 블록 삭제 후 아래 fetch 블록 주석 해제
   const fetchHistory = useCallback(
     async (page = 1, start = tableStartDate, end = tableEndDate) => {
-      // ── mock ──────────────────────────────────────────────────────────────
-      // const filtered = MOCK_DATA.filter((row) => {
-      //   const d = row[LIST_FIELDS.date].replace(/\./g, "-"); // yyyy.mm.dd → yyyy-mm-dd
-      //   if (start && d < start) return false;
-      //   if (end   && d > end)   return false;
-      //   return true;
-      // });
-      // const total = Math.ceil(filtered.length / PAGE_SIZE);
-      // const sliced = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-      // setHistory(sliced);
-      // setTotalPages(total);
-      // setCurrentPage(page);
       // ── fetch (백엔드 연결 시 사용) ───────────────────────────────────────
       let url = `/api/price?page=${page}&size=${PAGE_SIZE}`;
       if (start) url += `&startDate=${start}`;
