@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Header from "../components/Header";
-import { formatUSD, formatRate } from "../utils/format";
+import { formatUSD } from "../utils/format";
 
 // ─── 임시 데이터 ──────────────────────────────────────────────────────────────
 const MOCK_CONTRACTS = [
@@ -138,10 +138,63 @@ function ContractCard({ contract }) {
   );
 }
 
+// ─── 계약 작성 모달 ──────────────────────────────────────────────────────────
+function ContractCreateModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <h3 className="font-semibold text-slate-700 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full inline-block" />
+            계약 작성
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
+            aria-label="계약 작성 모달 닫기"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form className="flex-1 overflow-y-auto" onSubmit={(e) => e.preventDefault()}>
+          <div className="px-6 py-8 min-h-72 bg-white" />
+
+          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:text-slate-700 transition-all"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 hover:border-blue-700 transition-all shadow-sm shadow-blue-200"
+            >
+              저장
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── 메인 컴포넌트 ────────────────────────────────────────────────────────────
 export default function ContractPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("전체");
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const filtered = MOCK_CONTRACTS.filter((c) => {
     const matchSearch =
@@ -154,17 +207,32 @@ export default function ContractPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Header />
+      {createModalOpen && (
+        <ContractCreateModal onClose={() => setCreateModalOpen(false)} />
+      )}
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* 페이지 타이틀 */}
-        <div className="flex items-center gap-2 px-1">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <h1 className="font-bold text-slate-700 text-lg">계약별 조회</h1>
-          <span className="ml-1 text-xs text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
-            {filtered.length}건
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h1 className="font-bold text-slate-700 text-lg">계약별 조회</h1>
+            <span className="ml-1 text-xs text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded-full">
+              {filtered.length}건
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCreateModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 hover:border-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            작성
+          </button>
         </div>
 
         {/* 필터 바 */}

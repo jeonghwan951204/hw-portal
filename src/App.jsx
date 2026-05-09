@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import PriceManagement from "./pages/PriceManagement";
-import LmePage from "./pages/LmePage";
+import LmePage from "./pages/price";
 import NoticePage from "./pages/NoticePage";
 import InventoryPage from "./pages/InventoryPage";
 import WeighingPage from "./pages/WeighingPage";
