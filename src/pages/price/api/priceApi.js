@@ -37,3 +37,13 @@ export const fetchExchangeRates = async ({ page, size, startDate, endDate }) => 
 
   return res.json();
 };
+
+export const requestCrawlingSync = async () => {
+  const res = await apiFetch("/api/crawling", {
+    method: "POST",
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  return res;
+};

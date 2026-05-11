@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
-import { fetchLmeAverage, fetchLmePriceHistory } from "../api/priceApi";
+import { fetchLmeAverage, fetchLmePriceHistory, requestCrawlingSync } from "../api/priceApi";
 import { AVG_FIELDS, LIST_FIELDS, PAGE_SIZE, parsePercentRate } from "../constants";
 
 export const useLmePage = () => {
@@ -9,6 +9,7 @@ export const useLmePage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [tableStartDate, setTableStartDate] = useState("");
   const [tableEndDate, setTableEndDate] = useState("");
+  const [syncing, setSyncing] = useState(false);
 
   const [avgStartDate, setAvgStartDate] = useState("");
   const [avgEndDate, setAvgEndDate] = useState("");
@@ -68,6 +69,21 @@ export const useLmePage = () => {
     fetchHistory(1, "", "");
   };
 
+  const handleSyncCrawling = async () => {
+    if (syncing) return;
+
+    try {
+      setSyncing(true);
+      await requestCrawlingSync();
+      await fetchHistory(currentPage);
+    } catch (err) {
+      console.error("동기화 실패:", err);
+      alert("동기화에 실패했습니다.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleAvgDateRangeChange = (field, value) => {
     const nextRange = normalizeDateRangeChange({
       startDate: avgStartDate,
@@ -121,7 +137,9 @@ export const useLmePage = () => {
       tableStartDate,
       tableEndDate,
       tableDateLimits: getDateRangeLimits(tableStartDate, tableEndDate),
+      syncing,
       fetchHistory,
+      handleSyncCrawling,
       handleResetFilters,
       handleTableDateRangeChange,
     },

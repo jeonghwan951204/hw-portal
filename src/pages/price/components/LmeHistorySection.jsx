@@ -8,7 +8,9 @@ export default function LmeHistorySection({
   tableStartDate,
   tableEndDate,
   tableDateLimits,
+  syncing,
   fetchHistory,
+  handleSyncCrawling,
   handleResetFilters,
   handleTableDateRangeChange,
   onOpenRateModal,
@@ -21,6 +23,23 @@ export default function LmeHistorySection({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4v16M14 4v16" />
           </svg>
           <h2 className="font-bold text-slate-700 text-lg">LME 구리 가격 내역</h2>
+          <button
+            type="button"
+            onClick={handleSyncCrawling}
+            disabled={syncing}
+            className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v6h6M20 20v-6h-6M20 8A8 8 0 006.58 5.08M4 16a8 8 0 0013.42 2.92" />
+            </svg>
+            {syncing ? "동기화 중" : "동기화"}
+          </button>
           <button
             type="button"
             onClick={onOpenRateModal}
