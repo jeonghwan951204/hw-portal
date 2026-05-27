@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, hw-portal, deploy]
+    runs-on: [self-hosted, hw-portal, hw-portal-deploy]
 
     steps:
       - name: Deploy hw-portal
