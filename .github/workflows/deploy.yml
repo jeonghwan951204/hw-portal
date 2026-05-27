@@ -1,0 +1,21 @@
+name: deploy hw-portal
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - deploy
+
+concurrency:
+  group: hw-protal-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, hw-portal, deploy]
+
+    steps:
+      - name: Deploy hw-portal
+        run: |
+          /app/hw-project/scripts/deploy-hw-portal.sh
+        
