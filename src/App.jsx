@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
+import RequireAuth from "./components/RequireAuth";
+import SignupPage from "./pages/SignupPage";
 import PriceManagement from "./pages/PriceManagement";
 import LmePage from "./pages/price";
 import NoticePage from "./pages/NoticePage";
@@ -12,14 +13,18 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<PriceManagement />} />
-        <Route path="/lme" element={<LmePage />} />
-        <Route path="/notice" element={<NoticePage />} />
-        <Route path="/inventory" element={<InventoryPage />} />
-        <Route path="/weighing" element={<WeighingPage />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/contract" element={<ContractPage />} />
+        {/* 로그인 페이지는 더 이상 사용하지 않음 (공유링크 가입으로 대체) */}
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/signup/:linkId" element={<SignupPage />} />
+
+        {/* 보호된 페이지 — 토큰 + 권한 필요 */}
+        <Route path="/" element={<RequireAuth roles={["USER", "ADMIN"]}><PriceManagement /></RequireAuth>} />
+        <Route path="/lme" element={<RequireAuth roles={["USER", "ADMIN"]}><LmePage /></RequireAuth>} />
+        <Route path="/notice" element={<RequireAuth roles={["USER", "ADMIN"]}><NoticePage /></RequireAuth>} />
+        <Route path="/inventory" element={<RequireAuth roles={["USER", "ADMIN"]}><InventoryPage /></RequireAuth>} />
+        <Route path="/weighing" element={<RequireAuth roles={["USER", "ADMIN"]}><WeighingPage /></RequireAuth>} />
+        <Route path="/documents" element={<RequireAuth roles={["USER", "ADMIN"]}><DocumentsPage /></RequireAuth>} />
+        <Route path="/contract" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractPage /></RequireAuth>} />
       </Routes>
     </BrowserRouter>
   );
