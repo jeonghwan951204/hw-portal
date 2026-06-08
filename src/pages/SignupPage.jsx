@@ -19,6 +19,7 @@ export default function SignupPage() {
 
   // 링크 식별자: 경로 파라미터 우선, 없으면 쿼리(?id=) 사용
   const { linkId: linkIdParam } = useParams();
+
   const linkId =
     linkIdParam ?? new URLSearchParams(window.location.search).get("id") ?? "";
 
