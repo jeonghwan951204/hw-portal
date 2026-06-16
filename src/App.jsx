@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import RequireAuth from "./components/RequireAuth";
 import SignupPage from "./pages/SignupPage";
-import PriceManagement from "./pages/PriceManagement";
+import PriceManagement from "./pages/priceManagement";
 import LmePage from "./pages/price";
 import NoticePage from "./pages/NoticePage";
 import InventoryPage from "./pages/InventoryPage";
