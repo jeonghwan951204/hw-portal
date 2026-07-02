@@ -7,7 +7,7 @@ import NoticePage from "./pages/NoticePage";
 import InventoryPage from "./pages/InventoryPage";
 import WeighingPage from "./pages/WeighingPage";
 import DocumentsPage from "./pages/DocumentsPage";
-import ContractPage from "./pages/ContractPage";
+import ContractPage from "./pages/contract";
 
 export default function App() {
   return (
