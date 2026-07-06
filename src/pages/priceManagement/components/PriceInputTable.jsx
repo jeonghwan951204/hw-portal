@@ -49,6 +49,7 @@ export default function PriceInputTable({ category, prices, onChange, onSubmit }
                       value={prices[item] ?? ""}
                       onChange={(e) => onChange(item, e.target.value)}
                       className="w-full border-none bg-transparent text-center px-3 py-3 outline-none focus:bg-slate-50 font-mono text-blue-600 font-bold"
+                      step={100}
                     />
                   </td>
                 ))}
