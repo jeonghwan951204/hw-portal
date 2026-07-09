@@ -7,7 +7,9 @@ import NoticePage from "./pages/NoticePage";
 import InventoryPage from "./pages/InventoryPage";
 import WeighingPage from "./pages/WeighingPage";
 import DocumentsPage from "./pages/DocumentsPage";
-import ContractPage from "./pages/contract";
+import ContractListPage from "./pages/contract";
+import ContractDetailPage from "./pages/contract/detail";
+import ContractFormPage from "./pages/contract/form";
 
 export default function App() {
   return (
@@ -24,7 +26,10 @@ export default function App() {
         <Route path="/inventory" element={<RequireAuth roles={["USER", "ADMIN"]}><InventoryPage /></RequireAuth>} />
         <Route path="/weighing" element={<RequireAuth roles={["USER", "ADMIN"]}><WeighingPage /></RequireAuth>} />
         <Route path="/documents" element={<RequireAuth roles={["USER", "ADMIN"]}><DocumentsPage /></RequireAuth>} />
-        <Route path="/contract" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractPage /></RequireAuth>} />
+        <Route path="/contract" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractListPage /></RequireAuth>} />
+        <Route path="/contract/new" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
+        <Route path="/contract/:id" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractDetailPage /></RequireAuth>} />
+        <Route path="/contract/:id/edit" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
       </Routes>
     </BrowserRouter>
   );
