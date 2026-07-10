@@ -83,8 +83,9 @@ contract/
 
 ```js
 {
-  id, contractNo, company, status("진행중"|"완료"),
+  id, name, contractNo(선택), company, status("진행중"|"완료"),
   startDate, endDate, tradeType("수출"|"내수"), priceUnit("TON"|"KG"),
+  quantity(kg 저장, 톤 계약은 표시만 톤), memo(비고),
   prices: [{ id, type, periodStart, periodEnd, formulaId, formulaName,
              fixedPrice, confirmed, lme, exchangeRate, krwPerKg }],
   items:  [{ id, name, isPrimary,

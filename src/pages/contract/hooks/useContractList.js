@@ -13,7 +13,8 @@ const fetchContractsMock = ({ status, keyword, page }) =>
         const matchStatus = status === "전체" || c.status === status;
         const matchKeyword =
           !keyword ||
-          c.contractNo.toLowerCase().includes(keyword.toLowerCase()) ||
+          c.name.toLowerCase().includes(keyword.toLowerCase()) ||
+          (c.contractNo ?? "").toLowerCase().includes(keyword.toLowerCase()) ||
           c.company.toLowerCase().includes(keyword.toLowerCase());
         return matchStatus && matchKeyword;
       });

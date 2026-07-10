@@ -11,6 +11,7 @@ export const MOCK_MARKET = {
 export const MOCK_CONTRACTS = [
   {
     id: 1,
+    name: "포스코 A동 수출 계약",
     contractNo: "CT-2026-001",
     company: "포스코인터내셔널",
     status: "진행중",
@@ -18,6 +19,8 @@ export const MOCK_CONTRACTS = [
     endDate: "2026-09-30",
     tradeType: "수출",
     priceUnit: "TON",
+    quantity: 100000, // kg 저장 (톤 계약 → 표시만 100 톤)
+    memo: "선적 전 품질검사 필수",
     prices: [
       {
         id: "p1",
@@ -114,6 +117,7 @@ export const MOCK_CONTRACTS = [
   },
   {
     id: 2,
+    name: "한국전선 상동 공급 계약",
     contractNo: "CT-2026-002",
     company: "한국전선(주)",
     status: "진행중",
@@ -121,6 +125,8 @@ export const MOCK_CONTRACTS = [
     endDate: "2026-12-31",
     tradeType: "내수",
     priceUnit: "KG",
+    quantity: 50000,
+    memo: "월말 일괄 정산",
     prices: [
       {
         id: "p1",
@@ -190,6 +196,7 @@ export const MOCK_CONTRACTS = [
   },
   {
     id: 3,
+    name: "LS전선 파동 수출 계약",
     contractNo: "CT-2026-003",
     company: "LS전선(주)",
     status: "완료",
@@ -197,6 +204,8 @@ export const MOCK_CONTRACTS = [
     endDate: "2026-06-30",
     tradeType: "수출",
     priceUnit: "TON",
+    quantity: 80000, // 80 톤
+    memo: "", // 비고 없음 (조용한 영역 숨김 확인용)
     prices: [
       {
         id: "p1",
@@ -271,6 +280,7 @@ export const MOCK_CONTRACTS = [
   },
   {
     id: 4,
+    name: "동국제강 밀베리 공급 계약",
     contractNo: "CT-2026-004",
     company: "동국제강(주)",
     status: "진행중",
@@ -278,6 +288,8 @@ export const MOCK_CONTRACTS = [
     endDate: "2026-08-31",
     tradeType: "내수",
     priceUnit: "KG",
+    quantity: 30000,
+    memo: "",
     prices: [
       {
         id: "p1",

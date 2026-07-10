@@ -9,12 +9,15 @@ let tempSeq = 0;
 const nextTempId = (prefix) => `${prefix}${++tempSeq}`;
 
 const emptyBasic = {
+  name: "",
   contractNo: "",
   customer: "",
   startDate: "",
   endDate: "",
   tradeType: "수출",
   priceUnit: "TON",
+  quantity: "", // 계약 수량 (참고용, kg 저장)
+  memo: "", // 비고
 };
 
 const newPrice = () => ({
@@ -61,12 +64,15 @@ const contractToForm = (contract) => {
   const primary = contract.items.find((i) => i.isPrimary) ?? contract.items[0];
   return {
     basic: {
-      contractNo: contract.contractNo,
+      name: contract.name,
+      contractNo: contract.contractNo ?? "",
       customer: contract.company,
       startDate: contract.startDate,
       endDate: contract.endDate,
       tradeType: contract.tradeType,
       priceUnit: contract.priceUnit,
+      quantity: contract.quantity ?? "",
+      memo: contract.memo ?? "",
     },
     prices,
     items,
@@ -103,8 +109,11 @@ export function useContractForm() {
   }, [isEdit, id]);
 
   // ── 스텝 1: 기본 ──
-  const handleBasicChange = (field, value) =>
+  const handleBasicChange = (field, value) => {
+    // 계약 수량 음수 입력 방지 (0은 허용)
+    if (field === "quantity" && value !== "" && Number(value) < 0) return;
     setBasic((prev) => ({ ...prev, [field]: value }));
+  };
 
   // ── 스텝 2: 단가 (추가형) ──
   const handleAddPrice = () => setPrices((prev) => [...prev, newPrice()]);
@@ -181,7 +190,14 @@ export function useContractForm() {
 
   // ── 스텝 이동 / 저장 ──
   const goPrev = () => setStep((s) => Math.max(1, s - 1));
-  const goNext = () => setStep((s) => Math.min(FORM_STEPS.length, s + 1));
+  const goNext = () => {
+    // 계약명은 필수 — 비어 있으면 스텝 1에서 진행 차단 (최종 검증은 서버)
+    if (step === 1 && !basic.name.trim()) {
+      showToast("error", "계약명을 입력하세요");
+      return;
+    }
+    setStep((s) => Math.min(FORM_STEPS.length, s + 1));
+  };
 
   const handleConfirmSave = () => {
     // TODO: API 연동 시 등록/수정 요청 → 서버 검증 오류는 토스트로 표시

@@ -56,6 +56,18 @@ export const unitLabel = (contract) => {
   return contract.tradeType === "수출" ? `USD/${unit}` : `원/${unit}`;
 };
 
+// 계약 수량 표기 — 무게는 kg로 저장, 톤 계약이면 표시만 톤으로 (참고용)
+export const formatQuantity = (contract) => {
+  const kg = contract?.quantity;
+  if (kg == null || kg === "") return "-";
+  const num = Number(kg);
+  if (Number.isNaN(num)) return "-";
+  if (contract.priceUnit === "TON") {
+    return `${(num / 1000).toLocaleString("ko-KR", { maximumFractionDigits: 3 })} 톤`;
+  }
+  return `${num.toLocaleString("ko-KR")} kg`;
+};
+
 // 확정가가 확정된 계약에서만 정산가를 노출한다 (서버 판단 값 기준)
 export const isSettlementVisible = (contract) =>
   contract.prices.some((p) => p.type === "확정가" && p.confirmed);

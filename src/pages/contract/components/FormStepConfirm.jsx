@@ -1,4 +1,4 @@
-import { MOCK_FORMULAS, PRICE_TYPE_STYLE, formatDate } from "../constants";
+import { MOCK_FORMULAS, PRICE_TYPE_STYLE, formatDate, formatQuantity } from "../constants";
 
 const formulaName = (formulaId) =>
   MOCK_FORMULAS.find((f) => f.id === formulaId)?.name ?? formulaId;
@@ -19,7 +19,8 @@ export default function FormStepConfirm({ basic, prices, items, primaryItemId })
       {/* 기본 */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-2.5">
         <h3 className="text-sm font-bold text-slate-700 mb-3">계약 기본</h3>
-        <SummaryRow label="계약번호" value={basic.contractNo} />
+        <SummaryRow label="계약명" value={basic.name} />
+        {basic.contractNo && <SummaryRow label="계약번호" value={basic.contractNo} />}
         <SummaryRow label="거래처" value={basic.customer} />
         <SummaryRow
           label="계약기간"
@@ -31,6 +32,10 @@ export default function FormStepConfirm({ basic, prices, items, primaryItemId })
         />
         <SummaryRow label="거래구분" value={basic.tradeType} />
         <SummaryRow label="단가 단위" value={basic.priceUnit} />
+        {basic.quantity !== "" && (
+          <SummaryRow label="계약 수량" value={formatQuantity(basic)} />
+        )}
+        {basic.memo && <SummaryRow label="비고" value={basic.memo} />}
       </div>
 
       {/* 단가 */}

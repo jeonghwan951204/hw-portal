@@ -1,4 +1,4 @@
-import { formatDate } from "../constants";
+import { formatDate, formatQuantity } from "../constants";
 import StatusBadge from "./StatusBadge";
 
 // 계약 상세 헤더 — 탭 위 고정 영역 (통화·단위 문구는 표시 생략)
@@ -18,13 +18,25 @@ export default function ContractDetailHeader({ contract, onEdit, onDelete, onBac
           </button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-bold text-slate-800">{contract.contractNo}</h1>
+              <h1 className="text-lg font-bold text-slate-800">{contract.name}</h1>
               <StatusBadge status={contract.status} />
             </div>
             <p className="text-sm text-slate-500 mt-1">
+              {contract.contractNo && (
+                <>
+                  {contract.contractNo}
+                  <span className="mx-2 text-slate-300">·</span>
+                </>
+              )}
               {contract.company}
               <span className="mx-2 text-slate-300">·</span>
               {formatDate(contract.startDate)} – {formatDate(contract.endDate)}
+              {contract.quantity != null && contract.quantity !== "" && (
+                <>
+                  <span className="mx-2 text-slate-300">·</span>
+                  {formatQuantity(contract)}
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -46,6 +58,14 @@ export default function ContractDetailHeader({ contract, onEdit, onDelete, onBac
           </button>
         </div>
       </div>
+
+      {/* 비고 — 강조 없이 확인·공유용 조용한 영역 */}
+      {contract.memo && (
+        <p className="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-500 whitespace-pre-wrap">
+          <span className="text-xs font-bold text-slate-400 mr-2">비고</span>
+          {contract.memo}
+        </p>
+      )}
     </div>
   );
 }

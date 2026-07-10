@@ -9,8 +9,22 @@ export default function FormStepBasic({ basic, onChange }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="sm:col-span-2">
+          <label className={LABEL_CLASS}>
+            계약명 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="예: 포스코 A동 수출 계약"
+            value={basic.name}
+            onChange={(e) => onChange("name", e.target.value)}
+            className={INPUT_CLASS}
+          />
+        </div>
         <div>
-          <label className={LABEL_CLASS}>계약번호</label>
+          <label className={LABEL_CLASS}>
+            계약번호 <span className="font-normal text-slate-400">(선택)</span>
+          </label>
           <input
             type="text"
             placeholder="예: CT-2026-001"
@@ -88,6 +102,29 @@ export default function FormStepBasic({ basic, onChange }) {
               </button>
             ))}
           </div>
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>
+            계약 수량 <span className="font-normal text-slate-400">(kg, 참고용)</span>
+          </label>
+          <input
+            type="number"
+            min="0"
+            placeholder="예: 100000"
+            value={basic.quantity}
+            onChange={(e) => onChange("quantity", e.target.value)}
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className={LABEL_CLASS}>비고</label>
+          <textarea
+            rows={2}
+            placeholder="특이사항·주의사항 (선택)"
+            value={basic.memo}
+            onChange={(e) => onChange("memo", e.target.value)}
+            className={`${INPUT_CLASS} resize-none`}
+          />
         </div>
       </div>
     </div>

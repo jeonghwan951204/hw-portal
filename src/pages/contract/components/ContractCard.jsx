@@ -26,13 +26,19 @@ export default function ContractCard({ contract, onClick }) {
       {/* 카드 헤더 */}
       <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-bold text-slate-800 leading-snug">
-            {contract.contractNo}
+          <h3 className="font-bold text-slate-800 leading-snug truncate">
+            {contract.name}
           </h3>
           <p className="text-sm text-slate-500 font-medium mt-0.5 truncate">
             {contract.company}
           </p>
           <p className="text-xs text-slate-400 mt-1">
+            {contract.contractNo && (
+              <>
+                {contract.contractNo}
+                <span className="mx-1.5 text-slate-300">·</span>
+              </>
+            )}
             {formatShortPeriod(contract.startDate, contract.endDate)}
           </p>
         </div>
