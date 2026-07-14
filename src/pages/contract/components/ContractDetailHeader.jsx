@@ -1,4 +1,4 @@
-import { formatDate, formatQuantity } from "../constants";
+import { formatDate, formatQuantity, ownerLabel } from "../constants";
 import StatusBadge from "./StatusBadge";
 
 // 계약 상세 헤더 — 탭 위 고정 영역 (통화·단위 문구는 표시 생략)
@@ -18,6 +18,9 @@ export default function ContractDetailHeader({ contract, onEdit, onDelete, onBac
           </button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                {ownerLabel(contract.ownerCompany)}
+              </span>
               <h1 className="text-lg font-bold text-slate-800">{contract.name}</h1>
               <StatusBadge status={contract.status} />
             </div>

@@ -10,6 +10,7 @@ const nextTempId = (prefix) => `${prefix}${++tempSeq}`;
 
 const emptyBasic = {
   name: "",
+  ownerCompany: "hojae", // 소속회사 (호재/우남)
   contractNo: "",
   customer: "",
   startDate: "",
@@ -65,6 +66,7 @@ const contractToForm = (contract) => {
   return {
     basic: {
       name: contract.name,
+      ownerCompany: contract.ownerCompany ?? "hojae",
       contractNo: contract.contractNo ?? "",
       customer: contract.company,
       startDate: contract.startDate,

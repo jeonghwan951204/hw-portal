@@ -27,17 +27,10 @@ export default function ContractFormPage() {
       <Header />
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between px-1">
+        <div className="px-1">
           <h1 className="font-bold text-slate-700 text-lg">
             {isEdit ? "계약 수정" : "계약 등록"}
           </h1>
-          <button
-            type="button"
-            onClick={nav.onCancel}
-            className="text-sm font-semibold text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            취소
-          </button>
         </div>
 
         <FormStepIndicator {...stepper} />
@@ -61,23 +54,32 @@ export default function ContractFormPage() {
             <span />
           )}
 
-          {nav.step < nav.totalSteps ? (
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={nav.onNext}
-              className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+              onClick={nav.onCancel}
+              className="px-5 py-2.5 text-sm font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
             >
-              다음
+              취소
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={nav.onSave}
-              className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
-            >
-              {isEdit ? "저장" : "등록"}
-            </button>
-          )}
+            {nav.step < nav.totalSteps ? (
+              <button
+                type="button"
+                onClick={nav.onNext}
+                className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+              >
+                다음
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={nav.onSave}
+                className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+              >
+                {isEdit ? "저장" : "등록"}
+              </button>
+            )}
+          </div>
         </div>
       </main>
 

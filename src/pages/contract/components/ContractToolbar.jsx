@@ -1,8 +1,10 @@
-import { STATUS_FILTERS } from "../constants";
-
 export default function ContractToolbar({
+  ownerFilter,
+  onOwnerFilter,
+  ownerOptions = [],
   statusFilter,
   onStatusFilter,
+  statusOptions = [],
   search,
   onSearch,
   recalculating,
@@ -11,20 +13,38 @@ export default function ContractToolbar({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* 상태 필터 */}
+      {/* 소속회사 필터 (전체/호재/우남) */}
       <div className="flex items-center gap-1.5">
-        {STATUS_FILTERS.map((s) => (
+        {ownerOptions.map((o) => (
           <button
-            key={s}
+            key={o.value || "ALL"}
             type="button"
-            onClick={() => onStatusFilter(s)}
+            onClick={() => onOwnerFilter(o.value)}
             className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${
-              statusFilter === s
+              ownerFilter === o.value
                 ? "bg-blue-600 text-white border-blue-600"
                 : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700"
             }`}
           >
-            {s}
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 상태 필터 (전체/예정/진행중/완료/취소) */}
+      <div className="flex items-center gap-1.5">
+        {statusOptions.map((s) => (
+          <button
+            key={s.value || "ALL"}
+            type="button"
+            onClick={() => onStatusFilter(s.value)}
+            className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${
+              statusFilter === s.value
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700"
+            }`}
+          >
+            {s.label}
           </button>
         ))}
       </div>
@@ -36,7 +56,7 @@ export default function ContractToolbar({
         </svg>
         <input
           type="text"
-          placeholder="계약번호 또는 회사명 검색"
+          placeholder="계약명 검색"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white"

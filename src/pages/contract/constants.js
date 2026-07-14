@@ -5,10 +5,28 @@ export const PRICE_UNITS = ["TON", "KG"];
 export const STATUS_FILTERS = ["전체", "진행중", "완료"];
 export const PAGE_SIZE = 10;
 
+// 소속회사 — 이 시스템을 사용하는 회사 (등록 시 선택)
+export const OWNER_COMPANIES = [
+  { value: "hojae", label: "호재" },
+  { value: "woonam", label: "우남" },
+];
+// 목록 소속회사 필터 (전체 + 각 회사). "전체"는 필터 없음 의미
+export const OWNER_FILTERS = [{ value: "전체", label: "전체" }, ...OWNER_COMPANIES];
+
+// ownerCompany 코드값 → 표시명 (hojae → 호재)
+export const ownerLabel = (value) =>
+  OWNER_COMPANIES.find((o) => o.value === value)?.label ?? value ?? "-";
+
+// 상태 배지 스타일 — enum 표시명(한글) 기준 (예정/진행중/완료/취소)
 export const STATUS_STYLE = {
+  예정: "bg-amber-50 text-amber-700 border-amber-200",
   진행중: "bg-blue-100 text-blue-700 border-blue-200",
   완료: "bg-slate-100 text-slate-500 border-slate-200",
+  취소: "bg-rose-50 text-rose-600 border-rose-200",
 };
+
+// 목록 카드 단가 단위 — 서버가 원화 환산(원/kg, TON 계약이면 원/ton)해서 내려줌
+export const krwUnitLabel = (priceUnit) => (priceUnit === "TON" ? "원/ton" : "원/kg");
 
 export const PRICE_TYPE_STYLE = {
   가단가: "bg-amber-50 text-amber-700 border-amber-200",

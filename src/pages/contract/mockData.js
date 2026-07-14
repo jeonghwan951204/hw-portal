@@ -12,6 +12,7 @@ export const MOCK_CONTRACTS = [
   {
     id: 1,
     name: "포스코 A동 수출 계약",
+    ownerCompany: "hojae",
     contractNo: "CT-2026-001",
     company: "포스코인터내셔널",
     status: "진행중",
@@ -118,6 +119,7 @@ export const MOCK_CONTRACTS = [
   {
     id: 2,
     name: "한국전선 상동 공급 계약",
+    ownerCompany: "woonam",
     contractNo: "CT-2026-002",
     company: "한국전선(주)",
     status: "진행중",
@@ -197,6 +199,7 @@ export const MOCK_CONTRACTS = [
   {
     id: 3,
     name: "LS전선 파동 수출 계약",
+    ownerCompany: "hojae",
     contractNo: "CT-2026-003",
     company: "LS전선(주)",
     status: "완료",
@@ -281,6 +284,7 @@ export const MOCK_CONTRACTS = [
   {
     id: 4,
     name: "동국제강 밀베리 공급 계약",
+    ownerCompany: "woonam",
     contractNo: "CT-2026-004",
     company: "동국제강(주)",
     status: "진행중",

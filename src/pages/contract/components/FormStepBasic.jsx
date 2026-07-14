@@ -1,4 +1,4 @@
-import { MOCK_CUSTOMERS, PRICE_UNITS, TRADE_TYPES } from "../constants";
+import { MOCK_CUSTOMERS, OWNER_COMPANIES, PRICE_UNITS, TRADE_TYPES } from "../constants";
 
 const INPUT_CLASS =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white";
@@ -32,6 +32,27 @@ export default function FormStepBasic({ basic, onChange }) {
             onChange={(e) => onChange("contractNo", e.target.value)}
             className={INPUT_CLASS}
           />
+        </div>
+        <div>
+          <label className={LABEL_CLASS}>
+            소속회사 <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center gap-1.5">
+            {OWNER_COMPANIES.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => onChange("ownerCompany", o.value)}
+                className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg border transition-all ${
+                  basic.ownerCompany === o.value
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
         </div>
         <div>
           <label className={LABEL_CLASS}>거래처</label>
