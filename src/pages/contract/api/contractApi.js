@@ -16,12 +16,8 @@ const asJson = async (res) => {
   return res.json();
 };
 
-// 문자열(text) 본문을 반환하는 엔드포인트용 (단가 확정 등)
-const asText = async (res) => {
-  const text = await res.text().catch(() => "");
-  if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
-  return text;
-};
+// 참고: 변경(POST/PUT/DELETE)·재계산 응답은 CommonResponse{ message, data } 로 감싸져 온다.
+//       조회(GET)는 감싸지 않은 원본 스키마 그대로.
 
 // ─── 계약 ──────────────────────────────────────────────────────────────────
 // 목록 조회 (page 1-기반). 값이 없는 필터는 파라미터에서 제외
@@ -45,11 +41,15 @@ export const fetchContracts = async ({
   return asJson(await apiFetch(`/api/contracts?${params.toString()}`));
 };
 
-// 상세 조회 (기본 정보 + 품목 + 단가 목록)
+// 상세 조회 (기본 정보 + 품목). 단가는 /prices 로 별도 조회
 export const fetchContractDetail = async (contractId) =>
   asJson(await apiFetch(`/api/contracts/${contractId}`));
 
-// 계약 생성
+// 계약의 전체 단가 상세 (기간·기준값·확정여부 + 품목별 최종단가)
+export const fetchContractPrices = async (contractId) =>
+  asJson(await apiFetch(`/api/contracts/${contractId}/prices`));
+
+// 계약 생성 → { message, data: { contractId, itemIds, priceIds } }
 export const createContract = async (body) =>
   asJson(
     await apiFetch(`/api/contracts`, {
@@ -59,16 +59,30 @@ export const createContract = async (body) =>
     })
   );
 
+// 계약 수정 (헤더만) → { message }
+export const updateContract = async (contractId, body) =>
+  asJson(
+    await apiFetch(`/api/contracts/${contractId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+
+// 계약 삭제 (soft delete) → { message }
+export const deleteContract = async (contractId) =>
+  asJson(await apiFetch(`/api/contracts/${contractId}`, { method: "DELETE" }));
+
 // ─── 계약 단가 ──────────────────────────────────────────────────────────────
-// 단가 상세 (품목별 최종가 + 기준 LME/환율). 상세 품목 표의 컬럼 값 출처
-export const fetchPriceDetail = async (priceId) =>
-  asJson(await apiFetch(`/api/contracts/prices/${priceId}`));
-
-// 단가 확정
+// 단가 확정 → { message }
 export const confirmPrice = async (priceId) =>
-  asText(await apiFetch(`/api/contracts/prices/${priceId}/confirm`, { method: "POST" }));
+  asJson(await apiFetch(`/api/contracts/prices/${priceId}/confirm`, { method: "POST" }));
 
-// 당일 단가 수동 재계산 → { calcDate, recalculated }
+// 선택한 단가 1건 즉시 재계산 → { message, data: { calcDate, recalculated } }
+export const recalcPrice = async (priceId) =>
+  asJson(await apiFetch(`/api/contracts/prices/${priceId}/recalc`, { method: "POST" }));
+
+// 당일 단가 수동 재계산 → { message, data: { calcDate, recalculated } }
 export const recalcPrices = async () =>
   asJson(await apiFetch(`/api/contracts/prices/recalc`, { method: "POST" }));
 

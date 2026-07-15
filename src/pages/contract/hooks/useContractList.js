@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PAGE_SIZE } from "../constants";
-import { MOCK_MARKET } from "../mockData";
 import { fetchCompanies, fetchContracts, recalcPrices } from "../api/contractApi";
+import { fetchMarketSummary } from "../api/marketApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
 import { useEnums } from "./useEnums";
 import { useToast } from "./useToast";
@@ -27,11 +27,32 @@ export function useContractList() {
 
   const [contracts, setContracts] = useState([]);
   const [companyMap, setCompanyMap] = useState({}); // customerId → 회사명
+  const [market, setMarket] = useState({
+    lme: { value: null, date: null },
+    exchangeRate: { value: null, date: null },
+    krwPerKg: null,
+  });
+  const [marketLoading, setMarketLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [recalculating, setRecalculating] = useState(false);
+
+  // 시장 현황 (최근 LME·환율·원화환산)
+  useEffect(() => {
+    let alive = true;
+    fetchMarketSummary()
+      .then((m) => {
+        if (!alive || !m) return;
+        setMarket({ lme: m.lme, exchangeRate: m.exchangeRate, krwPerKg: m.krwPerKg });
+      })
+      .catch(() => {})
+      .finally(() => alive && setMarketLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // 거래처 id→이름 매핑 (목록 응답은 customerId 만 주므로 회사명 표시에 필요)
   useEffect(() => {
@@ -94,7 +115,7 @@ export function useContractList() {
     try {
       const res = await recalcPrices();
       await loadContracts({ owner: ownerFilter, status: statusFilter, keyword: search, page });
-      showToast("success", `재계산이 완료되었습니다 (${res?.recalculated ?? 0}건)`);
+      showToast("success", `재계산이 완료되었습니다 (${res?.data?.recalculated ?? 0}건)`);
     } catch (e) {
       showToast("error", e.message || "재계산에 실패했습니다");
     } finally {
@@ -112,9 +133,15 @@ export function useContractList() {
     statusLabel: labelOf(ENUM_GROUPS.CONTRACT_STATUS, c.status),
     startDate: c.startDate,
     endDate: c.endDate,
-    priceUnit: c.priceUnit,
-    priceTypeLabel: c.priceType ? labelOf(ENUM_GROUPS.PRICE_TYPE, c.priceType) : null,
-    finalUnitPrice: c.finalUnitPrice,
+    // 유형별 단가 목록 (finalUnitPrice 없으면 미정)
+    prices: (c.prices ?? []).map((p) => ({
+      priceId: p.priceId,
+      label: p.priceTypeLabel || labelOf(ENUM_GROUPS.PRICE_TYPE, p.priceType),
+      periodStart: p.periodStart,
+      periodEnd: p.periodEnd,
+      rate: p.rate,
+      value: p.finalUnitPrice ?? null,
+    })),
   }));
 
   // 필터 옵션 (전체 + enum)
@@ -122,11 +149,11 @@ export function useContractList() {
   const statusOptions = [{ value: "", label: "전체" }, ...(enums[ENUM_GROUPS.CONTRACT_STATUS] ?? [])];
 
   return {
-    // TODO: 시장 현황 배너는 계약 전용 엔드포인트가 없어 임시로 mock 유지
-    //       (연동 시 price/exchange 최신값 API 재사용 검토)
     market: {
-      lme: MOCK_MARKET.lme,
-      exchangeRate: MOCK_MARKET.exchangeRate,
+      lme: market.lme,
+      exchangeRate: market.exchangeRate,
+      krwPerKg: market.krwPerKg,
+      loading: marketLoading,
     },
     toolbar: {
       ownerFilter,

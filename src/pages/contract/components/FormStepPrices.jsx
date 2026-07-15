@@ -1,12 +1,18 @@
-import { MOCK_FORMULAS, PRICE_TYPES } from "../constants";
-
 const INPUT_CLASS =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white";
 const LABEL_CLASS = "block text-xs font-bold text-slate-500 mb-1.5";
 
 // 스텝 2 — 단가 (추가형 카드 0~N개)
 // 여기서 추가한 단가 목록이 스텝 3 품목 테이블의 요율 컬럼을 만든다.
-export default function FormStepPrices({ prices, onAdd, onRemove, onChange }) {
+export default function FormStepPrices({
+  prices,
+  onAdd,
+  onRemove,
+  onChange,
+  priceTypeOptions = [],
+  sourceOptions = [],
+  calcMethodOptions = [],
+}) {
   return (
     <div className="space-y-4">
       {prices.length === 0 && (
@@ -32,12 +38,24 @@ export default function FormStepPrices({ prices, onAdd, onRemove, onChange }) {
             <div>
               <label className={LABEL_CLASS}>유형</label>
               <select
-                value={price.type}
-                onChange={(e) => onChange(price.tempId, "type", e.target.value)}
+                value={price.priceType}
+                onChange={(e) => onChange(price.tempId, "priceType", e.target.value)}
                 className={INPUT_CLASS}
               >
-                {PRICE_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {priceTypeOptions.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={LABEL_CLASS}>산출 방식</label>
+              <select
+                value={price.priceSource}
+                onChange={(e) => onChange(price.tempId, "priceSource", e.target.value)}
+                className={INPUT_CLASS}
+              >
+                {sourceOptions.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
             </div>
@@ -59,32 +77,32 @@ export default function FormStepPrices({ prices, onAdd, onRemove, onChange }) {
                 className={INPUT_CLASS}
               />
             </div>
-            <div>
-              <label className={LABEL_CLASS}>계산식</label>
-              {/* TODO: API 연동 시 서버 계산식 목록으로 교체 */}
-              <select
-                value={price.formulaId}
-                onChange={(e) => onChange(price.tempId, "formulaId", e.target.value)}
-                className={INPUT_CLASS}
-              >
-                {MOCK_FORMULAS.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
 
-            {/* 고정값 계산식이면 고정 단가 입력란 노출 */}
-            {price.formulaId === "FIXED" && (
+            {/* 계산 단가면 계산식, 고정 단가면 고정 단가 입력 */}
+            {price.priceSource === "FIXED" ? (
               <div>
                 <label className={LABEL_CLASS}>고정 단가</label>
                 <input
                   type="number"
                   min="0"
                   placeholder="고정 단가 입력"
-                  value={price.fixedPrice}
-                  onChange={(e) => onChange(price.tempId, "fixedPrice", e.target.value)}
+                  value={price.fixedUnitPrice}
+                  onChange={(e) => onChange(price.tempId, "fixedUnitPrice", e.target.value)}
                   className={INPUT_CLASS}
                 />
+              </div>
+            ) : (
+              <div>
+                <label className={LABEL_CLASS}>계산식</label>
+                <select
+                  value={price.calcMethod}
+                  onChange={(e) => onChange(price.tempId, "calcMethod", e.target.value)}
+                  className={INPUT_CLASS}
+                >
+                  {calcMethodOptions.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
               </div>
             )}
           </div>

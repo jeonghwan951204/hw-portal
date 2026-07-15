@@ -1,5 +1,4 @@
 import { Fragment } from "react";
-import { MOCK_ITEM_NAMES } from "../constants";
 
 const INPUT_CLASS =
   "w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white";
@@ -17,6 +16,7 @@ export default function FormStepItems({
   onPremiumChange,
   onTogglePremium,
   onSetPrimary,
+  priceTypeLabel = (v) => v,
 }) {
   return (
     <div className="space-y-4">
@@ -29,7 +29,7 @@ export default function FormStepItems({
                 <th className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">품목명</th>
                 {prices.map((price, idx) => (
                   <th key={price.tempId} className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">
-                    {price.type || `단가 ${idx + 1}`} 요율(%)
+                    {priceTypeLabel(price.priceType) || `단가 ${idx + 1}`} 요율(%)
                   </th>
                 ))}
                 <th className="px-4 py-2.5 whitespace-nowrap" />
@@ -56,17 +56,13 @@ export default function FormStepItems({
                       />
                     </td>
                     <td className="px-4 py-3 min-w-36">
-                      {/* TODO: API 연동 시 서버 품목 목록으로 교체 */}
-                      <select
+                      <input
+                        type="text"
+                        placeholder="품목명"
                         value={item.name}
                         onChange={(e) => onItemChange(item.tempId, "name", e.target.value)}
                         className={INPUT_CLASS}
-                      >
-                        <option value="">품목 선택</option>
-                        {MOCK_ITEM_NAMES.map((n) => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
+                      />
                     </td>
                     {prices.map((price) => (
                       <td key={price.tempId} className="px-4 py-3 min-w-28">

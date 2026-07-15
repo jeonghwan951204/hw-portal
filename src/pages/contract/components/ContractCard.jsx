@@ -1,4 +1,4 @@
-import { formatNumber, formatShortPeriod, krwUnitLabel } from "../constants";
+import { PRICE_TYPE_STYLE, formatNumber, formatShortPeriod } from "../constants";
 import StatusBadge from "./StatusBadge";
 
 // 목록 카드 — 서버 목록 응답 기준(대표 품목의 대표 단가 1건, 원화 환산가)
@@ -38,26 +38,44 @@ export default function ContractCard({ contract, onClick }) {
         <StatusBadge status={contract.statusLabel} />
       </div>
 
-      {/* 단가 영역 — 대표 단가 1건 (원화 환산가) */}
-      <div className="px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          {contract.priceTypeLabel && (
-            <span className="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200">
-              {contract.priceTypeLabel}
-            </span>
-          )}
-          <span className="flex-1 border-b border-dotted border-slate-200" />
-          {contract.finalUnitPrice != null ? (
-            <span className="shrink-0 text-base font-bold font-mono text-slate-700">
-              {formatNumber(contract.finalUnitPrice)}
-              <span className="text-[11px] font-normal text-slate-400 ml-1">
-                {krwUnitLabel(contract.priceUnit)}
-              </span>
-            </span>
-          ) : (
-            <span className="shrink-0 text-sm font-semibold text-slate-300">미정</span>
-          )}
-        </div>
+      {/* 단가 영역 — 유형별 단가를 세로 나열 (원화 환산가) */}
+      <div className="px-5 py-4 space-y-2.5">
+        {!contract.prices || contract.prices.length === 0 ? (
+          <p className="text-sm text-slate-300">등록된 단가 없음</p>
+        ) : (
+          contract.prices.map((price) => (
+            <div key={price.priceId} className="flex items-center gap-2.5">
+              <div className="shrink-0">
+                <span
+                  className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                    PRICE_TYPE_STYLE[price.label] ?? PRICE_TYPE_STYLE["원가"]
+                  }`}
+                >
+                  {price.label}
+                </span>
+                {(price.periodStart || price.periodEnd || price.rate != null) && (
+                  <span className="block mt-1 text-[11px] text-slate-400">
+                    {(price.periodStart || price.periodEnd) &&
+                      formatShortPeriod(price.periodStart, price.periodEnd)}
+                    {(price.periodStart || price.periodEnd) && price.rate != null && " · "}
+                    {price.rate != null && `요율 ${formatNumber(price.rate, 2)}%`}
+                  </span>
+                )}
+              </div>
+              <span className="flex-1 border-b border-dotted border-slate-200" />
+              {price.value != null ? (
+                <span className="shrink-0 text-base font-bold font-mono text-slate-700">
+                  {formatNumber(price.value)}
+                  <span className="text-[11px] font-normal text-slate-400 ml-1">
+                    원/kg
+                  </span>
+                </span>
+              ) : (
+                <span className="shrink-0 text-sm font-semibold text-slate-300">미정</span>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </button>
   );

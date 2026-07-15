@@ -1,111 +1,117 @@
 # 계약 관리 화면 — 진행 상황 (핸드오프)
 
-> 2026-07-09 기준. [frontend-design.md](./frontend-design.md) 설계대로 화면 골격을 구현한 상태.
-> **API 연동 전 — 모든 데이터는 임시(mock)이며, 조작 결과는 화면 상태에만 반영됨(새로고침 시 초기화).**
+> **2026-07-15 기준. API 연동 완료 단계.**
+> 설계(UX)는 [frontend-design.md](./frontend-design.md), API 연동 상세는 [api-integration.md](./api-integration.md) 참고.
+> 백엔드 스펙: `http://localhost:8080/swagger-ui/index.html` (OpenAPI JSON: `/v3/api-docs`).
 >
-> 새 세션에서 이어서 작업할 때: 이 문서와 `frontend-design.md`를 먼저 읽을 것.
+> 새 세션에서 이어서 작업할 때: 이 문서 → `api-integration.md` → `frontend-design.md` 순으로 읽을 것.
 
 ---
 
-## 1. 완료된 것
+## 0. 한눈에 보기
 
-설계 문서의 3개 화면 + 공용 컴포넌트를 모두 구현. 기존 계약 화면(단일 목록 + 생성 모달)은 삭제하고 전면 재작성함.
+- 계약 **목록 · 상세 · 등록 · 수정 · 삭제 · 거래 등록/결제 · 단가 확정/재계산**을 모두 **실제 API**로 연동함.
+- 선택값(단가유형·거래구분·상태·소속회사 등)은 전부 `GET /api/enums/{group}` 로더로 처리(하드코딩 제거).
+- 거래처는 `GET /api/companies`, 시장 배너는 `GET /api/price/latest` 사용.
+- 초기 mock 데이터(`mockData.js`)와 결제 컴포넌트(`PaymentForm.jsx`)는 **더 이상 사용되지 않음(정리 대상)**.
 
-### 라우트 ([src/App.jsx](../../src/App.jsx))
+---
+
+## 1. 라우트 ([src/App.jsx](../../src/App.jsx))
 
 | 경로 | 화면 | 진입 파일 |
 |---|---|---|
 | `/contract` | 계약 목록 | `src/pages/contract/index.jsx` |
-| `/contract/new` | 계약 등록 (스텝형) | `src/pages/contract/form.jsx` |
-| `/contract/:id` | 계약 상세 (탭 2개) | `src/pages/contract/detail.jsx` |
-| `/contract/:id/edit` | 계약 수정 (등록 화면 재사용, 값 프리필) | `src/pages/contract/form.jsx` |
+| `/contract/new` | 계약 등록 (스텝형 1 기본 → 2 단가 → 3 품목 → 4 확인) | `src/pages/contract/form.jsx` |
+| `/contract/:id` | 계약 상세 (탭: 계약·단가 / 거래 내역) | `src/pages/contract/detail.jsx` |
+| `/contract/:id/edit` | 계약 수정 (**헤더만**, 단일 단계) | `src/pages/contract/form.jsx` |
 
-### 폴더 구조 (`src/pages/contract/`)
+모든 라우트는 `<RequireAuth roles={["USER","ADMIN"]}>`로 보호됨 → **로그인(공유링크 가입) 토큰이 있어야** API가 200을 반환.
+
+## 2. 폴더 구조 (`src/pages/contract/`)
 
 ```
 contract/
-├── index.jsx        # 목록 페이지 (배너 → 툴바 → 카드 그리드 → 페이지네이션)
-├── detail.jsx       # 상세 페이지 (헤더 + 탭: 계약·단가 / 거래 내역)
-├── form.jsx         # 등록/수정 페이지 (1 기본 → 2 단가 → 3 품목 → 4 확인)
-├── constants.js     # 단가유형·상태 스타일, 셀렉트 임시 옵션, 표시 헬퍼
-├── mockData.js      # 임시 계약 4건 + 시장 현황 (전부 서버 응답으로 교체 대상)
+├── index.jsx        # 목록 (배너 → 툴바 → 카드 그리드 → 페이지네이션)
+├── detail.jsx       # 상세 (헤더 + 탭 2개)
+├── form.jsx         # 등록(스텝형) / 수정(헤더 단일 단계) 분기
+├── constants.js     # 상태·단가유형 스타일, 표시 헬퍼(formatDate/Number/Quantity, krwUnitLabel …)
+├── mockData.js      # (미사용) 초기 mock — 정리 대상
+├── api/
+│   ├── contractApi.js  # 계약·단가·거래·거래처 엔드포인트 래퍼
+│   ├── enumsApi.js     # ENUM_GROUPS + /api/enums/{group}
+│   └── marketApi.js    # /api/price/latest (배너)
 ├── hooks/
-│   ├── useToast.js           # 성공/오류 토스트 공용 훅
-│   ├── useContractList.js    # 목록: 필터·검색·페이지·재계산
-│   ├── useContractDetail.js  # 상세: 탭, 거래 추가, 결제 입력, 삭제
-│   └── useContractForm.js    # 등록/수정: 스텝 상태 + 단가/품목 동적 행
+│   ├── useToast.js         # 성공/오류 토스트
+│   ├── useEnums.js         # enum 그룹 로더(모듈 캐시) + labelOf(group,value)
+│   ├── useContractList.js  # 목록: 필터·검색·페이지·재계산·거래처맵·시장배너
+│   ├── useContractDetail.js# 상세: 품목단가 매트릭스·단가 기간줄·거래 등록/결제·단가 확정·삭제
+│   └── useContractForm.js  # 등록(생성)·수정(헤더 PUT)·enum·거래처
 └── components/
-    ├── Toast.jsx / ConfirmModal.jsx / StatusBadge.jsx   # 공용
-    ├── MarketBanner.jsx / ContractToolbar.jsx           # 목록
-    ├── ContractGrid.jsx / ContractCard.jsx              # 목록
-    ├── ContractDetailHeader.jsx                         # 상세
-    ├── PriceInfoTab.jsx / TransactionTab.jsx / PaymentForm.jsx  # 상세 탭
-    └── FormStepIndicator / Basic / Prices / Items / Confirm.jsx # 등록 스텝
+    ├── Toast / ConfirmModal / StatusBadge            # 공용
+    ├── MarketBanner / ContractToolbar / ContractGrid / ContractCard   # 목록
+    ├── ContractDetailHeader / PriceInfoTab / TransactionTab           # 상세
+    ├── PaymentForm.jsx (미사용, 정리 대상)
+    └── FormStepIndicator / Basic / Prices / Items / Confirm           # 등록 스텝
 ```
 
-패턴: 각 페이지는 훅 1개가 상태·핸들러 전부를 보유하고, 섹션별 그룹 객체를 반환 → 컴포넌트에 스프레드(`<MarketBanner {...market} />`). `price/`, `priceManagement/` 폴더와 같은 컨벤션.
-
-### 설계 반영된 핵심 동작 (구현 완료)
-
-- **목록 카드**: 단가를 유형별 세로 나열(`[유형] [산정기간·요율] …… [값] 원/kg`), 대표 품목 기준, 품목명 미표시. **정산가 줄은 확정가 확정 시에만 렌더** (`isSettlementVisible()` in constants.js).
-- **재계산 버튼**: 로딩(스피너) → 완료 토스트. 현재는 1.2초 지연만 흉내.
-- **상세 탭1**: 단가별 기간 줄 + 기준값(수출=LME만, 내수=LME+환율 조건부), 품목 표(대표 강조, 요율·프리미엄).
-- **상세 탭2**: PC는 표 하단 입력 행 / 모바일은 [거래 추가] 버튼 → 폼. 거래 추가·결제 입력은 **확인 모달 없이 저장 후 토스트**. 단가유형 드롭다운에서 **정산가는 확정가 확정 시에만 노출**. 미결제 행 클릭 → 결제 폼 펼침(내수: 실입금액·입금일 / 수출: 수취 외화·환율·원화 입금액 직접 입력 + 달러 대조·원화 차액 참고 표시. 원화 입금액 자동계산 안 함).
-- **등록/수정**: 스텝2에서 추가한 단가 배열이 스텝3 품목 테이블의 요율 컬럼을 동적 생성. 고정값 계산식이면 고정 단가 입력란 노출. 프리미엄은 [+프리미엄] 클릭 시에만 행 펼침(안 펼치면 값 없음). 대표 품목 라디오(첫 품목 기본). 저장 시 확인 모달("저장하시겠습니까?").
-- **삭제**: 확인 모달(빨강 경고 스타일) → 목록으로 이동.
-- 공용 `Pagination`(src/components), 로딩/빈 상태, 음수 입력 방지(0 허용) 처리됨.
-- 날짜 `yyyy.MM.dd`, 숫자 천 단위 콤마, 목록은 `원/kg`·상세는 계약 통화/단위(`unitLabel()`).
+**패턴**: 페이지마다 훅 1개가 상태·핸들러 전부를 보유하고 섹션별 그룹 객체를 반환 → 컴포넌트에 스프레드(`<MarketBanner {...market} />`). `price/`, `priceManagement/` 폴더와 동일 컨벤션.
 
 ---
 
-## 2. 남은 것 — API 연동 (다음 작업)
+## 3. 화면별 연동 상태
 
-**코드 내 `TODO: API 연동` 주석이 교체 지점 표시.** `rg "TODO" src/pages/contract` 로 전부 찾을 수 있음.
+### 목록 (`useContractList`)
+- `GET /api/contracts` — 필터 `ownerCompany`(전체/호재/우남)·`status`(전체/예정/진행중/완료/취소)·`contractName`(검색). 페이지네이션 서버 처리(1-기반).
+- 회사명은 `GET /api/companies`로 `customerId → 이름` 매핑.
+- 카드 단가: 응답의 **`prices[]` 배열**을 유형별로 세로 나열, 각 `finalUnitPrice` 표시(없으면 "미정").
+- 시장 배너: `GET /api/price/latest` → LME·환율(각자 기준일)·원화환산(원/kg).
+- 재계산: `POST /api/contracts/prices/recalc` → 완료 건수 토스트 + 목록 갱신.
 
-연동 시 규칙: 요청은 반드시 `apiFetch`([src/utils/api.js](../../src/utils/api.js)) 사용, API 함수는 `src/pages/contract/api/` 폴더를 새로 만들어 배치 (price 폴더의 `api/priceApi.js` 패턴 참고).
+### 상세 (`useContractDetail`)
+- 헤더: `GET /api/contracts/{id}`(기본+품목) + 회사명 매핑 + enum 표시명.
+- **탭1 계약·단가**:
+  - `GET /api/contracts/{id}/prices` 한 번으로 전체 단가의 산정기간·**확정여부**·기준 LME/환율과 품목별 요율·프리미엄·최종단가를 조회.
+  - 단가별 기간 줄의 미확정 단가에 **[확정] 버튼**(`POST …/confirm`).
+  - 미확정 단가는 행별 **[재계산] 버튼**으로 `POST /api/contracts/prices/{priceId}/recalc`를 호출하고, 완료 후 전체 계약 단가를 다시 조회.
+  - 품목 × 단가 매트릭스도 같은 전체 단가 응답으로 구성.
+- **탭2 거래 내역**:
+  - 조회: `GET /api/contracts/{id}/transactions`.
+  - 거래 등록: `POST …/transactions`. 산정단가(`unitPrice`)는 품목×단가유형 매트릭스에서 자동 조회해 전송(금액은 서버 계산). **결제(실입금)는 같은 폼에서 함께 입력**(내수: 실입금액·입금일 / 수출: 수취외화·환전환율·원화입금액). **마지막 정산** 옵션(unitPrice 생략, 서버 계산).
+  - **정산가(SETTLEMENT) 거래유형은 확정가(FINAL) 확정 시에만** 드롭다운에 노출.
+- 삭제: `DELETE /api/contracts/{id}`(soft delete) → 목록 이동.
 
-| 교체 지점 | 위치 | 현재 상태 |
-|---|---|---|
-| 목록 조회 (필터·검색·페이지네이션은 서버 책임) | `useContractList.js`의 `fetchContractsMock` | mock 필터링, 300ms 지연 |
-| 시장 현황 (LME·환율, 기준일 각각) | `mockData.js`의 `MOCK_MARKET` | 고정값 |
-| 재계산 요청 | `useContractList.js`의 `handleRecalculate` | 1.2초 지연만 |
-| 상세 조회 | `useContractDetail.js`의 useEffect | mock에서 find + 복사 |
-| 거래 추가 (단가·총금액은 **서버가 계산해 반환**) | `useContractDetail.js`의 `handleAddTransaction` | 품목 옵션 값으로 임시 계산 중 — 연동 시 프론트 계산 제거 |
-| 결제 저장 | `useContractDetail.js`의 `handleSavePayment` | 상태만 갱신 |
-| 계약 삭제 (soft delete는 서버) | `useContractDetail.js`의 `handleConfirmDelete` | 목록 이동만 |
-| 등록/수정 저장 (검증 오류는 서버 메시지를 토스트로) | `useContractForm.js`의 `handleConfirmSave` | 토스트 후 이동만 |
-| 수정 모드 프리필 | `useContractForm.js`의 useEffect + `contractToForm()` | mock에서 변환 |
-| 셀렉트 옵션: 거래처 / 계산식 / 품목명 | `constants.js`의 `MOCK_CUSTOMERS`, `MOCK_FORMULAS`, `MOCK_ITEM_NAMES` | 하드코딩 배열 |
-
-### 데이터 모양 (mock 기준 — 서버 응답 설계 시 참고)
-
-`mockData.js`의 계약 구조가 화면이 기대하는 형태:
-
-```js
-{
-  id, name, ownerCompany("hojae"|"woonam"), contractNo(선택), company, status("진행중"|"완료"),
-  startDate, endDate, tradeType("수출"|"내수"), priceUnit("TON"|"KG"),
-  quantity(kg 저장, 톤 계약은 표시만 톤), memo(비고),
-  prices: [{ id, type, periodStart, periodEnd, formulaId, formulaName,
-             fixedPrice, confirmed, lme, exchangeRate, krwPerKg }],
-  items:  [{ id, name, isPrimary,
-             options: { [priceId]: { rate, premium, value } } }],
-  transactions: [{ id, date, itemName, priceType, quantity, unitPrice,
-                   totalAmount, paid, payment }]
-}
-```
-
-- `krwPerKg`: 목록 카드용 원/kg (대표 품목 기준, 서버 계산)
-- `options[priceId].value`: 상세 품목 표의 계약 통화·단위 단가 (서버 계산)
-- `confirmed`: 단가 확정 여부 (서버 판단) — 확정가의 confirmed가 정산가 노출을 결정
-
-### 미결정 사항 (설계 문서의 "추후" 항목)
-
-- 로딩 표시 형태 상세(현재 스피너+텍스트), 스텝 4 요약 레이아웃 다듬기, 목록 정렬 UI 노출 여부.
-- mock 계약 4건은 조건부 UI 확인용(수출/내수 × 확정/미확정 × 완료 상태 조합) — 연동 후 삭제.
+### 등록/수정 (`useContractForm`)
+- **등록**: 4스텝 → `POST /api/contracts`. 품목별 요율·프리미엄을 `items[].prices[]`(priceIndex 참조)로 조립. 셀렉트·라디오는 enum, 거래처는 companies.
+- **수정**: PUT이 **헤더만** 바꾸므로 **단일 단계(기본 정보)**로 분기. `GET /api/contracts/{id}` 프리필 → `PUT /api/contracts/{id}` 저장. 단가·품목은 이 폼에서 수정 불가(별도 리소스, 엔드포인트 없음).
 
 ---
 
-## 3. 확인 방법
+## 4. 주요 결정 사항 (왜 이렇게 했나)
 
-`npm run dev` → `/contract` 접속. 빌드·린트는 아직 실행하지 않았음 (`npm run lint` 권장).
+- **모달 아님, 페이지 유지**: 상세·등록은 콘텐츠가 무겁고 딥링크·새로고침이 중요 → 라우트 페이지 유지.
+- **수정 = 헤더 전용**: `PUT /api/contracts/{id}`가 품목·단가를 바꾸지 않음(스펙 명시). 그래서 수정 화면은 기본 정보만.
+- **결제 = 거래 등록 시 함께 입력**: 결제 전용/거래 수정 엔드포인트가 없음. 기존 거래에 사후 결제 추가 불가 → 분할 결제는 수량을 쪼개 여러 거래로.
+- **소속회사(자사)**: 호재=`HOJAE`, 우남=`WOONAM`. 목록 필터 + 등록 필수.
+- **필드명은 API에 맞춤**: 폼/뷰모델이 `contractName`, `customerId`, `contractQuantity` 등 서버 필드명을 그대로 사용.
+
+## 5. 알려진 이슈 / 확인 필요
+
+- **목록 카드 `finalUnitPrice` 크기 이상**: 예시 데이터에서 `finalUnitPrice`(≈20.5억)가 `baseUnitPrice`(≈2천만, LME×환율 원/ton 수준)의 **약 100배**. 요율(%)이 소수(1.005)로 안 나눠지고 정수(100.5)로 곱해진 **서버 계산 의심**. → 서버 수정 or 카드에 `baseUnitPrice` 표시로 전환 결정 필요.
+- **오류 메시지**: mutation은 `CommonResponse{message}`라 서버 메시지를 토스트로 그대로 노출. (조회 실패는 일반 문구)
+- **정리 대상**: `mockData.js`, `components/PaymentForm.jsx` 미사용.
+
+## 6. 미지원(엔드포인트 없음) / 다음 작업 후보
+
+- 계약의 **단가·품목 개별 수정** (PUT은 헤더만).
+- **거래 수정/삭제**, 결제 사후 입력.
+- 목록 정렬 UI(정렬 자체는 서버 책임).
+
+---
+
+## 7. 확인 방법
+
+1. 백엔드 `http://localhost:8080` 기동 + 로그인(공유링크 가입)으로 **토큰 확보**(없으면 401).
+2. `npm run dev` → `/contract` 접속.
+3. 목록 필터/검색 → 카드 클릭 → 상세(탭1 확정, 탭2 거래·결제) → 수정/삭제, 등록 흐름 확인.
+4. 빌드·린트는 미실행 — `npm run lint` 권장.

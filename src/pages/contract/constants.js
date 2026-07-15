@@ -25,9 +25,6 @@ export const STATUS_STYLE = {
   취소: "bg-rose-50 text-rose-600 border-rose-200",
 };
 
-// 목록 카드 단가 단위 — 서버가 원화 환산(원/kg, TON 계약이면 원/ton)해서 내려줌
-export const krwUnitLabel = (priceUnit) => (priceUnit === "TON" ? "원/ton" : "원/kg");
-
 export const PRICE_TYPE_STYLE = {
   가단가: "bg-amber-50 text-amber-700 border-amber-200",
   확정가: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -76,7 +73,7 @@ export const unitLabel = (contract) => {
 
 // 계약 수량 표기 — 무게는 kg로 저장, 톤 계약이면 표시만 톤으로 (참고용)
 export const formatQuantity = (contract) => {
-  const kg = contract?.quantity;
+  const kg = contract?.contractQuantity ?? contract?.quantity;
   if (kg == null || kg === "") return "-";
   const num = Number(kg);
   if (Number.isNaN(num)) return "-";
