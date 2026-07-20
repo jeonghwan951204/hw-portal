@@ -69,8 +69,16 @@ function TxForm({ form, isExport, unitHint }) {
           <span className="text-slate-400"> · 금액은 서버가 계산</span>
         </span>
         <label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-600">
-          <input type="checkbox" checked={values.finalSettlement} onChange={(e) => onChange("finalSettlement", e.target.checked)} className="w-3.5 h-3.5 accent-blue-600" />
-          마지막 정산 (확정가 기준 서버 계산)
+          <input
+            type="checkbox"
+            checked={values.finalSettlement}
+            disabled={values.priceType === "SETTLEMENT"}
+            onChange={(e) => onChange("finalSettlement", e.target.checked)}
+            className="w-3.5 h-3.5 accent-blue-600 disabled:cursor-not-allowed"
+          />
+          {values.priceType === "SETTLEMENT"
+            ? "정산가는 마지막 정산으로 처리됩니다"
+            : "마지막 정산 (확정가 기준 서버 계산)"}
         </label>
       </div>
 

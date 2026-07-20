@@ -183,18 +183,19 @@ export function useContractDetail() {
     [contractPrices, enums]
   );
 
-  // 확정가(FINAL) 확정 시에만 정산가(SETTLEMENT) 거래 허용
-  const settlementAllowed = priceLines.some((l) => l.priceType === "FINAL" && l.confirmed);
-
-  // 거래 단가유형 옵션 (정산가는 조건부)
+  // 거래 단가유형 옵션 — 계약에 등록된 유형 + 거래 전용 정산가
   const txPriceTypeOptions = useMemo(
-    () =>
-      columns
-        .filter((c) => c.priceType !== "SETTLEMENT" || settlementAllowed)
-        // 단가유형 중복 제거
+    () => {
+      const options = columns
+        .filter((c) => c.priceType !== "SETTLEMENT")
         .filter((c, i, arr) => arr.findIndex((x) => x.priceType === c.priceType) === i)
-        .map((c) => ({ value: c.priceType, label: c.label })),
-    [columns, settlementAllowed]
+        .map((c) => ({ value: c.priceType, label: c.label }));
+      const settlement = (enums[ENUM_GROUPS.PRICE_TYPE] ?? []).find(
+        (option) => option.value === "SETTLEMENT"
+      );
+      return settlement ? [...options, settlement] : options;
+    },
+    [columns, enums]
   );
 
   // 품목 × 단가유형 → 산정단가(unitPrice) 조회맵
@@ -234,7 +235,20 @@ export function useContractDetail() {
   const handleTxFormChange = (field, value) => {
     if (["quantity", "paidAmount", "paidForeign", "paidExchange"].includes(field) && value !== "" && Number(value) < 0)
       return;
-    setTxForm((prev) => ({ ...prev, [field]: value }));
+    setTxForm((prev) => {
+      if (field === "priceType") {
+        let finalSettlement = prev.finalSettlement;
+        if (value === "SETTLEMENT") finalSettlement = true;
+        else if (prev.priceType === "SETTLEMENT") finalSettlement = false;
+        return {
+          ...prev,
+          priceType: value,
+          finalSettlement,
+        };
+      }
+      if (field === "finalSettlement" && prev.priceType === "SETTLEMENT" && !value) return prev;
+      return { ...prev, [field]: value };
+    });
   };
 
   const handleSubmitTransaction = async () => {

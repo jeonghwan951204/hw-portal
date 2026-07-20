@@ -78,7 +78,7 @@ contract/
 - **탭2 거래 내역**:
   - 조회: `GET /api/contracts/{id}/transactions`.
   - 거래 등록: `POST …/transactions`. 산정단가(`unitPrice`)는 품목×단가유형 매트릭스에서 자동 조회해 전송(금액은 서버 계산). **결제(실입금)는 같은 폼에서 함께 입력**(내수: 실입금액·입금일 / 수출: 수취외화·환전환율·원화입금액). **마지막 정산** 옵션(unitPrice 생략, 서버 계산).
-  - **정산가(SETTLEMENT) 거래유형은 확정가(FINAL) 확정 시에만** 드롭다운에 노출.
+  - **정산가(SETTLEMENT)는 거래 입력 전용**으로 드롭다운에 노출하며, 선택 시 마지막 정산을 자동 적용. 계약 등록의 단가유형에서는 제외.
 - 삭제: `DELETE /api/contracts/{id}`(soft delete) → 목록 이동.
 
 ### 등록/수정 (`useContractForm`)

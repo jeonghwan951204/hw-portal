@@ -75,7 +75,7 @@ export default function ContractDetailPage() {
       <ConfirmModal
         open={deleteModal.open}
         title="계약 삭제"
-        message={"삭제하시겠습니까?\n목록에서 숨겨집니다."}
+        message="삭제하시겠습니까?"
         danger
         onConfirm={deleteModal.onConfirm}
         onCancel={deleteModal.onCancel}

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import KakaoInAppBrowserGuard from "./components/KakaoInAppBrowserGuard";
 import RequireAuth from "./components/RequireAuth";
 import SignupPage from "./pages/SignupPage";
 import PriceManagement from "./pages/priceManagement";
@@ -13,24 +14,26 @@ import ContractFormPage from "./pages/contract/form";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 로그인 페이지는 더 이상 사용하지 않음 (공유링크 가입으로 대체) */}
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/signup/:linkId" element={<SignupPage />} />
+    <KakaoInAppBrowserGuard>
+      <BrowserRouter>
+        <Routes>
+          {/* 로그인 페이지는 더 이상 사용하지 않음 (공유링크 가입으로 대체) */}
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup/:linkId" element={<SignupPage />} />
 
-        {/* 보호된 페이지 — 토큰 + 권한 필요 */}
-        <Route path="/" element={<RequireAuth roles={["USER", "ADMIN"]}><PriceManagement /></RequireAuth>} />
-        <Route path="/lme" element={<RequireAuth roles={["USER", "ADMIN"]}><LmePage /></RequireAuth>} />
-        <Route path="/notice" element={<RequireAuth roles={["USER", "ADMIN"]}><NoticePage /></RequireAuth>} />
-        <Route path="/inventory" element={<RequireAuth roles={["USER", "ADMIN"]}><InventoryPage /></RequireAuth>} />
-        <Route path="/weighing" element={<RequireAuth roles={["USER", "ADMIN"]}><WeighingPage /></RequireAuth>} />
-        <Route path="/documents" element={<RequireAuth roles={["USER", "ADMIN"]}><DocumentsPage /></RequireAuth>} />
-        <Route path="/contract" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractListPage /></RequireAuth>} />
-        <Route path="/contract/new" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
-        <Route path="/contract/:id" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractDetailPage /></RequireAuth>} />
-        <Route path="/contract/:id/edit" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
-      </Routes>
-    </BrowserRouter>
+          {/* 보호된 페이지 — 토큰 + 권한 필요 */}
+          <Route path="/" element={<RequireAuth roles={["USER", "ADMIN"]}><PriceManagement /></RequireAuth>} />
+          <Route path="/lme" element={<RequireAuth roles={["USER", "ADMIN"]}><LmePage /></RequireAuth>} />
+          <Route path="/notice" element={<RequireAuth roles={["USER", "ADMIN"]}><NoticePage /></RequireAuth>} />
+          <Route path="/inventory" element={<RequireAuth roles={["USER", "ADMIN"]}><InventoryPage /></RequireAuth>} />
+          <Route path="/weighing" element={<RequireAuth roles={["USER", "ADMIN"]}><WeighingPage /></RequireAuth>} />
+          <Route path="/documents" element={<RequireAuth roles={["USER", "ADMIN"]}><DocumentsPage /></RequireAuth>} />
+          <Route path="/contract" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractListPage /></RequireAuth>} />
+          <Route path="/contract/new" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
+          <Route path="/contract/:id" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractDetailPage /></RequireAuth>} />
+          <Route path="/contract/:id/edit" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
+        </Routes>
+      </BrowserRouter>
+    </KakaoInAppBrowserGuard>
   );
 }

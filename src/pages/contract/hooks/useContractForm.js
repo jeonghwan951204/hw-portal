@@ -304,7 +304,9 @@ export function useContractForm() {
       onAdd: handleAddPrice,
       onRemove: handleRemovePrice,
       onChange: handlePriceChange,
-      priceTypeOptions: enums[ENUM_GROUPS.PRICE_TYPE] ?? [],
+      priceTypeOptions: (enums[ENUM_GROUPS.PRICE_TYPE] ?? []).filter(
+        (option) => option.value !== "SETTLEMENT"
+      ),
       sourceOptions: enums[ENUM_GROUPS.PRICE_SOURCE] ?? [],
       calcMethodOptions: enums[ENUM_GROUPS.CALC_METHOD] ?? [],
     },
