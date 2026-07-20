@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
+  calculateSettlement,
   confirmPrice,
   createTransaction,
   deleteContract,
@@ -9,6 +10,8 @@ import {
   fetchContractPrices,
   fetchTransactions,
   recalcPrice,
+  updateTransaction,
+  updateTransactionPayment,
 } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
 import { useEnums } from "./useEnums";
@@ -58,6 +61,13 @@ export function useContractDetail() {
   const [txForm, setTxForm] = useState(emptyTxForm);
   const [txFormOpen, setTxFormOpen] = useState(false);
   const [submittingTx, setSubmittingTx] = useState(false);
+  const [settlementPreview, setSettlementPreview] = useState(null);
+  const [settlementCalculating, setSettlementCalculating] = useState(false);
+  const [settlementError, setSettlementError] = useState("");
+  const [expandedPaymentId, setExpandedPaymentId] = useState(null);
+  const [submittingPaymentId, setSubmittingPaymentId] = useState(null);
+  const [expandedEditId, setExpandedEditId] = useState(null);
+  const [submittingEditId, setSubmittingEditId] = useState(null);
 
   // 계약의 전체 단가 상세(기간·확정·기준값 + 품목별 최종단가) 로드
   const loadPrices = async () => {
@@ -213,6 +223,42 @@ export function useContractDetail() {
   const derivedUnitPrice =
     txForm.itemId && txForm.priceType ? unitPriceMap[txForm.itemId]?.[txForm.priceType] : undefined;
 
+  // 마지막 거래 선택 시 품목·수량을 기준으로 정산가 미리보기
+  useEffect(() => {
+    const quantity = Number(txForm.quantity);
+    if (!txForm.finalSettlement || !txForm.itemId || !Number.isFinite(quantity) || quantity <= 0) {
+      setSettlementPreview(null);
+      setSettlementCalculating(false);
+      setSettlementError("");
+      return undefined;
+    }
+
+    setSettlementPreview(null);
+    setSettlementCalculating(true);
+    setSettlementError("");
+    let alive = true;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await calculateSettlement(id, {
+          itemId: Number(txForm.itemId),
+          quantity,
+        });
+        if (alive) setSettlementPreview(result);
+      } catch (e) {
+        if (!alive) return;
+        setSettlementPreview(null);
+        setSettlementError(e.message || "정산가를 계산하지 못했습니다");
+      } finally {
+        if (alive) setSettlementCalculating(false);
+      }
+    }, 300);
+
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [id, txForm.finalSettlement, txForm.itemId, txForm.quantity]);
+
   const itemNameById = useMemo(() => {
     const map = {};
     (detail?.items ?? []).forEach((it) => (map[it.itemId] = it.itemName));
@@ -225,7 +271,7 @@ export function useContractDetail() {
         ...t,
         itemName: itemNameById[t.itemId] ?? "-",
         priceTypeLabel: labelOf(ENUM_GROUPS.PRICE_TYPE, t.priceType),
-        paid: t.paidAmount != null || t.paidDate != null,
+        paid: t.paidForeign != null || t.paidAmount != null || t.paidDate != null,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [transactions, itemNameById]
@@ -246,7 +292,16 @@ export function useContractDetail() {
           finalSettlement,
         };
       }
-      if (field === "finalSettlement" && prev.priceType === "SETTLEMENT" && !value) return prev;
+      if (field === "finalSettlement") {
+        let priceType = prev.priceType;
+        if (value) priceType = "SETTLEMENT";
+        else if (prev.priceType === "SETTLEMENT") priceType = "";
+        return {
+          ...prev,
+          finalSettlement: value,
+          priceType,
+        };
+      }
       return { ...prev, [field]: value };
     });
   };
@@ -255,6 +310,10 @@ export function useContractDetail() {
     if (submittingTx) return;
     if (!txForm.date || !txForm.itemId || !txForm.priceType || txForm.quantity === "") {
       showToast("error", "납품일·품목·단가유형·수량을 모두 입력하세요");
+      return;
+    }
+    if (txForm.finalSettlement && !settlementPreview) {
+      showToast("error", settlementError || "정산가 계산 결과를 확인하세요");
       return;
     }
     // 일반 거래는 산정단가 필요 (마지막 정산은 서버가 계산)
@@ -267,7 +326,7 @@ export function useContractDetail() {
       transactionDate: txForm.date,
       quantity: Number(txForm.quantity),
       priceType: txForm.priceType,
-      finalSettlement: txForm.finalSettlement || undefined,
+      isFinalSettlement: txForm.finalSettlement || undefined,
       unitPrice: txForm.finalSettlement ? undefined : Number(derivedUnitPrice),
     };
     if (txForm.withPayment) {
@@ -291,6 +350,38 @@ export function useContractDetail() {
       showToast("error", e.message || "거래 등록에 실패했습니다");
     } finally {
       setSubmittingTx(false);
+    }
+  };
+
+  // ── 기존 거래 결제 등록·수정 ──
+  const handleSavePayment = async (transactionId, body) => {
+    if (submittingPaymentId) return;
+    setSubmittingPaymentId(transactionId);
+    try {
+      await updateTransactionPayment(id, transactionId, body);
+      await loadTransactions();
+      setExpandedPaymentId(null);
+      showToast("success", "결제 정보가 저장되었습니다");
+    } catch (e) {
+      showToast("error", e.message || "결제 정보 저장에 실패했습니다");
+    } finally {
+      setSubmittingPaymentId(null);
+    }
+  };
+
+  // ── 기존 거래 내용 수정 ──
+  const handleUpdateTransaction = async (transactionId, body) => {
+    if (submittingEditId) return;
+    setSubmittingEditId(transactionId);
+    try {
+      await updateTransaction(id, transactionId, body);
+      await loadTransactions();
+      setExpandedEditId(null);
+      showToast("success", "거래 내역이 수정되었습니다");
+    } catch (e) {
+      showToast("error", e.message || "거래 내역 수정에 실패했습니다");
+    } finally {
+      setSubmittingEditId(null);
     }
   };
 
@@ -373,8 +464,31 @@ export function useContractDetail() {
         itemOptions: detail?.items ?? [],
         priceTypeOptions: txPriceTypeOptions,
         derivedUnitPrice,
+        settlementPreview,
+        settlementCalculating,
+        settlementError,
         submitting: submittingTx,
         onSubmit: handleSubmitTransaction,
+      },
+      payment: {
+        expandedId: expandedPaymentId,
+        onToggle: (transactionId) => {
+          setExpandedEditId(null);
+          setExpandedPaymentId((current) => (current === transactionId ? null : transactionId));
+        },
+        submittingId: submittingPaymentId,
+        onSave: handleSavePayment,
+      },
+      edit: {
+        expandedId: expandedEditId,
+        onToggle: (transactionId) => {
+          setExpandedPaymentId(null);
+          setExpandedEditId((current) => (current === transactionId ? null : transactionId));
+        },
+        submittingId: submittingEditId,
+        onSave: handleUpdateTransaction,
+        itemOptions: detail?.items ?? [],
+        priceTypeOptions: txPriceTypeOptions,
       },
     },
     deleteModal: {

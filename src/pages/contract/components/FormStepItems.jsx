@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import NumericInput from "./NumericInput";
 
 const INPUT_CLASS =
   "w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white";
@@ -66,12 +67,10 @@ export default function FormStepItems({
                     </td>
                     {prices.map((price) => (
                       <td key={price.tempId} className="px-4 py-3 min-w-28">
-                        <input
-                          type="number"
-                          min="0"
+                        <NumericInput
                           placeholder="요율"
                           value={item.rates[price.tempId] ?? ""}
-                          onChange={(e) => onRateChange(item.tempId, price.tempId, e.target.value)}
+                          onChange={(value) => onRateChange(item.tempId, price.tempId, value)}
                           className={INPUT_CLASS}
                         />
                       </td>
@@ -107,12 +106,10 @@ export default function FormStepItems({
                       </td>
                       {prices.map((price) => (
                         <td key={price.tempId} className="px-4 py-3">
-                          <input
-                            type="number"
-                            min="0"
+                          <NumericInput
                             placeholder="프리미엄"
                             value={item.premiums[price.tempId] ?? ""}
-                            onChange={(e) => onPremiumChange(item.tempId, price.tempId, e.target.value)}
+                            onChange={(value) => onPremiumChange(item.tempId, price.tempId, value)}
                             className={INPUT_CLASS}
                           />
                         </td>

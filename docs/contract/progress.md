@@ -13,7 +13,7 @@
 - 계약 **목록 · 상세 · 등록 · 수정 · 삭제 · 거래 등록/결제 · 단가 확정/재계산**을 모두 **실제 API**로 연동함.
 - 선택값(단가유형·거래구분·상태·소속회사 등)은 전부 `GET /api/enums/{group}` 로더로 처리(하드코딩 제거).
 - 거래처는 `GET /api/companies`, 시장 배너는 `GET /api/price/latest` 사용.
-- 초기 mock 데이터(`mockData.js`)와 결제 컴포넌트(`PaymentForm.jsx`)는 **더 이상 사용되지 않음(정리 대상)**.
+- 초기 mock 데이터(`mockData.js`)는 **더 이상 사용되지 않음(정리 대상)**. `PaymentForm.jsx`는 거래별 결제 등록·수정에 사용.
 
 ---
 
@@ -49,9 +49,10 @@ contract/
 │   └── useContractForm.js  # 등록(생성)·수정(헤더 PUT)·enum·거래처
 └── components/
     ├── Toast / ConfirmModal / StatusBadge            # 공용
+    ├── NumericInput                                  # 숫자 입력 콤마 표시·원시값 전달
     ├── MarketBanner / ContractToolbar / ContractGrid / ContractCard   # 목록
     ├── ContractDetailHeader / PriceInfoTab / TransactionTab           # 상세
-    ├── PaymentForm.jsx (미사용, 정리 대상)
+    ├── PaymentForm.jsx                              # 거래별 결제 등록·수정
     └── FormStepIndicator / Basic / Prices / Items / Confirm           # 등록 스텝
 ```
 
@@ -77,8 +78,10 @@ contract/
   - 품목 × 단가 매트릭스도 같은 전체 단가 응답으로 구성.
 - **탭2 거래 내역**:
   - 조회: `GET /api/contracts/{id}/transactions`.
-  - 거래 등록: `POST …/transactions`. 산정단가(`unitPrice`)는 품목×단가유형 매트릭스에서 자동 조회해 전송(금액은 서버 계산). **결제(실입금)는 같은 폼에서 함께 입력**(내수: 실입금액·입금일 / 수출: 수취외화·환전환율·원화입금액). **마지막 정산** 옵션(unitPrice 생략, 서버 계산).
-  - **정산가(SETTLEMENT)는 거래 입력 전용**으로 드롭다운에 노출하며, 선택 시 마지막 정산을 자동 적용. 계약 등록의 단가유형에서는 제외.
+  - 거래 등록: `POST …/transactions`. 산정단가(`unitPrice`)는 품목×단가유형 매트릭스에서 자동 조회해 전송(금액은 서버 계산). 결제 정보는 같은 폼에서 함께 입력할 수도 있음.
+  - **정산가(SETTLEMENT)는 거래 입력 전용**. 마지막 거래 선택 시 `POST …/transactions/settlement/calculate`로 정산 단가·정산금액을 미리 표시하고, 등록 요청에서는 unitPrice를 생략해 서버가 계산.
+  - 기존 거래는 행별 **[거래 수정]**에서 `PUT …/transactions/{transactionId}`로 품목·납품일·수량·단가·단가유형·메모를 수정. 결제 정보는 유지.
+  - 기존 거래의 결제는 행별 입력 영역에서 `PATCH …/transactions/{transactionId}/payment`로 등록·수정. 내수는 실입금액, 수출은 수취외화와 선택적 환전 정보를 입력.
 - 삭제: `DELETE /api/contracts/{id}`(soft delete) → 목록 이동.
 
 ### 등록/수정 (`useContractForm`)
@@ -91,7 +94,7 @@ contract/
 
 - **모달 아님, 페이지 유지**: 상세·등록은 콘텐츠가 무겁고 딥링크·새로고침이 중요 → 라우트 페이지 유지.
 - **수정 = 헤더 전용**: `PUT /api/contracts/{id}`가 품목·단가를 바꾸지 않음(스펙 명시). 그래서 수정 화면은 기본 정보만.
-- **결제 = 거래 등록 시 함께 입력**: 결제 전용/거래 수정 엔드포인트가 없음. 기존 거래에 사후 결제 추가 불가 → 분할 결제는 수량을 쪼개 여러 거래로.
+- **결제는 거래 등록 시 또는 사후 입력**: 기존 거래의 수량·단가·정산금액은 유지하고 결제 정보만 PATCH로 등록·수정.
 - **소속회사(자사)**: 호재=`HOJAE`, 우남=`WOONAM`. 목록 필터 + 등록 필수.
 - **필드명은 API에 맞춤**: 폼/뷰모델이 `contractName`, `customerId`, `contractQuantity` 등 서버 필드명을 그대로 사용.
 
@@ -99,12 +102,12 @@ contract/
 
 - **목록 카드 `finalUnitPrice` 크기 이상**: 예시 데이터에서 `finalUnitPrice`(≈20.5억)가 `baseUnitPrice`(≈2천만, LME×환율 원/ton 수준)의 **약 100배**. 요율(%)이 소수(1.005)로 안 나눠지고 정수(100.5)로 곱해진 **서버 계산 의심**. → 서버 수정 or 카드에 `baseUnitPrice` 표시로 전환 결정 필요.
 - **오류 메시지**: mutation은 `CommonResponse{message}`라 서버 메시지를 토스트로 그대로 노출. (조회 실패는 일반 문구)
-- **정리 대상**: `mockData.js`, `components/PaymentForm.jsx` 미사용.
+- **정리 대상**: `mockData.js` 미사용.
 
 ## 6. 미지원(엔드포인트 없음) / 다음 작업 후보
 
 - 계약의 **단가·품목 개별 수정** (PUT은 헤더만).
-- **거래 수정/삭제**, 결제 사후 입력.
+- **거래 삭제**.
 - 목록 정렬 UI(정렬 자체는 서버 책임).
 
 ---

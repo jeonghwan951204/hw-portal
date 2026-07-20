@@ -101,6 +101,36 @@ export const createTransaction = async (contractId, body) =>
     })
   );
 
+// 기존 거래 내용 수정 (결제 정보 제외)
+export const updateTransaction = async (contractId, transactionId, body) =>
+  asJson(
+    await apiFetch(`/api/contracts/${contractId}/transactions/${transactionId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+
+// 마지막 거래의 정산 단가·정산금액 미리 계산 (저장하지 않음)
+export const calculateSettlement = async (contractId, body) =>
+  asJson(
+    await apiFetch(`/api/contracts/${contractId}/transactions/settlement/calculate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+
+// 기존 거래의 실제 결제 정보 등록·수정
+export const updateTransactionPayment = async (contractId, transactionId, body) =>
+  asJson(
+    await apiFetch(`/api/contracts/${contractId}/transactions/${transactionId}/payment`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+
 // ─── 거래처 ────────────────────────────────────────────────────────────────
 // 거래처(회사) 셀렉트용 목록 → [{ id, name }]
 export const fetchCompanies = async (keyword) => {

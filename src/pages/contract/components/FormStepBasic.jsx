@@ -1,3 +1,5 @@
+import NumericInput from "./NumericInput";
+
 const INPUT_CLASS =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white";
 const LABEL_CLASS = "block text-xs font-bold text-slate-500 mb-1.5";
@@ -134,12 +136,10 @@ export default function FormStepBasic({
           <label className={LABEL_CLASS}>
             계약 수량 <span className="font-normal text-slate-400">(kg, 참고용)</span>
           </label>
-          <input
-            type="number"
-            min="0"
+          <NumericInput
             placeholder="예: 100000"
             value={basic.contractQuantity}
-            onChange={(e) => onChange("contractQuantity", e.target.value)}
+            onChange={(value) => onChange("contractQuantity", value)}
             className={INPUT_CLASS}
           />
         </div>

@@ -32,6 +32,9 @@
 | `POST /api/contracts/prices/recalc` | 당일 재계산 | `recalcPrices` | useContractList |
 | `GET /api/contracts/{id}/transactions` | 거래 내역 조회 | `fetchTransactions` | useContractDetail |
 | `POST /api/contracts/{id}/transactions` | 거래 등록(+결제) | `createTransaction` | useContractDetail |
+| `PUT /api/contracts/{id}/transactions/{transactionId}` | 거래 내용 수정(결제 제외) | `updateTransaction` | useContractDetail |
+| `POST /api/contracts/{id}/transactions/settlement/calculate` | 마지막 거래 정산가 미리 계산 | `calculateSettlement` | useContractDetail |
+| `PATCH /api/contracts/{id}/transactions/{transactionId}/payment` | 기존 거래 결제 등록·수정 | `updateTransactionPayment` | useContractDetail |
 | `GET /api/companies` | 거래처 셀렉트/이름 매핑 | `fetchCompanies` | useContractList, useContractForm |
 | `GET /api/enums/{group}` | 선택값 옵션 | `fetchEnum`/`fetchEnums` | useEnums |
 | `GET /api/price/latest` | 시장 배너(LME·환율·원화환산) | `fetchMarketSummary` | useContractList |
@@ -99,7 +102,7 @@
   "quantity": 24000,               // kg
   "priceType": "FINAL",
   "unitPrice": 9236.8,             // 일반 거래 필수(품목×단가 매트릭스에서 조회). 마지막 정산이면 생략
-  "finalSettlement": false,
+  "isFinalSettlement": false,
   // ↓ 결제(실입금)를 함께 넣을 때만
   "paidCurrency": "USD",           // 내수 KRW / 수출 USD
   "paidForeign": 220062,           // 수출: 수취 외화
@@ -110,6 +113,32 @@
 }
 ```
 - 금액(`amount`)·차액(`settlementDiff`)은 서버 계산. 조립 코드: `useContractDetail.js`의 `handleSubmitTransaction`.
+- 마지막 정산 거래는 `isFinalSettlement: true`를 전송하고 `unitPrice`는 생략한다.
+
+### 마지막 정산가 계산 `POST /api/contracts/{id}/transactions/settlement/calculate`
+```jsonc
+{ "itemId": 3, "quantity": 24000 }
+```
+응답의 `settlementUnitPrice`, `settlementAmount`를 거래 등록 전에 미리 표시한다. 데이터는 저장되지 않는다.
+
+### 거래 내용 수정 `PUT /api/contracts/{id}/transactions/{transactionId}`
+`itemId, transactionDate, quantity, unitPrice, priceType, memo`를 전송한다. 결제 정보는
+변경하지 않는다. 마지막 정산 거래는 품목을 변경할 수 없으며 단가·정산금액은 서버가
+다시 계산하므로 `unitPrice`를 생략한다.
+
+### 거래 결제 등록·수정 `PATCH /api/contracts/{id}/transactions/{transactionId}/payment`
+```jsonc
+{
+  "paidCurrency": "USD",
+  "paidForeign": 220062,
+  "paidExchange": 1381.2,
+  "paidAmount": 303949637,
+  "paidDate": "2026-07-12",
+  "paymentMemo": "…"
+}
+```
+- KRW 결제는 `paidAmount` 필수.
+- USD 결제는 `paidForeign` 필수이며, 환전했다면 `paidExchange`와 `paidAmount`를 함께 입력.
 
 ---
 
@@ -152,7 +181,7 @@
 
 ### 거래 `GET /api/contracts/{id}/transactions` → `TransactionResponse[]`
 `transactionId, itemId, transactionDate, quantity, unitPrice, priceType, amount, paidCurrency, paidForeign, paidExchange, paidAmount, paidDate, paymentMemo, memo, settlementDiff, finalSettlement`.
-- 결제여부는 `paidAmount`/`paidDate` 유무로 판정.
+- 결제여부는 `paidForeign`/`paidAmount`/`paidDate` 유무로 판정.
 
 ### 시장 배너 `GET /api/price/latest`
 ```jsonc

@@ -15,20 +15,22 @@ export default function LmeHistoryTable({ history }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full table-fixed sm:table-auto text-[11px] sm:text-sm border-collapse">
         <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
           <tr>
-            <th className="py-3 px-6 text-left border-r border-slate-200 w-40">
+            <th className="w-[26%] sm:w-40 py-3 px-2 sm:px-6 text-left border-r border-slate-200">
               날짜
             </th>
-            <th className="py-3 px-6 text-right border-r border-slate-200">
-              LME 구리 종가 ($/t)
+            <th className="w-[27%] py-3 px-2 sm:px-6 text-right border-r border-slate-200">
+              <span className="sm:hidden">LME 종가</span>
+              <span className="hidden sm:inline">LME 구리 종가 ($/t)</span>
             </th>
-            <th className="py-3 px-6 text-right border-r border-slate-200">
+            <th className="w-[21%] py-3 px-2 sm:px-6 text-right border-r border-slate-200">
               변동폭
             </th>
-            <th className="py-3 px-6 text-right">
-              환율 (₩/$)
+            <th className="w-[26%] py-3 px-2 sm:px-6 text-right">
+              <span className="sm:hidden">환율</span>
+              <span className="hidden sm:inline">환율 (₩/$)</span>
             </th>
           </tr>
         </thead>
@@ -43,16 +45,20 @@ export default function LmeHistoryTable({ history }) {
                 key={row[LIST_FIELDS.id] ?? idx}
                 className="hover:bg-slate-50/80 transition-colors animate-fadeIn"
               >
-                <td className="py-3 px-6 border-r border-slate-100 text-slate-500 text-xs font-medium tabular-nums">
+                <td className="py-3 px-2 sm:px-6 border-r border-slate-100 text-slate-500 text-[11px] sm:text-xs font-medium tabular-nums whitespace-nowrap">
                   {row.baseDate}
                 </td>
-                <td className="py-3 px-6 border-r border-slate-100 text-right font-mono font-bold text-blue-600">
+                <td
+                  className={`py-3 px-2 sm:px-6 border-r border-slate-100 text-right font-mono font-bold whitespace-nowrap ${
+                    isUp ? "text-red-600" : "text-blue-600"
+                  }`}
+                >
                   {formatUSD(row.price)}
                 </td>
-                <td className="py-3 px-6 border-r border-slate-100 text-right font-mono">
-                  <span className="inline-flex items-center justify-end gap-1">
+                <td className="py-3 px-2 sm:px-6 border-r border-slate-100 text-right font-mono whitespace-nowrap">
+                  <span className="inline-flex items-center justify-end gap-0.5 sm:gap-1">
                     {isUp && (
-                      <span className="inline-flex items-center gap-0.5 text-xs font-bold text-red-500">
+                      <span className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs font-bold text-red-500">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M12 4l8 16H4L12 4z" />
                         </svg>
@@ -60,7 +66,7 @@ export default function LmeHistoryTable({ history }) {
                       </span>
                     )}
                     {isDown && (
-                      <span className="inline-flex items-center gap-0.5 text-xs font-bold text-blue-500">
+                      <span className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs font-bold text-blue-500">
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M12 20l-8-16h16L12 20z" />
                         </svg>
@@ -70,7 +76,7 @@ export default function LmeHistoryTable({ history }) {
                     {!isUp && !isDown && <span className="text-slate-400">-</span>}
                   </span>
                 </td>
-                <td className="py-3 px-6 text-right font-mono text-slate-700 font-semibold">
+                <td className="py-3 px-2 sm:px-6 text-right font-mono text-slate-700 font-semibold whitespace-nowrap">
                   {formatRate(row.rate)}
                 </td>
               </tr>

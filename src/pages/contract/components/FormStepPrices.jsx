@@ -1,3 +1,5 @@
+import NumericInput from "./NumericInput";
+
 const INPUT_CLASS =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white";
 const LABEL_CLASS = "block text-xs font-bold text-slate-500 mb-1.5";
@@ -82,12 +84,10 @@ export default function FormStepPrices({
             {price.priceSource === "FIXED" ? (
               <div>
                 <label className={LABEL_CLASS}>고정 단가</label>
-                <input
-                  type="number"
-                  min="0"
+                <NumericInput
                   placeholder="고정 단가 입력"
                   value={price.fixedUnitPrice}
-                  onChange={(e) => onChange(price.tempId, "fixedUnitPrice", e.target.value)}
+                  onChange={(value) => onChange(price.tempId, "fixedUnitPrice", value)}
                   className={INPUT_CLASS}
                 />
               </div>

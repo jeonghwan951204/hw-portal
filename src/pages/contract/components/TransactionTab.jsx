@@ -1,4 +1,8 @@
+import { Fragment } from "react";
 import { PRICE_TYPE_STYLE, formatDate, formatNumber } from "../constants";
+import PaymentForm from "./PaymentForm";
+import TransactionEditForm from "./TransactionEditForm";
+import NumericInput from "./NumericInput";
 
 const INPUT_CLASS =
   "w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white";
@@ -20,7 +24,18 @@ function PaidBadge({ paid }) {
 
 // 거래 등록 + 결제(실입금) 입력 폼
 function TxForm({ form, isExport, unitHint }) {
-  const { values, onChange, itemOptions, priceTypeOptions, derivedUnitPrice, submitting, onSubmit } = form;
+  const {
+    values,
+    onChange,
+    itemOptions,
+    priceTypeOptions,
+    derivedUnitPrice,
+    settlementPreview,
+    settlementCalculating,
+    settlementError,
+    submitting,
+    onSubmit,
+  } = form;
   const moneyDigits = isExport ? 2 : 0;
 
   return (
@@ -51,11 +66,11 @@ function TxForm({ form, isExport, unitHint }) {
         </div>
         <div>
           <label className={LABEL_CLASS}>수량(kg)</label>
-          <input type="number" min="0" placeholder="수량" value={values.quantity} onChange={(e) => onChange("quantity", e.target.value)} className={INPUT_CLASS} />
+          <NumericInput placeholder="수량" value={values.quantity} onChange={(value) => onChange("quantity", value)} className={INPUT_CLASS} />
         </div>
       </div>
 
-      {/* 산정단가 안내 + 마지막 정산 */}
+      {/* 산정단가 안내 + 마지막 거래 */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
         <span className="text-slate-500">
           산정단가:{" "}
@@ -72,15 +87,42 @@ function TxForm({ form, isExport, unitHint }) {
           <input
             type="checkbox"
             checked={values.finalSettlement}
-            disabled={values.priceType === "SETTLEMENT"}
             onChange={(e) => onChange("finalSettlement", e.target.checked)}
-            className="w-3.5 h-3.5 accent-blue-600 disabled:cursor-not-allowed"
+            className="w-3.5 h-3.5 accent-blue-600"
           />
           {values.priceType === "SETTLEMENT"
-            ? "정산가는 마지막 정산으로 처리됩니다"
-            : "마지막 정산 (확정가 기준 서버 계산)"}
+            ? "마지막 거래 (정산가 적용)"
+            : "마지막 거래"}
         </label>
       </div>
+
+      {values.finalSettlement && (
+        <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-xs">
+          {settlementCalculating ? (
+            <p className="font-semibold text-violet-500">정산가 계산 중...</p>
+          ) : settlementError ? (
+            <p className="font-semibold text-rose-500">{settlementError}</p>
+          ) : settlementPreview ? (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-violet-700">
+              <span>
+                정산 단가{" "}
+                <strong className="font-mono">
+                  {formatNumber(settlementPreview.settlementUnitPrice, moneyDigits)} {unitHint}
+                </strong>
+              </span>
+              <span>
+                정산금액{" "}
+                <strong className="font-mono">
+                  {formatNumber(settlementPreview.settlementAmount, moneyDigits)}
+                  {isExport ? " USD" : " 원"}
+                </strong>
+              </span>
+            </div>
+          ) : (
+            <p className="text-violet-500">품목과 마지막 거래 수량을 입력하세요.</p>
+          )}
+        </div>
+      )}
 
       {/* 결제(실입금) 함께 입력 */}
       <div className="border-t border-slate-200 pt-3">
@@ -94,17 +136,17 @@ function TxForm({ form, isExport, unitHint }) {
               <>
                 <div>
                   <label className={LABEL_CLASS}>수취 외화(USD)</label>
-                  <input type="number" min="0" value={values.paidForeign} onChange={(e) => onChange("paidForeign", e.target.value)} className={INPUT_CLASS} />
+                  <NumericInput value={values.paidForeign} onChange={(value) => onChange("paidForeign", value)} className={INPUT_CLASS} />
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>환전 환율</label>
-                  <input type="number" min="0" value={values.paidExchange} onChange={(e) => onChange("paidExchange", e.target.value)} className={INPUT_CLASS} />
+                  <NumericInput value={values.paidExchange} onChange={(value) => onChange("paidExchange", value)} className={INPUT_CLASS} />
                 </div>
               </>
             )}
             <div>
               <label className={LABEL_CLASS}>{isExport ? "원화 입금액" : "실입금액"}</label>
-              <input type="number" min="0" value={values.paidAmount} onChange={(e) => onChange("paidAmount", e.target.value)} className={INPUT_CLASS} />
+              <NumericInput value={values.paidAmount} onChange={(value) => onChange("paidAmount", value)} className={INPUT_CLASS} />
             </div>
             <div>
               <label className={LABEL_CLASS}>입금일</label>
@@ -122,9 +164,15 @@ function TxForm({ form, isExport, unitHint }) {
         <button
           type="button"
           onClick={onSubmit}
-          disabled={submitting}
+          disabled={
+            submitting ||
+            settlementCalculating ||
+            (values.finalSettlement && !settlementPreview)
+          }
           className={`px-5 py-2 text-sm font-bold text-white rounded-lg transition-all active:scale-95 ${
-            submitting ? "bg-slate-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+            submitting || settlementCalculating || (values.finalSettlement && !settlementPreview)
+              ? "bg-slate-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
           {submitting ? "등록 중..." : "거래 등록"}
@@ -135,7 +183,7 @@ function TxForm({ form, isExport, unitHint }) {
 }
 
 // 탭 2 — 거래 내역: 조회 + 거래 등록·실결제 입력
-export default function TransactionTab({ transactions = [], isExport, unitHint, form }) {
+export default function TransactionTab({ transactions = [], isExport, unitHint, form, payment, edit }) {
   const moneyDigits = isExport ? 2 : 0;
 
   return (
@@ -170,7 +218,7 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">단가</th>
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">정산금액</th>
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">차액</th>
-              <th className="px-4 py-2.5 text-center font-semibold whitespace-nowrap">결제</th>
+              <th className="px-4 py-2.5 text-center font-semibold whitespace-nowrap">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -182,7 +230,8 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
               </tr>
             )}
             {transactions.map((tx) => (
-              <tr key={tx.transactionId}>
+              <Fragment key={tx.transactionId}>
+                <tr>
                 <td className="px-4 py-3 whitespace-nowrap text-slate-600">{formatDate(tx.transactionDate)}</td>
                 <td className="px-4 py-3 whitespace-nowrap font-semibold text-slate-700">{tx.itemName}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
@@ -196,8 +245,54 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
                 <td className={`px-4 py-3 text-right font-mono ${tx.settlementDiff ? "text-rose-500" : "text-slate-400"}`}>
                   {tx.settlementDiff != null ? formatNumber(tx.settlementDiff, moneyDigits) : "-"}
                 </td>
-                <td className="px-4 py-3 text-center"><PaidBadge paid={tx.paid} /></td>
-              </tr>
+                <td className="px-4 py-3 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <PaidBadge paid={tx.paid} />
+                    <button
+                      type="button"
+                      onClick={() => payment.onToggle(tx.transactionId)}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700"
+                    >
+                      결제 {tx.paid ? "수정" : "입력"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => edit.onToggle(tx.transactionId)}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-700"
+                    >
+                      거래 수정
+                    </button>
+                  </div>
+                </td>
+                </tr>
+                {payment.expandedId === tx.transactionId && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-3 bg-slate-50/50">
+                      <PaymentForm
+                        isExport={isExport}
+                        tx={tx}
+                        submitting={payment.submittingId === tx.transactionId}
+                        onSave={payment.onSave}
+                        onCancel={() => payment.onToggle(tx.transactionId)}
+                      />
+                    </td>
+                  </tr>
+                )}
+                {edit.expandedId === tx.transactionId && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-3 bg-slate-50/50">
+                      <TransactionEditForm
+                        tx={tx}
+                        itemOptions={edit.itemOptions}
+                        priceTypeOptions={edit.priceTypeOptions}
+                        submitting={edit.submittingId === tx.transactionId}
+                        onSave={edit.onSave}
+                        onCancel={() => edit.onToggle(tx.transactionId)}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -217,7 +312,23 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
                   {tx.priceTypeLabel}
                 </span>
               </div>
-              <PaidBadge paid={tx.paid} />
+              <div className="flex items-center gap-2">
+                <PaidBadge paid={tx.paid} />
+                <button
+                  type="button"
+                  onClick={() => payment.onToggle(tx.transactionId)}
+                  className="text-[11px] font-bold text-blue-600"
+                >
+                  결제 {tx.paid ? "수정" : "입력"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => edit.onToggle(tx.transactionId)}
+                  className="text-[11px] font-bold text-slate-500"
+                >
+                  거래 수정
+                </button>
+              </div>
             </div>
             <div className="mt-2 flex items-center justify-between text-sm">
               <span className="text-xs text-slate-400">
@@ -227,6 +338,29 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
                 {formatNumber(tx.amount, moneyDigits)}
               </span>
             </div>
+            {payment.expandedId === tx.transactionId && (
+              <div className="mt-3">
+                <PaymentForm
+                  isExport={isExport}
+                  tx={tx}
+                  submitting={payment.submittingId === tx.transactionId}
+                  onSave={payment.onSave}
+                  onCancel={() => payment.onToggle(tx.transactionId)}
+                />
+              </div>
+            )}
+            {edit.expandedId === tx.transactionId && (
+              <div className="mt-3">
+                <TransactionEditForm
+                  tx={tx}
+                  itemOptions={edit.itemOptions}
+                  priceTypeOptions={edit.priceTypeOptions}
+                  submitting={edit.submittingId === tx.transactionId}
+                  onSave={edit.onSave}
+                  onCancel={() => edit.onToggle(tx.transactionId)}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
