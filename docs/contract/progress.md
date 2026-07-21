@@ -52,6 +52,7 @@ contract/
     ├── NumericInput                                  # 숫자 입력 콤마 표시·원시값 전달
     ├── MarketBanner / ContractToolbar / ContractGrid / ContractCard   # 목록
     ├── ContractDetailHeader / PriceInfoTab / TransactionTab           # 상세
+    ├── TransactionStatistics                                          # 전체·품목별 거래 통계
     ├── PaymentForm.jsx                              # 거래별 결제 등록·수정
     └── FormStepIndicator / Basic / Prices / Items / Confirm           # 등록 스텝
 ```
@@ -78,10 +79,12 @@ contract/
   - 품목 × 단가 매트릭스도 같은 전체 단가 응답으로 구성.
 - **탭2 거래 내역**:
   - 조회: `GET /api/contracts/{id}/transactions`.
+  - 통계: `GET /api/contracts/{id}/transactions/statistics`로 전체·품목별 납품수량, 잔여 계약수량, 납품률, 가중평균 단가, 정산·결제 금액, 마지막 정산 상태와 거래 기간 표시.
   - 거래 등록: `POST …/transactions`. 산정단가(`unitPrice`)는 품목×단가유형 매트릭스에서 자동 조회해 전송(금액은 서버 계산). 결제 정보는 같은 폼에서 함께 입력할 수도 있음.
   - **정산가(SETTLEMENT)는 거래 입력 전용**. 마지막 거래 선택 시 `POST …/transactions/settlement/calculate`로 정산 단가·정산금액을 미리 표시하고, 등록 요청에서는 unitPrice를 생략해 서버가 계산.
   - 기존 거래는 행별 **[거래 수정]**에서 `PUT …/transactions/{transactionId}`로 품목·납품일·수량·단가·단가유형·메모를 수정. 결제 정보는 유지.
   - 기존 거래의 결제는 행별 입력 영역에서 `PATCH …/transactions/{transactionId}/payment`로 등록·수정. 내수는 실입금액, 수출은 수취외화와 선택적 환전 정보를 입력.
+  - 거래 등록·수정·결제 저장 후 거래 목록과 통계를 함께 갱신.
 - 삭제: `DELETE /api/contracts/{id}`(soft delete) → 목록 이동.
 
 ### 등록/수정 (`useContractForm`)

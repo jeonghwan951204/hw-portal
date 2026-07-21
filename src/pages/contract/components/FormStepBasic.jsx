@@ -134,10 +134,13 @@ export default function FormStepBasic({
         </div>
         <div>
           <label className={LABEL_CLASS}>
-            계약 수량 <span className="font-normal text-slate-400">(kg, 참고용)</span>
+            계약 수량{" "}
+            <span className="font-normal text-slate-400">
+              ({basic.priceUnit === "TON" ? "ton" : "kg"}, 참고용)
+            </span>
           </label>
           <NumericInput
-            placeholder="예: 100000"
+            placeholder={basic.priceUnit === "TON" ? "예: 100" : "예: 100000"}
             value={basic.contractQuantity}
             onChange={(value) => onChange("contractQuantity", value)}
             className={INPUT_CLASS}

@@ -34,10 +34,11 @@ export default function ContractDetailHeader({ contract, onEdit, onDelete, onBac
               {contract.company}
               <span className="mx-2 text-slate-300">·</span>
               {formatDate(contract.startDate)} – {formatDate(contract.endDate)}
-              {contract.quantity != null && contract.quantity !== "" && (
+              {contract.contractQuantity != null && contract.contractQuantity !== "" && (
                 <>
                   <span className="mx-2 text-slate-300">·</span>
-                  {formatQuantity(contract)}
+                  <span className="text-slate-400">계약 수량</span>{" "}
+                  <span className="font-semibold text-slate-600">{formatQuantity(contract)}</span>
                 </>
               )}
             </p>

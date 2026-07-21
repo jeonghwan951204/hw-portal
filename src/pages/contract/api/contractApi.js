@@ -91,6 +91,10 @@ export const recalcPrices = async () =>
 export const fetchTransactions = async (contractId) =>
   asJson(await apiFetch(`/api/contracts/${contractId}/transactions`));
 
+// 거래 전체·품목별 통계 조회
+export const fetchTransactionStatistics = async (contractId) =>
+  asJson(await apiFetch(`/api/contracts/${contractId}/transactions/statistics`));
+
 // 거래 등록 (결제 정보 포함 가능. 금액은 서버 계산)
 export const createTransaction = async (contractId, body) =>
   asJson(

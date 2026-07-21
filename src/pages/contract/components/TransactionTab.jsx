@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { PRICE_TYPE_STYLE, formatDate, formatNumber } from "../constants";
 import PaymentForm from "./PaymentForm";
+import TransactionStatistics from "./TransactionStatistics";
 import TransactionEditForm from "./TransactionEditForm";
 import NumericInput from "./NumericInput";
 
@@ -183,11 +184,20 @@ function TxForm({ form, isExport, unitHint }) {
 }
 
 // 탭 2 — 거래 내역: 조회 + 거래 등록·실결제 입력
-export default function TransactionTab({ transactions = [], isExport, unitHint, form, payment, edit }) {
+export default function TransactionTab({
+  transactions = [],
+  isExport,
+  unitHint,
+  statistics,
+  form,
+  payment,
+  edit,
+}) {
   const moneyDigits = isExport ? 2 : 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
         <h3 className="text-sm font-bold text-slate-700">
           거래 내역
@@ -217,14 +227,13 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">수량(kg)</th>
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">단가</th>
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">정산금액</th>
-              <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">차액</th>
               <th className="px-4 py-2.5 text-center font-semibold whitespace-nowrap">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-slate-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                   등록된 거래가 없습니다.
                 </td>
               </tr>
@@ -242,9 +251,6 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
                 <td className="px-4 py-3 text-right font-mono text-slate-600">{formatNumber(tx.quantity)}</td>
                 <td className="px-4 py-3 text-right font-mono text-slate-600">{formatNumber(tx.unitPrice, moneyDigits)}</td>
                 <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">{formatNumber(tx.amount, moneyDigits)}</td>
-                <td className={`px-4 py-3 text-right font-mono ${tx.settlementDiff ? "text-rose-500" : "text-slate-400"}`}>
-                  {tx.settlementDiff != null ? formatNumber(tx.settlementDiff, moneyDigits) : "-"}
-                </td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <PaidBadge paid={tx.paid} />
@@ -267,7 +273,7 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
                 </tr>
                 {payment.expandedId === tx.transactionId && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-3 bg-slate-50/50">
+                    <td colSpan={7} className="px-4 py-3 bg-slate-50/50">
                       <PaymentForm
                         isExport={isExport}
                         tx={tx}
@@ -280,7 +286,7 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
                 )}
                 {edit.expandedId === tx.transactionId && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-3 bg-slate-50/50">
+                    <td colSpan={7} className="px-4 py-3 bg-slate-50/50">
                       <TransactionEditForm
                         tx={tx}
                         itemOptions={edit.itemOptions}
@@ -364,6 +370,9 @@ export default function TransactionTab({ transactions = [], isExport, unitHint, 
           </div>
         ))}
       </div>
+      </div>
+
+      <TransactionStatistics {...statistics} />
     </div>
   );
 }

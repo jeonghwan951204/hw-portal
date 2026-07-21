@@ -31,6 +31,7 @@
 | `POST /api/contracts/prices/{priceId}/recalc` | 선택 단가 1건 즉시 재계산 | `recalcPrice` | useContractDetail |
 | `POST /api/contracts/prices/recalc` | 당일 재계산 | `recalcPrices` | useContractList |
 | `GET /api/contracts/{id}/transactions` | 거래 내역 조회 | `fetchTransactions` | useContractDetail |
+| `GET /api/contracts/{id}/transactions/statistics` | 전체·품목별 거래 통계 | `fetchTransactionStatistics` | useContractDetail |
 | `POST /api/contracts/{id}/transactions` | 거래 등록(+결제) | `createTransaction` | useContractDetail |
 | `PUT /api/contracts/{id}/transactions/{transactionId}` | 거래 내용 수정(결제 제외) | `updateTransaction` | useContractDetail |
 | `POST /api/contracts/{id}/transactions/settlement/calculate` | 마지막 거래 정산가 미리 계산 | `calculateSettlement` | useContractDetail |
@@ -69,7 +70,7 @@
   "customerId": 2,                 // 거래처 id
   "tradeType": "EXPORT",
   "priceUnit": "TON",
-  "contractQuantity": 100000,      // kg
+  "contractQuantity": 100,         // priceUnit 기준 수량(TON이면 ton, KG이면 kg)
   "startDate": "2026-07-01",
   "endDate": "2026-07-31",
   "status": "IN_PROGRESS",
@@ -112,7 +113,7 @@
   "paymentMemo": "…"
 }
 ```
-- 금액(`amount`)·차액(`settlementDiff`)은 서버 계산. 조립 코드: `useContractDetail.js`의 `handleSubmitTransaction`.
+- 정산금액(`amount`)은 서버가 계산한다. 조립 코드는 `useContractDetail.js`의 `handleSubmitTransaction`에 있다.
 - 마지막 정산 거래는 `isFinalSettlement: true`를 전송하고 `unitPrice`는 생략한다.
 
 ### 마지막 정산가 계산 `POST /api/contracts/{id}/transactions/settlement/calculate`
@@ -180,8 +181,19 @@
 ```
 
 ### 거래 `GET /api/contracts/{id}/transactions` → `TransactionResponse[]`
-`transactionId, itemId, transactionDate, quantity, unitPrice, priceType, amount, paidCurrency, paidForeign, paidExchange, paidAmount, paidDate, paymentMemo, memo, settlementDiff, finalSettlement`.
+`transactionId, itemId, transactionDate, quantity, unitPrice, priceType, amount, paidCurrency, paidForeign, paidExchange, paidAmount, paidDate, paymentMemo, memo, finalSettlement`.
 - 결제여부는 `paidForeign`/`paidAmount`/`paidDate` 유무로 판정.
+- 결제 정보가 등록된 거래는 결제 완료이며, 정산금액과 결제금액의 차액은 표시하지 않는다.
+
+### 거래 통계 `GET /api/contracts/{id}/transactions/statistics` → `TransactionStatisticsResponse`
+전체 집계 필드: `transactionCount`, `paidTransactionCount`, `unpaidTransactionCount`,
+`totalQuantityKg`, `contractQuantityKg`, `remainingContractQuantityKg`,
+`deliveryProgressRate`, `weightedAverageUnitPrice`, `totalSettlementAmount`,
+`totalPaidAmount`, `outstandingAmount`, `hasFinalSettlement`, 거래 시작·최근일.
+
+`items[]`에는 품목별 거래 건수·수량·가중평균 단가·정산/결제/미결제 금액과
+마지막 정산 완료 여부가 포함된다.
+미결제금액은 결제 정보가 없는 거래의 정산금액 합계이며, 결제 완료 거래는 금액 차이와 관계없이 제외된다.
 
 ### 시장 배너 `GET /api/price/latest`
 ```jsonc
@@ -205,7 +217,7 @@
 | `customerId` → `/api/companies` name | 거래처 |
 | `tradeType` | 거래구분 |
 | `priceUnit` | 단가 단위 |
-| `contractQuantity` | 계약 수량(kg 저장, TON 계약은 톤 표시 — `formatQuantity`) |
+| `contractQuantity` | 계약 수량(`priceUnit` 기준 값을 변환 없이 표시 — `formatQuantity`) |
 | `status` | 상태 |
 | `finalUnitPrice` / `baseUnitPrice` / `unitPrice` | 단가 |
-| `amount` / `settlementDiff` | 정산금액 / 차액 |
+| `amount` | 정산금액 |

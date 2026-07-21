@@ -8,6 +8,7 @@ import {
   fetchCompanies,
   fetchContractDetail,
   fetchContractPrices,
+  fetchTransactionStatistics,
   fetchTransactions,
   recalcPrice,
   updateTransaction,
@@ -49,6 +50,9 @@ export function useContractDetail() {
   const [detail, setDetail] = useState(null);
   const [contractPrices, setContractPrices] = useState([]); // PriceDetailResponse[]
   const [transactions, setTransactions] = useState([]);
+  const [transactionStatistics, setTransactionStatistics] = useState(null);
+  const [statisticsLoading, setStatisticsLoading] = useState(true);
+  const [statisticsError, setStatisticsError] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("price");
@@ -80,6 +84,20 @@ export function useContractDetail() {
     setTransactions(txs);
   };
 
+  const loadTransactionStatistics = async () => {
+    setStatisticsLoading(true);
+    setStatisticsError("");
+    try {
+      const statistics = await fetchTransactionStatistics(id);
+      setTransactionStatistics(statistics);
+    } catch (e) {
+      setTransactionStatistics(null);
+      setStatisticsError(e.message || "거래 통계를 불러오지 못했습니다");
+    } finally {
+      setStatisticsLoading(false);
+    }
+  };
+
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -88,7 +106,7 @@ export function useContractDetail() {
         const d = await fetchContractDetail(id);
         if (!alive) return;
         setDetail(d);
-        await Promise.all([loadPrices(), loadTransactions()]);
+        await Promise.all([loadPrices(), loadTransactions(), loadTransactionStatistics()]);
         if (d.customerId != null) {
           fetchCompanies()
             .then((list) => {
@@ -342,7 +360,7 @@ export function useContractDetail() {
     setSubmittingTx(true);
     try {
       await createTransaction(id, body);
-      await loadTransactions();
+      await Promise.all([loadTransactions(), loadTransactionStatistics()]);
       setTxForm(emptyTxForm());
       setTxFormOpen(false);
       showToast("success", "거래가 등록되었습니다");
@@ -359,7 +377,7 @@ export function useContractDetail() {
     setSubmittingPaymentId(transactionId);
     try {
       await updateTransactionPayment(id, transactionId, body);
-      await loadTransactions();
+      await Promise.all([loadTransactions(), loadTransactionStatistics()]);
       setExpandedPaymentId(null);
       showToast("success", "결제 정보가 저장되었습니다");
     } catch (e) {
@@ -375,7 +393,7 @@ export function useContractDetail() {
     setSubmittingEditId(transactionId);
     try {
       await updateTransaction(id, transactionId, body);
-      await loadTransactions();
+      await Promise.all([loadTransactions(), loadTransactionStatistics()]);
       setExpandedEditId(null);
       showToast("success", "거래 내역이 수정되었습니다");
     } catch (e) {
@@ -456,6 +474,11 @@ export function useContractDetail() {
       transactions: txVM,
       isExport,
       unitHint,
+      statistics: {
+        data: transactionStatistics,
+        loading: statisticsLoading,
+        error: statisticsError,
+      },
       form: {
         open: txFormOpen,
         onToggle: () => setTxFormOpen((v) => !v),

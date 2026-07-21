@@ -30,7 +30,7 @@ const emptyBasic = {
   tradeType: "EXPORT", // TRADE_TYPE
   priceUnit: "TON", // PRICE_UNIT
   status: "IN_PROGRESS", // CONTRACT_STATUS
-  contractQuantity: "", // kg
+  contractQuantity: "", // priceUnit 기준 수량
   startDate: "",
   endDate: "",
   memo: "",
