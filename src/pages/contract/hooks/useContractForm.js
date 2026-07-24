@@ -11,7 +11,6 @@ export const FORM_STEPS = ["기본", "단가", "품목", "확인"];
 const FORM_ENUMS = [
   ENUM_GROUPS.OWNER_COMPANY,
   ENUM_GROUPS.TRADE_TYPE,
-  ENUM_GROUPS.PRICE_UNIT,
   ENUM_GROUPS.CONTRACT_STATUS,
   ENUM_GROUPS.PRICE_TYPE,
   ENUM_GROUPS.PRICE_SOURCE,
@@ -28,9 +27,8 @@ const emptyBasic = {
   ownerCompany: "HOJAE", // OWNER_COMPANY
   customerId: "", // 거래처 id
   tradeType: "EXPORT", // TRADE_TYPE
-  priceUnit: "TON", // PRICE_UNIT
   status: "IN_PROGRESS", // CONTRACT_STATUS
-  contractQuantity: "", // priceUnit 기준 수량
+  contractQuantity: "", // ton 기준 수량
   startDate: "",
   endDate: "",
   memo: "",
@@ -91,7 +89,6 @@ export function useContractForm() {
           ownerCompany: d.ownerCompany ?? "HOJAE",
           customerId: d.customerId != null ? String(d.customerId) : "",
           tradeType: d.tradeType ?? "EXPORT",
-          priceUnit: d.priceUnit ?? "TON",
           status: d.status ?? "IN_PROGRESS",
           contractQuantity: d.contractQuantity != null ? String(d.contractQuantity) : "",
           startDate: d.startDate ?? "",
@@ -198,7 +195,6 @@ export function useContractForm() {
       contractNo: basic.contractNo || undefined,
       customerId: numOrUndef(basic.customerId),
       tradeType: basic.tradeType,
-      priceUnit: basic.priceUnit,
       contractQuantity: numOrUndef(basic.contractQuantity),
       startDate: basic.startDate || undefined,
       endDate: basic.endDate || undefined,
@@ -242,7 +238,6 @@ export function useContractForm() {
     contractNo: basic.contractNo || undefined,
     customerId: numOrUndef(basic.customerId),
     tradeType: basic.tradeType,
-    priceUnit: basic.priceUnit,
     contractQuantity: numOrUndef(basic.contractQuantity),
     startDate: basic.startDate || undefined,
     endDate: basic.endDate || undefined,
@@ -296,7 +291,6 @@ export function useContractForm() {
       companies,
       ownerOptions: enums[ENUM_GROUPS.OWNER_COMPANY] ?? [],
       tradeOptions: enums[ENUM_GROUPS.TRADE_TYPE] ?? [],
-      unitOptions: enums[ENUM_GROUPS.PRICE_UNIT] ?? [],
       statusOptions: enums[ENUM_GROUPS.CONTRACT_STATUS] ?? [],
     },
     pricesStep: {

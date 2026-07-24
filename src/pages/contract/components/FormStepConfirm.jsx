@@ -41,7 +41,6 @@ export default function FormStepConfirm({
           }
         />
         <SummaryRow label="거래구분" value={labelOf(ENUM_GROUPS.TRADE_TYPE, basic.tradeType)} />
-        <SummaryRow label="단가 단위" value={labelOf(ENUM_GROUPS.PRICE_UNIT, basic.priceUnit)} />
         {basic.contractQuantity !== "" && (
           <SummaryRow label="계약 수량" value={formatQuantity(basic)} />
         )}

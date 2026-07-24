@@ -32,13 +32,14 @@ export default function TransactionStatistics({ data, loading, error }) {
   const isUsd = data.settlementCurrency === "USD";
   const moneyDigits = isUsd ? 2 : 0;
   const moneyUnit = isUsd ? "USD" : "원";
-  const priceUnit = data.priceUnit === "TON" ? "ton" : "kg";
+  const priceUnit = data.unitPriceUnit === "TON" ? "ton" : "kg";
   const progress = Math.min(100, Math.max(0, Number(data.deliveryProgressRate) || 0));
-  const remainingQuantity = Number(data.remainingContractQuantityKg) || 0;
+  const totalQuantityTon = (Number(data.totalQuantityKg) || 0) / 1000;
+  const remainingQuantity = Number(data.remainingContractQuantityTon) || 0;
   const remainingQuantityLabel =
     remainingQuantity < 0
-      ? `+${formatNumber(Math.abs(remainingQuantity))} kg`
-      : `${formatNumber(remainingQuantity)} kg`;
+      ? `+${formatNumber(Math.abs(remainingQuantity), 3)} ton`
+      : `${formatNumber(remainingQuantity, 3)} ton`;
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-slate-200 px-5 py-5 space-y-4">
@@ -69,7 +70,7 @@ export default function TransactionStatistics({ data, loading, error }) {
             {formatNumber(data.deliveryProgressRate, 1)}%
           </p>
           <p className="mt-0.5 text-[11px] text-slate-400">
-            {formatNumber(data.totalQuantityKg)} / {formatNumber(data.contractQuantityKg)} kg
+            {formatNumber(totalQuantityTon, 3)} / {formatNumber(data.contractQuantityTon, 3)} ton
           </p>
           <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
             <div className="h-full rounded-full bg-blue-500" style={{ width: `${progress}%` }} />
@@ -89,7 +90,7 @@ export default function TransactionStatistics({ data, loading, error }) {
           label="잔여 계약수량"
           value={remainingQuantityLabel}
           valueClass={remainingQuantity < 0 ? "text-rose-600" : "text-slate-800"}
-          detail={`계약 ${formatNumber(data.contractQuantityKg)} kg · 납품 ${formatNumber(data.totalQuantityKg)} kg`}
+          detail={`계약 ${formatNumber(data.contractQuantityTon, 3)} ton · 납품 ${formatNumber(totalQuantityTon, 3)} ton`}
         />
       </div>
 

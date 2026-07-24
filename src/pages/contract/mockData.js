@@ -19,8 +19,7 @@ export const MOCK_CONTRACTS = [
     startDate: "2026-07-01",
     endDate: "2026-09-30",
     tradeType: "수출",
-    priceUnit: "TON",
-    quantity: 100000, // kg 저장 (톤 계약 → 표시만 100 톤)
+    quantity: 100, // 계약 수량은 ton
     memo: "선적 전 품질검사 필수",
     prices: [
       {
@@ -126,8 +125,7 @@ export const MOCK_CONTRACTS = [
     startDate: "2026-07-01",
     endDate: "2026-12-31",
     tradeType: "내수",
-    priceUnit: "KG",
-    quantity: 50000,
+    quantity: 50,
     memo: "월말 일괄 정산",
     prices: [
       {
@@ -206,8 +204,7 @@ export const MOCK_CONTRACTS = [
     startDate: "2026-01-01",
     endDate: "2026-06-30",
     tradeType: "수출",
-    priceUnit: "TON",
-    quantity: 80000, // 80 톤
+    quantity: 80,
     memo: "", // 비고 없음 (조용한 영역 숨김 확인용)
     prices: [
       {
@@ -291,8 +288,7 @@ export const MOCK_CONTRACTS = [
     startDate: "2026-06-01",
     endDate: "2026-08-31",
     tradeType: "내수",
-    priceUnit: "KG",
-    quantity: 30000,
+    quantity: 30,
     memo: "",
     prices: [
       {

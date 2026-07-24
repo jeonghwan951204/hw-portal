@@ -5,7 +5,6 @@ export const ENUM_GROUPS = {
   PRICE_TYPE: "PRICE_TYPE", // 단가 종류 (가단가/확정가/정산가/원가)
   PRICE_SOURCE: "PRICE_SOURCE", // 단가 산출 방식 (계산/고정)
   CALC_METHOD: "CALC_METHOD", // 계산식 (수출 표준/내수/원가)
-  PRICE_UNIT: "PRICE_UNIT", // 단가 단위 (kg당/톤당)
   TRADE_TYPE: "TRADE_TYPE", // 거래 형태 (수출/내수)
   PAID_CURRENCY: "PAID_CURRENCY", // 수취 통화 (달러/원화)
   CONTRACT_STATUS: "CONTRACT_STATUS", // 계약 진행 상태 (예정/진행중/완료/취소)

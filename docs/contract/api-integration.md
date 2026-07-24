@@ -50,7 +50,6 @@
 |---|---|
 | `OWNER_COMPANY` | `HOJAE` 호재 · `WOONAM` 우남 |
 | `TRADE_TYPE` | `EXPORT` 수출 · `DOMESTIC` 내수 |
-| `PRICE_UNIT` | `KG` kg당 · `TON` 톤당 |
 | `CONTRACT_STATUS` | `SCHEDULED` 예정 · `IN_PROGRESS` 진행중 · `COMPLETED` 완료 · `CANCELED` 취소 |
 | `PRICE_TYPE` | `PROVISIONAL` 가단가 · `FINAL` 확정가 · `SETTLEMENT` 정산가 · `COST` 원가 |
 | `PRICE_SOURCE` | `CALCULATED` 계산 단가 · `FIXED` 고정 단가 |
@@ -68,9 +67,8 @@
   "contractName": "7월 …",         // 필수
   "contractNo": "CT-2026-001",    // 선택
   "customerId": 2,                 // 거래처 id
-  "tradeType": "EXPORT",
-  "priceUnit": "TON",
-  "contractQuantity": 100,         // priceUnit 기준 수량(TON이면 ton, KG이면 kg)
+  "tradeType": "EXPORT",            // 필수, 수출 USD/ton · 내수 KRW/kg
+  "contractQuantity": 100,         // 항상 ton
   "startDate": "2026-07-01",
   "endDate": "2026-07-31",
   "status": "IN_PROGRESS",
@@ -93,7 +91,7 @@
 - 조립 코드: `useContractForm.js`의 `buildCreateRequest`.
 
 ### 계약 수정 `PUT /api/contracts/{id}` — **헤더 필드만**
-`ownerCompany, contractName, contractNo, customerId, tradeType, priceUnit, contractQuantity, startDate, endDate, status, memo`. 품목·단가는 바꾸지 않음. (`buildUpdateRequest`)
+`ownerCompany, contractName, contractNo, customerId, tradeType, contractQuantity, startDate, endDate, status, memo`. 품목·단가는 바꾸지 않음. (`buildUpdateRequest`)
 
 ### 거래 등록 `POST /api/contracts/{id}/transactions`
 ```jsonc
@@ -151,7 +149,7 @@
   "content": [{
     "contractId": 1, "ownerCompany": "HOJAE", "contractName": "…",
     "contractNo": "…", "customerId": 2, "tradeType": "EXPORT",
-    "priceUnit": "TON", "contractQuantity": 0.2, "startDate": "…", "endDate": "…",
+    "contractQuantity": 100, "startDate": "…", "endDate": "…",
     "status": "IN_PROGRESS", "primaryItemName": "밀베리",
     "prices": [                        // ← 유형별 단가 배열(카드에 세로 나열)
       { "priceId": 1, "priceType": "PROVISIONAL", "priceTypeLabel": "가단가",
@@ -187,7 +185,7 @@
 
 ### 거래 통계 `GET /api/contracts/{id}/transactions/statistics` → `TransactionStatisticsResponse`
 전체 집계 필드: `transactionCount`, `paidTransactionCount`, `unpaidTransactionCount`,
-`totalQuantityKg`, `contractQuantityKg`, `remainingContractQuantityKg`,
+`unitPriceUnit`, `totalQuantityKg`, `contractQuantityTon`, `remainingContractQuantityTon`,
 `deliveryProgressRate`, `weightedAverageUnitPrice`, `totalSettlementAmount`,
 `totalPaidAmount`, `outstandingAmount`, `hasFinalSettlement`, 거래 시작·최근일.
 
@@ -216,8 +214,7 @@
 | `ownerCompany` | 소속회사(자사) |
 | `customerId` → `/api/companies` name | 거래처 |
 | `tradeType` | 거래구분 |
-| `priceUnit` | 단가 단위 |
-| `contractQuantity` | 계약 수량(`priceUnit` 기준 값을 변환 없이 표시 — `formatQuantity`) |
+| `contractQuantity` | 계약 수량(항상 ton으로 표시 — `formatQuantity`) |
 | `status` | 상태 |
 | `finalUnitPrice` / `baseUnitPrice` / `unitPrice` | 단가 |
 | `amount` | 정산금액 |

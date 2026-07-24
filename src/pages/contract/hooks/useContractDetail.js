@@ -130,7 +130,7 @@ export function useContractDetail() {
 
   const isExport = detail?.tradeType === "EXPORT";
   const currency = isExport ? "USD" : "원";
-  const unitSuffix = detail?.priceUnit === "TON" ? "ton" : "kg";
+  const unitSuffix = isExport ? "ton" : "kg";
   const unitHint = `${currency}/${unitSuffix}`;
 
   const contractVM = detail
@@ -144,7 +144,6 @@ export function useContractDetail() {
         startDate: detail.startDate,
         endDate: detail.endDate,
         contractQuantity: detail.contractQuantity,
-        priceUnit: detail.priceUnit,
         memo: detail.memo,
       }
     : null;
@@ -159,6 +158,10 @@ export function useContractDetail() {
           (enums[ENUM_GROUPS.PRICE_TYPE] ?? []).find(
             (option) => option.value === price.priceType
           )?.label ?? price.priceType,
+        unitHint:
+          price.currency && price.unit
+            ? `${price.currency === "KRW" ? "원" : price.currency}/${price.unit === "TON" ? "ton" : "kg"}`
+            : "",
       })),
     [contractPrices, enums]
   );
@@ -463,7 +466,6 @@ export function useContractDetail() {
     priceTab: {
       rows,
       columns,
-      unitHint,
       priceLines,
       onConfirm: handleConfirmPrice,
       confirmingId,

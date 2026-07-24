@@ -4,7 +4,6 @@ import { PRICE_TYPE_STYLE, formatDate, formatNumber } from "../constants";
 export default function PriceInfoTab({
   rows = [],
   columns = [],
-  unitHint = "",
   priceLines = [],
   onConfirm,
   confirmingId,
@@ -87,9 +86,8 @@ export default function PriceInfoTab({
 
       {/* 품목 표 */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-5 py-3 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-700">품목별 단가</h3>
-          <span className="text-xs text-slate-400">{unitHint}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -98,7 +96,12 @@ export default function PriceInfoTab({
                 <th className="px-5 py-2.5 text-left font-semibold whitespace-nowrap">품목명</th>
                 {columns.map((col) => (
                   <th key={col.priceId} className="px-5 py-2.5 text-right font-semibold whitespace-nowrap">
-                    {col.label}
+                    <span>{col.label}</span>
+                    {col.unitHint && (
+                      <span className="block mt-0.5 text-[10px] font-normal text-slate-400">
+                        {col.unitHint}
+                      </span>
+                    )}
                   </th>
                 ))}
               </tr>
@@ -119,7 +122,9 @@ export default function PriceInfoTab({
                     return (
                       <td key={col.priceId} className="px-5 py-3 text-right whitespace-nowrap">
                         <p className="font-mono font-bold text-slate-700">
-                          {cell?.unitPrice != null ? formatNumber(cell.unitPrice, 2) : "-"}
+                          {cell?.unitPrice != null
+                            ? formatNumber(cell.unitPrice, col.unitHint === "원/kg" ? 0 : 2)
+                            : "-"}
                         </p>
                         <p className="text-[11px] text-slate-400 mt-0.5">
                           {cell?.rate != null && `요율 ${cell.rate}`}

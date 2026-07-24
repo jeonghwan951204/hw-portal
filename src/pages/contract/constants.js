@@ -1,7 +1,6 @@
 // ─── 코드성 상수 ──────────────────────────────────────────────────────────────
 export const PRICE_TYPES = ["가단가", "확정가", "정산가", "원가"];
 export const TRADE_TYPES = ["수출", "내수"];
-export const PRICE_UNITS = ["TON", "KG"];
 export const STATUS_FILTERS = ["전체", "진행중", "완료"];
 export const PAGE_SIZE = 10;
 
@@ -65,20 +64,17 @@ export const formatNumber = (value, digits = 0) =>
         maximumFractionDigits: digits,
       });
 
-// 계약 통화·단위 표기 (상세 화면용)
-export const unitLabel = (contract) => {
-  const unit = contract.priceUnit === "TON" ? "ton" : "kg";
-  return contract.tradeType === "수출" ? `USD/${unit}` : `원/${unit}`;
-};
+// 계약 거래 단가 표기 — 수출 USD/ton, 내수 원/kg로 고정
+export const unitLabel = (contract) =>
+  contract?.tradeType === "수출" || contract?.tradeType === "EXPORT" ? "USD/ton" : "원/kg";
 
-// 계약 수량 표기 — API 응답값은 계약의 priceUnit 단위이므로 변환하지 않음
+// 계약 수량 표기 — API 응답값은 항상 ton
 export const formatQuantity = (contract) => {
   const quantity = contract?.contractQuantity ?? contract?.quantity;
   if (quantity == null || quantity === "") return "-";
   const num = Number(quantity);
   if (Number.isNaN(num)) return "-";
-  const unit = contract.priceUnit === "TON" ? "ton" : "kg";
-  return `${num.toLocaleString("ko-KR", { maximumFractionDigits: 3 })} ${unit}`;
+  return `${num.toLocaleString("ko-KR", { maximumFractionDigits: 3 })} ton`;
 };
 
 // 확정가가 확정된 계약에서만 정산가를 노출한다 (서버 판단 값 기준)

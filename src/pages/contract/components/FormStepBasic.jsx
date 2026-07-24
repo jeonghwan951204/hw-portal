@@ -33,7 +33,6 @@ export default function FormStepBasic({
   companies = [],
   ownerOptions = [],
   tradeOptions = [],
-  unitOptions = [],
   statusOptions = [],
 }) {
   return (
@@ -125,22 +124,14 @@ export default function FormStepBasic({
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>단가 단위</label>
-          <SegmentGroup
-            options={unitOptions}
-            value={basic.priceUnit}
-            onChange={(v) => onChange("priceUnit", v)}
-          />
-        </div>
-        <div>
           <label className={LABEL_CLASS}>
             계약 수량{" "}
             <span className="font-normal text-slate-400">
-              ({basic.priceUnit === "TON" ? "ton" : "kg"}, 참고용)
+              (ton, 참고용)
             </span>
           </label>
           <NumericInput
-            placeholder={basic.priceUnit === "TON" ? "예: 100" : "예: 100000"}
+            placeholder="예: 100"
             value={basic.contractQuantity}
             onChange={(value) => onChange("contractQuantity", value)}
             className={INPUT_CLASS}
