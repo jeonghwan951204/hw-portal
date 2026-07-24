@@ -26,6 +26,7 @@
 | `GET /api/contracts/{id}/prices` | 전체 단가 상세(기간·확정·기준값·품목별 최종단가) | `fetchContractPrices` | useContractDetail |
 | `POST /api/contracts` | 계약 생성 | `createContract` | useContractForm |
 | `PUT /api/contracts/{id}` | 계약 수정(**헤더만**) | `updateContract` | useContractForm |
+| `PATCH /api/contracts/{id}/status` | 계약 진행상태 변경 | `updateContractStatus` | useContractDetail |
 | `DELETE /api/contracts/{id}` | 삭제(soft delete) | `deleteContract` | useContractDetail |
 | `POST /api/contracts/prices/{priceId}/confirm` | 단가 확정 | `confirmPrice` | useContractDetail |
 | `POST /api/contracts/prices/{priceId}/recalc` | 선택 단가 1건 즉시 재계산 | `recalcPrice` | useContractDetail |
@@ -92,6 +93,15 @@
 
 ### 계약 수정 `PUT /api/contracts/{id}` — **헤더 필드만**
 `ownerCompany, contractName, contractNo, customerId, tradeType, contractQuantity, startDate, endDate, status, memo`. 품목·단가는 바꾸지 않음. (`buildUpdateRequest`)
+
+### 계약 진행 상태 변경 `PATCH /api/contracts/{id}/status`
+계약의 다른 정보는 유지하고 진행 상태만 변경한다.
+
+```json
+{ "status": "COMPLETED" }
+```
+
+허용값: `SCHEDULED`, `IN_PROGRESS`, `COMPLETED`, `CANCELED`.
 
 ### 거래 등록 `POST /api/contracts/{id}/transactions`
 ```jsonc

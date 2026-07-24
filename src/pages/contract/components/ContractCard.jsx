@@ -26,12 +26,6 @@ export default function ContractCard({ contract, onClick }) {
             {contract.company || "-"}
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            {contract.contractNo && (
-              <>
-                {contract.contractNo}
-                <span className="mx-1.5 text-slate-300">·</span>
-              </>
-            )}
             {formatShortPeriod(contract.startDate, contract.endDate)}
           </p>
         </div>

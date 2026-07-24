@@ -13,6 +13,7 @@ import {
   recalcPrice,
   updateTransaction,
   updateTransactionPayment,
+  updateContractStatus,
 } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
 import { useEnums } from "./useEnums";
@@ -61,6 +62,7 @@ export function useContractDetail() {
   const [deleting, setDeleting] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
   const [recalculatingId, setRecalculatingId] = useState(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   const [txForm, setTxForm] = useState(emptyTxForm);
   const [txFormOpen, setTxFormOpen] = useState(false);
@@ -140,6 +142,7 @@ export function useContractDetail() {
         contractNo: detail.contractNo,
         ownerLabel: labelOf(ENUM_GROUPS.OWNER_COMPANY, detail.ownerCompany),
         status: labelOf(ENUM_GROUPS.CONTRACT_STATUS, detail.status),
+        statusValue: detail.status,
         company: companyName,
         startDate: detail.startDate,
         endDate: detail.endDate,
@@ -436,6 +439,21 @@ export function useContractDetail() {
     }
   };
 
+  // ── 계약 진행 상태 변경 ──
+  const handleStatusChange = async (status) => {
+    if (statusUpdating || !detail || status === detail.status) return;
+    setStatusUpdating(true);
+    try {
+      const response = await updateContractStatus(id, status);
+      setDetail((current) => (current ? { ...current, status } : current));
+      showToast("success", response?.message || "계약 상태가 변경되었습니다");
+    } catch (e) {
+      showToast("error", e.message || "계약 상태 변경에 실패했습니다");
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
   // ── 삭제 ──
   const handleConfirmDelete = async () => {
     if (deleting) return;
@@ -461,6 +479,9 @@ export function useContractDetail() {
       onEdit: () => navigate(`/contract/${id}/edit`),
       onDelete: () => setDeleteModalOpen(true),
       onBack: () => navigate("/contract"),
+      statusOptions: enums[ENUM_GROUPS.CONTRACT_STATUS] ?? [],
+      statusUpdating,
+      onStatusChange: handleStatusChange,
     },
     tabs: { activeTab, onTabChange: setActiveTab },
     priceTab: {

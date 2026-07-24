@@ -69,6 +69,16 @@ export const updateContract = async (contractId, body) =>
     })
   );
 
+// 계약 진행 상태만 변경 → { message }
+export const updateContractStatus = async (contractId, status) =>
+  asJson(
+    await apiFetch(`/api/contracts/${contractId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
+  );
+
 // 계약 삭제 (soft delete) → { message }
 export const deleteContract = async (contractId) =>
   asJson(await apiFetch(`/api/contracts/${contractId}`, { method: "DELETE" }));

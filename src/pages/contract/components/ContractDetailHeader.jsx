@@ -1,8 +1,15 @@
-import { formatDate, formatQuantity } from "../constants";
-import StatusBadge from "./StatusBadge";
+import { STATUS_STYLE, formatDate, formatQuantity } from "../constants";
 
 // 계약 상세 헤더 — 탭 위 고정 영역 (통화·단위 문구는 표시 생략)
-export default function ContractDetailHeader({ contract, onEdit, onDelete, onBack }) {
+export default function ContractDetailHeader({
+  contract,
+  onEdit,
+  onDelete,
+  onBack,
+  statusOptions = [],
+  statusUpdating,
+  onStatusChange,
+}) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -22,7 +29,25 @@ export default function ContractDetailHeader({ contract, onEdit, onDelete, onBac
                 {contract.ownerLabel}
               </span>
               <h1 className="text-lg font-bold text-slate-800">{contract.name}</h1>
-              <StatusBadge status={contract.status} />
+              <select
+                aria-label="계약 진행상태"
+                title="계약 진행상태 변경"
+                value={contract.statusValue ?? ""}
+                disabled={statusUpdating}
+                onChange={(e) => onStatusChange(e.target.value)}
+                className={`text-[11px] font-bold px-2 py-1 rounded-full border outline-none transition-all ${
+                  STATUS_STYLE[contract.status] ?? STATUS_STYLE["진행중"]
+                } ${statusUpdating ? "cursor-wait opacity-60" : "cursor-pointer"}`}
+              >
+                {statusOptions.length === 0 && (
+                  <option value={contract.statusValue ?? ""}>{contract.status}</option>
+                )}
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <p className="text-sm text-slate-500 mt-1">
               {contract.contractNo && (

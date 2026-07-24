@@ -127,7 +127,6 @@ export function useContractList() {
   const cards = contracts.map((c) => ({
     id: c.contractId,
     name: c.contractName,
-    contractNo: c.contractNo,
     company: companyMap[c.customerId] ?? "",
     ownerLabel: labelOf(ENUM_GROUPS.OWNER_COMPANY, c.ownerCompany),
     statusLabel: labelOf(ENUM_GROUPS.CONTRACT_STATUS, c.status),

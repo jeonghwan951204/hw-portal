@@ -72,6 +72,7 @@ contract/
 
 ### 상세 (`useContractDetail`)
 - 헤더: `GET /api/contracts/{id}`(기본+품목) + 회사명 매핑 + enum 표시명.
+- 헤더의 진행상태 드롭다운에서 `PATCH /api/contracts/{id}/status`로 상태를 즉시 변경.
 - **탭1 계약·단가**:
   - `GET /api/contracts/{id}/prices` 한 번으로 전체 단가의 산정기간·**확정여부**·기준 LME/환율과 품목별 요율·프리미엄·최종단가를 조회.
   - 단가별 기간 줄의 미확정 단가에 **[확정] 버튼**(`POST …/confirm`).
