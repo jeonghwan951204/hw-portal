@@ -11,9 +11,10 @@ import {
   fetchTransactionStatistics,
   fetchTransactions,
   recalcPrice,
+  updateContractPrice,
+  updateContractStatus,
   updateTransaction,
   updateTransactionPayment,
-  updateContractStatus,
 } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
 import { useEnums } from "./useEnums";
@@ -23,6 +24,8 @@ const DETAIL_ENUMS = [
   ENUM_GROUPS.OWNER_COMPANY,
   ENUM_GROUPS.CONTRACT_STATUS,
   ENUM_GROUPS.PRICE_TYPE,
+  ENUM_GROUPS.PRICE_SOURCE,
+  ENUM_GROUPS.CALC_METHOD,
   ENUM_GROUPS.PAID_CURRENCY,
 ];
 
@@ -62,6 +65,8 @@ export function useContractDetail() {
   const [deleting, setDeleting] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
   const [recalculatingId, setRecalculatingId] = useState(null);
+  const [updatingPriceId, setUpdatingPriceId] = useState(null);
+  const [priceEditForm, setPriceEditForm] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
   const [txForm, setTxForm] = useState(emptyTxForm);
@@ -210,9 +215,18 @@ export function useContractDetail() {
           )?.label ?? price.priceType,
         periodStart: price.periodStart,
         periodEnd: price.periodEnd,
+        priceSource: price.priceSource,
+        calcMethod: price.calcMethod,
+        fixedUnitPrice: price.priceSource === "FIXED" ? price.baseUnitPrice : null,
         confirmed: !!price.confirmedAt,
         avgLme: price.avgLmePrice,
         avgExchange: price.avgExchange,
+        items: (price.items ?? []).map((item) => ({
+          itemId: item.itemId,
+          itemName: item.itemName,
+          rate: item.rate,
+          premium: item.premium,
+        })),
       })),
     [contractPrices, enums]
   );
@@ -439,6 +453,96 @@ export function useContractDetail() {
     }
   };
 
+  // ── 미확정 단가 수정 ──
+  const handleOpenPriceEdit = (priceId) => {
+    if (updatingPriceId) return;
+    if (priceEditForm?.priceId === priceId) {
+      setPriceEditForm(null);
+      return;
+    }
+    const price = contractPrices.find((item) => item.priceId === priceId);
+    if (!price || price.confirmedAt) return;
+    setPriceEditForm({
+      priceId,
+      priceSource: price.priceSource,
+      calcMethod: price.calcMethod ?? "",
+      periodStart: price.periodStart ?? "",
+      periodEnd: price.periodEnd ?? "",
+      fixedUnitPrice: price.priceSource === "FIXED" ? String(price.baseUnitPrice ?? "") : "",
+      items: (price.items ?? []).map((item) => ({
+        itemId: item.itemId,
+        itemName: item.itemName,
+        rate: String(item.rate ?? ""),
+        premium: String(item.premium ?? "0"),
+      })),
+    });
+  };
+
+  const handlePriceEditChange = (field, value) => {
+    setPriceEditForm((current) => (current ? { ...current, [field]: value } : current));
+  };
+
+  const handlePriceItemChange = (itemId, field, value) => {
+    setPriceEditForm((current) =>
+      current
+        ? {
+            ...current,
+            items: current.items.map((item) =>
+              item.itemId === itemId ? { ...item, [field]: value } : item
+            ),
+          }
+        : current
+    );
+  };
+
+  const handleUpdatePrice = async () => {
+    if (!priceEditForm || updatingPriceId) return;
+    const isCalculated = priceEditForm.priceSource === "CALCULATED";
+    if (isCalculated && (!priceEditForm.calcMethod || !priceEditForm.periodStart)) {
+      showToast("error", "계산 단가는 계산식과 산정 시작일을 입력해 주세요");
+      return;
+    }
+    if (
+      isCalculated &&
+      priceEditForm.periodEnd &&
+      priceEditForm.periodEnd < priceEditForm.periodStart
+    ) {
+      showToast("error", "산정 종료일은 시작일보다 빠를 수 없습니다");
+      return;
+    }
+    if (!isCalculated && priceEditForm.fixedUnitPrice === "") {
+      showToast("error", "고정 단가를 입력해 주세요");
+      return;
+    }
+    if (priceEditForm.items.some((item) => item.rate === "")) {
+      showToast("error", "모든 품목의 요율을 입력해 주세요");
+      return;
+    }
+
+    setUpdatingPriceId(priceEditForm.priceId);
+    try {
+      const response = await updateContractPrice(id, priceEditForm.priceId, {
+        priceSource: priceEditForm.priceSource,
+        calcMethod: isCalculated ? priceEditForm.calcMethod : null,
+        periodStart: isCalculated ? priceEditForm.periodStart : null,
+        periodEnd: isCalculated && priceEditForm.periodEnd ? priceEditForm.periodEnd : null,
+        fixedUnitPrice: isCalculated ? null : Number(priceEditForm.fixedUnitPrice),
+        items: priceEditForm.items.map((item) => ({
+          itemId: item.itemId,
+          rate: Number(item.rate),
+          premium: item.premium === "" ? 0 : Number(item.premium),
+        })),
+      });
+      await loadPrices();
+      setPriceEditForm(null);
+      showToast("success", response?.message || "단가가 수정되고 재계산되었습니다");
+    } catch (e) {
+      showToast("error", e.message || "단가 수정에 실패했습니다");
+    } finally {
+      setUpdatingPriceId(null);
+    }
+  };
+
   // ── 계약 진행 상태 변경 ──
   const handleStatusChange = async (status) => {
     if (statusUpdating || !detail || status === detail.status) return;
@@ -492,6 +596,15 @@ export function useContractDetail() {
       confirmingId,
       onRecalc: handleRecalcPrice,
       recalculatingId,
+      editForm: priceEditForm,
+      sourceOptions: enums[ENUM_GROUPS.PRICE_SOURCE] ?? [],
+      calcMethodOptions: enums[ENUM_GROUPS.CALC_METHOD] ?? [],
+      updatingPriceId,
+      onEdit: handleOpenPriceEdit,
+      onEditChange: handlePriceEditChange,
+      onItemChange: handlePriceItemChange,
+      onEditSubmit: handleUpdatePrice,
+      onEditCancel: () => setPriceEditForm(null),
     },
     txTab: {
       transactions: txVM,

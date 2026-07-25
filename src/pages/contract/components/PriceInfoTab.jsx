@@ -1,4 +1,5 @@
 import { PRICE_TYPE_STYLE, formatDate, formatNumber } from "../constants";
+import PriceEditForm from "./PriceEditForm";
 
 // 탭 1 — 계약·단가: 단가별 기간 줄(확정 버튼) + 품목 × 단가 매트릭스
 export default function PriceInfoTab({
@@ -9,6 +10,15 @@ export default function PriceInfoTab({
   confirmingId,
   onRecalc,
   recalculatingId,
+  editForm,
+  sourceOptions,
+  calcMethodOptions,
+  updatingPriceId,
+  onEdit,
+  onEditChange,
+  onItemChange,
+  onEditSubmit,
+  onEditCancel,
 }) {
   if (columns.length === 0) {
     return (
@@ -22,66 +32,99 @@ export default function PriceInfoTab({
     <div className="space-y-6">
       {/* 단가별 기간 줄 */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">
-        {priceLines.map((line) => (
-          <div key={line.priceId} className="px-5 py-3.5 flex flex-wrap items-center gap-3">
-            <span
-              className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-md border ${
-                PRICE_TYPE_STYLE[line.label] ?? PRICE_TYPE_STYLE["원가"]
-              }`}
-            >
-              {line.label}
-            </span>
-            <span className="text-sm text-slate-600 font-medium">
-              {formatDate(line.periodStart)} – {formatDate(line.periodEnd)}
-            </span>
-            <span
-              className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-                line.confirmed
-                  ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                  : "bg-slate-50 text-slate-400 border-slate-200"
-              }`}
-            >
-              {line.confirmed ? "확정" : "미확정"}
-            </span>
-
-            <span className="ml-auto flex items-center gap-3">
-              <span className="text-xs text-slate-400 font-mono">
-                {line.avgLme != null && <>LME {formatNumber(line.avgLme, 2)}</>}
-                {line.avgExchange != null && (
-                  <span className="ml-3">환율 {formatNumber(line.avgExchange, 2)}</span>
-                )}
-              </span>
-              {!line.confirmed && (
-                <span className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onRecalc(line.priceId)}
-                    disabled={recalculatingId === line.priceId || confirmingId === line.priceId}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
-                      recalculatingId === line.priceId || confirmingId === line.priceId
-                        ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                        : "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100 active:scale-95"
-                    }`}
-                  >
-                    {recalculatingId === line.priceId ? "재계산 중..." : "재계산"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onConfirm(line.priceId)}
-                    disabled={confirmingId === line.priceId || recalculatingId === line.priceId}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
-                      confirmingId === line.priceId || recalculatingId === line.priceId
-                        ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                        : "text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 active:scale-95"
-                    }`}
-                  >
-                    {confirmingId === line.priceId ? "확정 중..." : "확정"}
-                  </button>
+        {priceLines.map((line) => {
+          const editing = editForm?.priceId === line.priceId;
+          const busy =
+            recalculatingId === line.priceId ||
+            confirmingId === line.priceId ||
+            updatingPriceId === line.priceId;
+          return (
+            <div key={line.priceId}>
+              <div className="px-5 py-3.5 flex flex-wrap items-center gap-3">
+                <span
+                  className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-md border ${
+                    PRICE_TYPE_STYLE[line.label] ?? PRICE_TYPE_STYLE["원가"]
+                  }`}
+                >
+                  {line.label}
                 </span>
+                <span className="text-sm text-slate-600 font-medium">
+                  {formatDate(line.periodStart)} – {formatDate(line.periodEnd)}
+                </span>
+                <span
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                    line.confirmed
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                      : "bg-slate-50 text-slate-400 border-slate-200"
+                  }`}
+                >
+                  {line.confirmed ? "확정" : "미확정"}
+                </span>
+
+                <span className="ml-auto flex items-center gap-3">
+                  <span className="text-xs text-slate-400 font-mono">
+                    {line.avgLme != null && <>LME {formatNumber(line.avgLme, 2)}</>}
+                    {line.avgExchange != null && (
+                      <span className="ml-3">환율 {formatNumber(line.avgExchange, 2)}</span>
+                    )}
+                  </span>
+                  {!line.confirmed && (
+                    <span className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(line.priceId)}
+                        disabled={busy}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                          busy
+                            ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                            : "text-slate-600 bg-white border-slate-200 hover:bg-slate-50 active:scale-95"
+                        }`}
+                      >
+                        {editing ? "수정 닫기" : "수정"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRecalc(line.priceId)}
+                        disabled={busy || editing}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                          busy || editing
+                            ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                            : "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100 active:scale-95"
+                        }`}
+                      >
+                        {recalculatingId === line.priceId ? "재계산 중..." : "재계산"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onConfirm(line.priceId)}
+                        disabled={busy || editing}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                          busy || editing
+                            ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                            : "text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 active:scale-95"
+                        }`}
+                      >
+                        {confirmingId === line.priceId ? "확정 중..." : "확정"}
+                      </button>
+                    </span>
+                  )}
+                </span>
+              </div>
+              {editing && (
+                <PriceEditForm
+                  form={editForm}
+                  sourceOptions={sourceOptions}
+                  calcMethodOptions={calcMethodOptions}
+                  submitting={updatingPriceId === line.priceId}
+                  onChange={onEditChange}
+                  onItemChange={onItemChange}
+                  onSubmit={onEditSubmit}
+                  onCancel={onEditCancel}
+                />
               )}
-            </span>
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* 품목 표 */}

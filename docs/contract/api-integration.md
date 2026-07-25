@@ -27,6 +27,7 @@
 | `POST /api/contracts` | 계약 생성 | `createContract` | useContractForm |
 | `PUT /api/contracts/{id}` | 계약 수정(**헤더만**) | `updateContract` | useContractForm |
 | `PATCH /api/contracts/{id}/status` | 계약 진행상태 변경 | `updateContractStatus` | useContractDetail |
+| `PUT /api/contracts/{id}/prices/{priceId}` | 미확정 단가 수정 후 재계산 | `updateContractPrice` | useContractDetail |
 | `DELETE /api/contracts/{id}` | 삭제(soft delete) | `deleteContract` | useContractDetail |
 | `POST /api/contracts/prices/{priceId}/confirm` | 단가 확정 | `confirmPrice` | useContractDetail |
 | `POST /api/contracts/prices/{priceId}/recalc` | 선택 단가 1건 즉시 재계산 | `recalcPrice` | useContractDetail |
@@ -102,6 +103,26 @@
 ```
 
 허용값: `SCHEDULED`, `IN_PROGRESS`, `COMPLETED`, `CANCELED`.
+
+### 미확정 단가 수정 `PUT /api/contracts/{id}/prices/{priceId}`
+
+```jsonc
+{
+  "priceSource": "CALCULATED",
+  "calcMethod": "DOMESTIC_KG_KRW",
+  "periodStart": "2026-07-01",
+  "periodEnd": "2026-07-20",
+  "fixedUnitPrice": null,
+  "items": [
+    { "itemId": 3, "rate": 100, "premium": 50, "memo": null }
+  ]
+}
+```
+
+- 단가 종류(`priceType`)는 변경하지 않는다.
+- `items`에 포함된 품목의 조정만 수정하며 생략한 품목은 기존 값을 유지한다.
+- 수정 후 해당 단가 한 건만 즉시 재계산한다.
+- 확정된 단가는 수정할 수 없다.
 
 ### 거래 등록 `POST /api/contracts/{id}/transactions`
 ```jsonc

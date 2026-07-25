@@ -77,6 +77,7 @@ contract/
   - `GET /api/contracts/{id}/prices` 한 번으로 전체 단가의 산정기간·**확정여부**·기준 LME/환율과 품목별 요율·프리미엄·최종단가를 조회.
   - 단가별 기간 줄의 미확정 단가에 **[확정] 버튼**(`POST …/confirm`).
   - 미확정 단가는 행별 **[재계산] 버튼**으로 `POST /api/contracts/prices/{priceId}/recalc`를 호출하고, 완료 후 전체 계약 단가를 다시 조회.
+  - 미확정 단가는 행별 **[수정]**에서 산출 방식·계산 조건·품목별 요율/프리미엄을 변경하고 `PUT /api/contracts/{id}/prices/{priceId}`로 저장·즉시 재계산.
   - 품목 × 단가 매트릭스도 같은 전체 단가 응답으로 구성.
 - **탭2 거래 내역**:
   - 조회: `GET /api/contracts/{id}/transactions`.
@@ -90,7 +91,7 @@ contract/
 
 ### 등록/수정 (`useContractForm`)
 - **등록**: 4스텝 → `POST /api/contracts`. 품목별 요율·프리미엄을 `items[].prices[]`(priceIndex 참조)로 조립. 셀렉트·라디오는 enum, 거래처는 companies.
-- **수정**: PUT이 **헤더만** 바꾸므로 **단일 단계(기본 정보)**로 분기. `GET /api/contracts/{id}` 프리필 → `PUT /api/contracts/{id}` 저장. 단가·품목은 이 폼에서 수정 불가(별도 리소스, 엔드포인트 없음).
+- **수정**: PUT이 **헤더만** 바꾸므로 **단일 단계(기본 정보)**로 분기. `GET /api/contracts/{id}` 프리필 → `PUT /api/contracts/{id}` 저장. 미확정 단가는 상세 화면의 별도 수정 폼을 사용하며 품목 구성은 이 폼에서 수정하지 않음.
 
 ---
 
@@ -111,7 +112,7 @@ contract/
 
 ## 6. 미지원(엔드포인트 없음) / 다음 작업 후보
 
-- 계약의 **단가·품목 개별 수정** (PUT은 헤더만).
+- 확정된 단가 및 계약 품목 구성의 개별 수정.
 - **거래 삭제**.
 - 목록 정렬 UI(정렬 자체는 서버 책임).
 
