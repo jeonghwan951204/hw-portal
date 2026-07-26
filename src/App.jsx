@@ -11,6 +11,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import ContractListPage from "./pages/contract";
 import ContractDetailPage from "./pages/contract/detail";
 import ContractFormPage from "./pages/contract/form";
+import AdminPage from "./pages/admin";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/contract/new" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
           <Route path="/contract/:id" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractDetailPage /></RequireAuth>} />
           <Route path="/contract/:id/edit" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
+          <Route path="/admin" element={<RequireAuth roles={["ADMIN"]}><AdminPage /></RequireAuth>} />
         </Routes>
       </BrowserRouter>
     </KakaoInAppBrowserGuard>

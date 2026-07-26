@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { getRole } from "../utils/auth";
 
 const NAV_ITEMS = [
   { label: "사이트 관리", to: "/" },
@@ -94,6 +95,9 @@ function DropdownMenu({ item }) {
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState({});
+  const navItems = getRole() === "ADMIN"
+    ? [...NAV_ITEMS, { label: "관리자", to: "/admin" }]
+    : NAV_ITEMS;
 
   const handleLogout = async () => {
     await fetch("/logout", { method: "POST" });
@@ -117,7 +121,7 @@ export default function Header() {
 
         {/* 데스크탑 네비게이션 */}
         <nav className="hidden md:flex items-center h-full">
-          {NAV_ITEMS.map((item) =>
+          {navItems.map((item) =>
             item.children ? (
               <DropdownMenu key={item.label} item={item} />
             ) : (
@@ -175,7 +179,7 @@ export default function Header() {
       {/* 모바일 메뉴 */}
       {mobileOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white">
-          {NAV_ITEMS.map((item) =>
+          {navItems.map((item) =>
             item.children ? (
               <div key={item.label}>
                 <button
