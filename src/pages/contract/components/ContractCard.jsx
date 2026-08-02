@@ -25,11 +25,29 @@ export default function ContractCard({ contract, onClick }) {
           <p className="text-sm text-slate-500 font-medium mt-0.5 truncate">
             {contract.company || "-"}
           </p>
-          <p className="text-xs text-slate-400 mt-1">
-            {formatShortPeriod(contract.startDate, contract.endDate)}
-          </p>
         </div>
         <StatusBadge status={contract.statusLabel} />
+      </div>
+
+      {/* 확정가 산정에 사용된 계약별 평균 */}
+      <div className="mx-5 mt-4 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+        <p className="text-[11px] font-bold text-emerald-700">확정가 평균</p>
+        <div className="mt-1.5 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-[10px] font-medium text-slate-400">LME</p>
+            <p className="mt-0.5 font-mono text-base font-bold text-slate-800">
+              {formatNumber(contract.avgLmePrice, 2)}
+              <span className="ml-1 text-[10px] font-normal text-slate-400">USD/ton</span>
+            </p>
+          </div>
+          <div className="border-l border-emerald-100 pl-4">
+            <p className="text-[10px] font-medium text-slate-400">환율</p>
+            <p className="mt-0.5 font-mono text-base font-bold text-slate-800">
+              {formatNumber(contract.avgExchange, 2)}
+              <span className="ml-1 text-[10px] font-normal text-slate-400">원/USD</span>
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 단가 영역 — 유형별 단가를 세로 나열 (원화 환산가) */}

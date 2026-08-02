@@ -3,6 +3,25 @@ import { fetchEnum } from "../api/enumsApi";
 
 // group → [{value,label}] 모듈 캐시 (페이지 간 재조회 방지, enum 은 거의 불변)
 const cache = new Map();
+// 최초 조회가 끝나기 전에 같은 그룹을 요청하면 진행 중인 요청을 공유한다.
+const pending = new Map();
+
+const loadEnum = (group) => {
+  if (cache.has(group)) return Promise.resolve(cache.get(group));
+  if (pending.has(group)) return pending.get(group);
+
+  const request = fetchEnum(group)
+    .then((options) => {
+      cache.set(group, options);
+      return options;
+    })
+    .finally(() => {
+      pending.delete(group);
+    });
+
+  pending.set(group, request);
+  return request;
+};
 
 /**
  * 필요한 enum 그룹들을 조회해 { enums, loading, labelOf } 반환.
@@ -27,10 +46,7 @@ export function useEnums(groups) {
     let alive = true;
     setLoading(true);
     Promise.all(
-      missing.map(async (g) => {
-        const opts = await fetchEnum(g);
-        cache.set(g, opts);
-      })
+      missing.map((g) => loadEnum(g))
     )
       .then(() => {
         if (!alive) return;

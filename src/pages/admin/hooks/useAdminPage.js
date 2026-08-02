@@ -83,10 +83,20 @@ export const useAdminPage = () => {
 
   useEffect(() => {
     loadMembers(1);
-    loadShareLinks(1);
-    // 최초 진입 시 두 목록을 한 번만 조회한다.
+    // 기본 회원 관리 탭에 필요한 목록만 최초 조회한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleTabChange = (nextTab) => {
+    if (nextTab === activeTab) return;
+
+    setActiveTab(nextTab);
+    if (nextTab === "members") {
+      loadMembers(memberPage);
+      return;
+    }
+    loadShareLinks(linkPage);
+  };
 
   const handleMemberSearch = (event) => {
     event.preventDefault();
@@ -201,7 +211,7 @@ export const useAdminPage = () => {
   };
 
   return {
-    tabs: { activeTab, onChange: setActiveTab },
+    tabs: { activeTab, onChange: handleTabChange },
     members: {
       members,
       loading: memberLoading,

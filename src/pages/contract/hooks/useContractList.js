@@ -130,8 +130,8 @@ export function useContractList() {
     company: companyMap[c.customerId] ?? "",
     ownerLabel: labelOf(ENUM_GROUPS.OWNER_COMPANY, c.ownerCompany),
     statusLabel: labelOf(ENUM_GROUPS.CONTRACT_STATUS, c.status),
-    startDate: c.startDate,
-    endDate: c.endDate,
+    avgLmePrice: c.avgLmePrice,
+    avgExchange: c.avgExchange,
     // 유형별 단가 목록 (finalUnitPrice 없으면 미정)
     prices: (c.prices ?? []).map((p) => ({
       priceId: p.priceId,

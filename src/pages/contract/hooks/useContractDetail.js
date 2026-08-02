@@ -26,7 +26,6 @@ const DETAIL_ENUMS = [
   ENUM_GROUPS.PRICE_TYPE,
   ENUM_GROUPS.PRICE_SOURCE,
   ENUM_GROUPS.CALC_METHOD,
-  ENUM_GROUPS.PAID_CURRENCY,
 ];
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -53,9 +52,13 @@ export function useContractDetail() {
 
   const [detail, setDetail] = useState(null);
   const [contractPrices, setContractPrices] = useState([]); // PriceDetailResponse[]
+  const [pricesLoading, setPricesLoading] = useState(true);
+  const [pricesError, setPricesError] = useState("");
   const [transactions, setTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsError, setTransactionsError] = useState("");
   const [transactionStatistics, setTransactionStatistics] = useState(null);
-  const [statisticsLoading, setStatisticsLoading] = useState(true);
+  const [statisticsLoading, setStatisticsLoading] = useState(false);
   const [statisticsError, setStatisticsError] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -82,13 +85,31 @@ export function useContractDetail() {
 
   // 계약의 전체 단가 상세(기간·확정·기준값 + 품목별 최종단가) 로드
   const loadPrices = async () => {
-    const prices = (await fetchContractPrices(id).catch(() => [])) ?? [];
-    setContractPrices(prices);
+    setPricesLoading(true);
+    setPricesError("");
+    try {
+      const prices = (await fetchContractPrices(id)) ?? [];
+      setContractPrices(prices);
+    } catch (e) {
+      setContractPrices([]);
+      setPricesError(e.message || "계약 단가를 불러오지 못했습니다");
+    } finally {
+      setPricesLoading(false);
+    }
   };
 
   const loadTransactions = async () => {
-    const txs = (await fetchTransactions(id).catch(() => [])) ?? [];
-    setTransactions(txs);
+    setTransactionsLoading(true);
+    setTransactionsError("");
+    try {
+      const txs = (await fetchTransactions(id)) ?? [];
+      setTransactions(txs);
+    } catch (e) {
+      setTransactions([]);
+      setTransactionsError(e.message || "거래 내역을 불러오지 못했습니다");
+    } finally {
+      setTransactionsLoading(false);
+    }
   };
 
   const loadTransactionStatistics = async () => {
@@ -113,7 +134,7 @@ export function useContractDetail() {
         const d = await fetchContractDetail(id);
         if (!alive) return;
         setDetail(d);
-        await Promise.all([loadPrices(), loadTransactions(), loadTransactionStatistics()]);
+        await loadPrices();
         if (d.customerId != null) {
           fetchCompanies()
             .then((list) => {
@@ -134,6 +155,17 @@ export function useContractDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const handleTabChange = (nextTab) => {
+    if (nextTab === activeTab) return;
+
+    setActiveTab(nextTab);
+    if (nextTab === "price") {
+      loadPrices();
+      return;
+    }
+    Promise.all([loadTransactions(), loadTransactionStatistics()]);
+  };
 
   const isExport = detail?.tradeType === "EXPORT";
   const currency = isExport ? "USD" : "원";
@@ -587,8 +619,10 @@ export function useContractDetail() {
       statusUpdating,
       onStatusChange: handleStatusChange,
     },
-    tabs: { activeTab, onTabChange: setActiveTab },
+    tabs: { activeTab, onTabChange: handleTabChange },
     priceTab: {
+      loading: pricesLoading,
+      error: pricesError,
       rows,
       columns,
       priceLines,
@@ -607,6 +641,8 @@ export function useContractDetail() {
       onEditCancel: () => setPriceEditForm(null),
     },
     txTab: {
+      loading: transactionsLoading,
+      error: transactionsError,
       transactions: txVM,
       isExport,
       unitHint,

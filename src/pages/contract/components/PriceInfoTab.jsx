@@ -3,6 +3,8 @@ import PriceEditForm from "./PriceEditForm";
 
 // 탭 1 — 계약·단가: 단가별 기간 줄(확정 버튼) + 품목 × 단가 매트릭스
 export default function PriceInfoTab({
+  loading,
+  error,
   rows = [],
   columns = [],
   priceLines = [],
@@ -20,6 +22,22 @@ export default function PriceInfoTab({
   onEditSubmit,
   onEditCancel,
 }) {
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center text-sm text-slate-400">
+        계약 단가를 불러오는 중입니다...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 rounded-2xl border border-red-200 py-16 px-4 text-center text-sm text-red-600">
+        {error}
+      </div>
+    );
+  }
+
   if (columns.length === 0) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center text-sm text-slate-400">

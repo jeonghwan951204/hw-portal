@@ -185,6 +185,8 @@ function TxForm({ form, isExport, unitHint }) {
 
 // 탭 2 — 거래 내역: 조회 + 거래 등록·실결제 입력
 export default function TransactionTab({
+  loading,
+  error,
   transactions = [],
   isExport,
   unitHint,
@@ -231,14 +233,28 @@ export default function TransactionTab({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {transactions.length === 0 && (
+            {loading && (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
+                  거래 내역을 불러오는 중입니다...
+                </td>
+              </tr>
+            )}
+            {!loading && error && (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-red-500">
+                  {error}
+                </td>
+              </tr>
+            )}
+            {!loading && !error && transactions.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
                   등록된 거래가 없습니다.
                 </td>
               </tr>
             )}
-            {transactions.map((tx) => (
+            {!loading && !error && transactions.map((tx) => (
               <Fragment key={tx.transactionId}>
                 <tr>
                 <td className="px-4 py-3 whitespace-nowrap text-slate-600">{formatDate(tx.transactionDate)}</td>
@@ -306,10 +322,18 @@ export default function TransactionTab({
 
       {/* 모바일 카드형 */}
       <div className="md:hidden divide-y divide-slate-100">
-        {transactions.length === 0 && (
+        {loading && (
+          <p className="px-5 py-10 text-center text-sm text-slate-400">
+            거래 내역을 불러오는 중입니다...
+          </p>
+        )}
+        {!loading && error && (
+          <p className="px-5 py-10 text-center text-sm text-red-500">{error}</p>
+        )}
+        {!loading && !error && transactions.length === 0 && (
           <p className="px-5 py-10 text-center text-sm text-slate-400">등록된 거래가 없습니다.</p>
         )}
-        {transactions.map((tx) => (
+        {!loading && !error && transactions.map((tx) => (
           <div key={tx.transactionId} className="px-5 py-4">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
