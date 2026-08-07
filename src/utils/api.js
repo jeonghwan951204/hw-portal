@@ -7,8 +7,31 @@ import {
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
+const ACCESS_TOKEN_EXPIRED = "ACCESS_TOKEN_EXPIRED";
+const CLEAR_TOKEN_ERROR_CODES = new Set([
+  "AUTH_REQUIRED",
+  "INVALID_ACCESS_TOKEN",
+  "INVALID_REFRESH_TOKEN",
+  "ACCOUNT_UNAVAILABLE",
+]);
+
 // 동시에 여러 요청이 401 을 받아도 재발급은 한 번만 수행하도록 공유
 let refreshPromise = null;
+
+const getErrorCode = async (res) => {
+  try {
+    const data = await res.clone().json();
+    return data?.code ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const clearTokensByErrorCode = (errorCode) => {
+  if (CLEAR_TOKEN_ERROR_CODES.has(errorCode)) {
+    clearTokens();
+  }
+};
 
 /**
  * refreshToken 으로 accessToken 재발급
@@ -26,7 +49,8 @@ const refreshAccessToken = () => {
     })
       .then(async (res) => {
         if (!res.ok) {
-          clearTokens(); // 리프레시 토큰도 만료/무효 → 로그아웃 처리
+          const errorCode = await getErrorCode(res);
+          clearTokensByErrorCode(errorCode);
           return null;
         }
         const data = await res.json();
@@ -50,7 +74,8 @@ const withAuthHeader = (options, token) => {
 /**
  * BASE_URL 기반 fetch 래퍼.
  * - accessToken 이 있으면 Authorization: Bearer 헤더를 자동 첨부
- * - 401 응답 시 refreshToken 으로 재발급 후 1회 재시도
+ * - ACCESS_TOKEN_EXPIRED 응답 시 refreshToken 으로 재발급 후 1회 재시도
+ * - 인증 복구가 불가능한 에러 코드에서만 저장된 토큰 제거
  * @param {string} path  - "/api/lme/price" 형태의 경로
  * @param {RequestInit} options - fetch 옵션
  */
@@ -58,14 +83,18 @@ export const apiFetch = async (path, options = {}) => {
   const url = `${BASE_URL}${path}`;
 
   let res = await fetch(url, withAuthHeader(options, getAccessToken()));
+  let errorCode = res.status === 401 ? await getErrorCode(res) : null;
 
   // 액세스 토큰 만료 → 재발급 후 재시도
-  if (res.status === 401 && getRefreshToken()) {
+  if (errorCode === ACCESS_TOKEN_EXPIRED && getRefreshToken()) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       res = await fetch(url, withAuthHeader(options, newToken));
+      errorCode = res.status === 401 ? await getErrorCode(res) : null;
     }
   }
+
+  clearTokensByErrorCode(errorCode);
 
   return res;
 };

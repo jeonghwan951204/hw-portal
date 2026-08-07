@@ -1,21 +1,65 @@
-name: deploy hw-portal
+name: Deploy production
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - deploy
+      - production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-northeast-2
+  S3_BUCKET: hw-front
 
 concurrency:
-  group: hw-protal-deploy
+  group: hw-portal-production
   cancel-in-progress: true
 
 jobs:
   deploy:
-    runs-on: [self-hosted, hw-portal, hw-portal-deploy]
+    runs-on: ubuntu-latest
+    environment: production
 
     steps:
-      - name: Deploy hw-portal
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build:prod
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload immutable assets
+        run: >-
+          aws s3 sync dist/assets/ s3://${{ env.S3_BUCKET }}/assets/
+          --delete
+          --cache-control "public,max-age=31536000,immutable"
+
+      - name: Upload application files
         run: |
-          /app/hw-project/scripts/deploy-hw-portal.sh
-        
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --exclude "assets/*" \
+            --cache-control "no-cache"
+
+      - name: Invalidate CloudFront cache
+        run: >-
+          aws cloudfront create-invalidation
+          --distribution-id ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+          --paths "/*"
