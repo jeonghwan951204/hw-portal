@@ -12,7 +12,7 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  S3_BUCKET: hw-front
+  S3_BUCKET: work.hojaemetal.com-261949105760-ap-northeast-2-an
 
 concurrency:
   group: hw-portal-production
