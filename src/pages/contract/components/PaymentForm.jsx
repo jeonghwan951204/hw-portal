@@ -8,15 +8,41 @@ const LABEL_CLASS = "block text-[11px] font-bold text-slate-500 mb-1";
 const numberOrUndefined = (value) =>
   value === "" || value == null ? undefined : Number(value);
 
+const calculatePaidAmount = (form) => {
+  const operands = [form.paidForeign, form.paidExchange];
+  if (operands.some((value) => value === "")) return "";
+  return String(operands.reduce((result, value) => result * Number(value), 1));
+};
+
+const withCalculatedPaidAmount = (form) => ({
+  ...form,
+  paidAmount: calculatePaidAmount(form),
+});
+
+const PAYMENT_FORM_RULES = {
+  false: {
+    initialPaidAmount: (tx) => tx.paidAmount ?? tx.amount ?? "",
+    fieldChanges: {},
+  },
+  true: {
+    initialPaidAmount: (tx) => tx.paidAmount ?? "",
+    fieldChanges: {
+      paidForeign: withCalculatedPaidAmount,
+      paidExchange: withCalculatedPaidAmount,
+    },
+  },
+};
+
 // 기존 거래의 결제 정보 등록·수정
 export default function PaymentForm({ isExport, tx, submitting, onSave, onCancel }) {
-  const [form, setForm] = useState({
+  const paymentFormRule = PAYMENT_FORM_RULES[isExport];
+  const [form, setForm] = useState(() => ({
     paidForeign: tx.paidForeign ?? "",
     paidExchange: tx.paidExchange ?? "",
-    paidAmount: tx.paidAmount ?? "",
+    paidAmount: paymentFormRule.initialPaidAmount(tx),
     paidDate: tx.paidDate ?? "",
     paymentMemo: tx.paymentMemo ?? "",
-  });
+  }));
 
   const handleChange = (field, value) => {
     if (
@@ -26,7 +52,11 @@ export default function PaymentForm({ isExport, tx, submitting, onSave, onCancel
     ) {
       return;
     }
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const nextForm = { ...prev, [field]: value };
+      const applyFieldChange = paymentFormRule.fieldChanges[field] ?? ((next) => next);
+      return applyFieldChange(nextForm);
+    });
   };
 
   const exchangePairValid =
