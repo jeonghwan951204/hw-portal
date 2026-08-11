@@ -59,9 +59,11 @@ export default function FormStepConfirm({
                 <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${PRICE_TYPE_STYLE[priceTypeLabel(price.priceType)] ?? PRICE_TYPE_STYLE["원가"]}`}>
                   {priceTypeLabel(price.priceType)}
                 </span>
-                <span className="text-slate-600">
-                  {formatDate(price.periodStart)} – {formatDate(price.periodEnd)}
-                </span>
+                {price.priceSource !== "FIXED" && (
+                  <span className="text-slate-600">
+                    {formatDate(price.periodStart)} – {formatDate(price.periodEnd)}
+                  </span>
+                )}
                 <span className="text-xs text-slate-400">
                   {price.priceSource === "FIXED"
                     ? `고정 단가${price.fixedUnitPrice !== "" ? ` · ${price.fixedUnitPrice}` : ""}`

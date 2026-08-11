@@ -205,8 +205,8 @@ export function useContractForm() {
         priceType: p.priceType,
         priceSource: p.priceSource,
         calcMethod: p.priceSource === "CALCULATED" ? p.calcMethod : undefined,
-        periodStart: p.periodStart || undefined,
-        periodEnd: p.periodEnd || undefined,
+        periodStart: p.priceSource === "CALCULATED" ? p.periodStart || undefined : undefined,
+        periodEnd: p.priceSource === "CALCULATED" ? p.periodEnd || undefined : undefined,
         fixedUnitPrice: p.priceSource === "FIXED" ? numOrUndef(p.fixedUnitPrice) : undefined,
       })),
       // 품목들 — 품목별 요율·프리미엄을 prices[]로 (priceIndex 참조)

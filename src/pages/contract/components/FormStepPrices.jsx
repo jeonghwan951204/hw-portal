@@ -61,24 +61,28 @@ export default function FormStepPrices({
                 ))}
               </select>
             </div>
-            <div>
-              <label className={LABEL_CLASS}>산정 시작</label>
-              <input
-                type="date"
-                value={price.periodStart}
-                onChange={(e) => onChange(price.tempId, "periodStart", e.target.value)}
-                className={INPUT_CLASS}
-              />
-            </div>
-            <div>
-              <label className={LABEL_CLASS}>산정 종료</label>
-              <input
-                type="date"
-                value={price.periodEnd}
-                onChange={(e) => onChange(price.tempId, "periodEnd", e.target.value)}
-                className={INPUT_CLASS}
-              />
-            </div>
+            {price.priceSource !== "FIXED" && (
+              <>
+                <div>
+                  <label className={LABEL_CLASS}>산정 시작</label>
+                  <input
+                    type="date"
+                    value={price.periodStart}
+                    onChange={(e) => onChange(price.tempId, "periodStart", e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_CLASS}>산정 종료</label>
+                  <input
+                    type="date"
+                    value={price.periodEnd}
+                    onChange={(e) => onChange(price.tempId, "periodEnd", e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+              </>
+            )}
 
             {/* 계산 단가면 계산식, 고정 단가면 고정 단가 입력 */}
             {price.priceSource === "FIXED" ? (
