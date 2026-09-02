@@ -3,7 +3,7 @@ export default function ConfirmModal({
   open,
   title,
   message,
-  confirmLabel = "확인",
+  confirmLabel = "예",
   danger = false,
   onConfirm,
   onCancel,
@@ -53,7 +53,7 @@ export default function ConfirmModal({
                 : "bg-blue-600 border border-blue-600 hover:bg-blue-700"
             }`}
           >
-            예
+            {confirmLabel}
           </button>
         </div>
       </div>

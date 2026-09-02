@@ -194,6 +194,7 @@ export default function TransactionTab({
   form,
   payment,
   edit,
+  remove,
 }) {
   const moneyDigits = isExport ? 2 : 0;
 
@@ -284,6 +285,19 @@ export default function TransactionTab({
                     >
                       거래 수정
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => remove.onOpen(tx.transactionId)}
+                      disabled={!tx.deletable || remove.deletingId === tx.transactionId}
+                      title={tx.deleteBlockedReason || undefined}
+                      className={`text-[11px] font-bold ${
+                        tx.deletable && remove.deletingId !== tx.transactionId
+                          ? "text-red-500 hover:text-red-600"
+                          : "text-slate-300 cursor-not-allowed"
+                      }`}
+                    >
+                      {remove.deletingId === tx.transactionId ? "삭제 중..." : "삭제"}
+                    </button>
                   </div>
                 </td>
                 </tr>
@@ -357,6 +371,19 @@ export default function TransactionTab({
                   className="text-[11px] font-bold text-slate-500"
                 >
                   거래 수정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove.onOpen(tx.transactionId)}
+                  disabled={!tx.deletable || remove.deletingId === tx.transactionId}
+                  title={tx.deleteBlockedReason || undefined}
+                  className={`text-[11px] font-bold ${
+                    tx.deletable && remove.deletingId !== tx.transactionId
+                      ? "text-red-500"
+                      : "text-slate-300 cursor-not-allowed"
+                  }`}
+                >
+                  {remove.deletingId === tx.transactionId ? "삭제 중..." : "삭제"}
                 </button>
               </div>
             </div>

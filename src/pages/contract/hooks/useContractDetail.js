@@ -5,6 +5,7 @@ import {
   confirmPrice,
   createTransaction,
   deleteContract,
+  deleteTransaction,
   fetchCompanies,
   fetchContractDetail,
   fetchContractPrices,
@@ -82,6 +83,8 @@ export function useContractDetail() {
   const [submittingPaymentId, setSubmittingPaymentId] = useState(null);
   const [expandedEditId, setExpandedEditId] = useState(null);
   const [submittingEditId, setSubmittingEditId] = useState(null);
+  const [deleteTransactionId, setDeleteTransactionId] = useState(null);
+  const [deletingTransactionId, setDeletingTransactionId] = useState(null);
 
   // 계약의 전체 단가 상세(기간·확정·기준값 + 품목별 최종단가) 로드
   const loadPrices = async () => {
@@ -336,15 +339,31 @@ export function useContractDetail() {
   }, [detail]);
 
   const txVM = useMemo(
-    () =>
-      transactions.map((t) => ({
-        ...t,
-        itemName: itemNameById[t.itemId] ?? "-",
-        priceTypeLabel: labelOf(ENUM_GROUPS.PRICE_TYPE, t.priceType),
-        paid: t.paidForeign != null || t.paidAmount != null || t.paidDate != null,
-      })),
+    () => {
+      const hasFinalSettlement =
+        transactionStatistics?.hasFinalSettlement ??
+        transactions.some((transaction) => transaction.finalSettlement);
+
+      return transactions.map((t) => {
+        const paid = t.paidForeign != null || t.paidAmount != null || t.paidDate != null;
+        const settlement = t.finalSettlement || t.priceType === "SETTLEMENT";
+        const generalTransactionLocked = !settlement && hasFinalSettlement;
+        return {
+          ...t,
+          itemName: itemNameById[t.itemId] ?? "-",
+          priceTypeLabel: labelOf(ENUM_GROUPS.PRICE_TYPE, t.priceType),
+          paid,
+          deletable: !paid && !generalTransactionLocked,
+          deleteBlockedReason: paid
+            ? "결제가 완료된 거래는 삭제할 수 없습니다"
+            : generalTransactionLocked
+              ? "마지막 정산 거래가 있어 일반 거래는 삭제할 수 없습니다"
+              : "",
+        };
+      });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, itemNameById]
+    [transactions, itemNameById, transactionStatistics]
   );
 
   // ── 거래 등록 ──
@@ -452,6 +471,32 @@ export function useContractDetail() {
       showToast("error", e.message || "거래 내역 수정에 실패했습니다");
     } finally {
       setSubmittingEditId(null);
+    }
+  };
+
+  // ── 기존 거래 삭제 ──
+  const handleDeleteTransaction = async () => {
+    if (!deleteTransactionId || deletingTransactionId) return;
+    const transaction = txVM.find((tx) => tx.transactionId === deleteTransactionId);
+    if (!transaction?.deletable) {
+      showToast("error", transaction?.deleteBlockedReason || "삭제할 수 없는 거래입니다");
+      setDeleteTransactionId(null);
+      return;
+    }
+
+    setDeletingTransactionId(deleteTransactionId);
+    try {
+      await deleteTransaction(id, deleteTransactionId);
+      await Promise.all([loadTransactions(), loadTransactionStatistics()]);
+      setExpandedPaymentId(null);
+      setExpandedEditId(null);
+      setDeleteTransactionId(null);
+      showToast("success", "거래 내역이 삭제되었습니다");
+    } catch (e) {
+      showToast("error", e.message || "거래 내역 삭제에 실패했습니다");
+      setDeleteTransactionId(null);
+    } finally {
+      setDeletingTransactionId(null);
     }
   };
 
@@ -684,6 +729,24 @@ export function useContractDetail() {
         onSave: handleUpdateTransaction,
         itemOptions: detail?.items ?? [],
         priceTypeOptions: txPriceTypeOptions,
+      },
+      remove: {
+        deletingId: deletingTransactionId,
+        onOpen: (transactionId) => {
+          const transaction = txVM.find((tx) => tx.transactionId === transactionId);
+          if (!transaction?.deletable) {
+            showToast("error", transaction?.deleteBlockedReason || "삭제할 수 없는 거래입니다");
+            return;
+          }
+          setDeleteTransactionId(transactionId);
+        },
+      },
+    },
+    transactionDeleteModal: {
+      open: deleteTransactionId != null,
+      onConfirm: handleDeleteTransaction,
+      onCancel: () => {
+        if (!deletingTransactionId) setDeleteTransactionId(null);
       },
     },
     deleteModal: {

@@ -21,7 +21,7 @@ export function useContractList() {
 
   // 필터 — "" = 전체(파라미터 미전송)
   const [ownerFilter, setOwnerFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("IN_PROGRESS");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
