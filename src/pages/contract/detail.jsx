@@ -15,8 +15,17 @@ const TABS = [
 // 계약 상세 화면 — 탭 2개 (계약·단가 / 거래 내역)
 export default function ContractDetailPage() {
   const navigate = useNavigate();
-  const { loading, contract, header, tabs, priceTab, txTab, deleteModal, toast } =
-    useContractDetail();
+  const {
+    loading,
+    contract,
+    header,
+    tabs,
+    priceTab,
+    txTab,
+    deleteModal,
+    transactionDeleteModal,
+    toast,
+  } = useContractDetail();
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -79,6 +88,15 @@ export default function ContractDetailPage() {
         danger
         onConfirm={deleteModal.onConfirm}
         onCancel={deleteModal.onCancel}
+      />
+      <ConfirmModal
+        open={transactionDeleteModal.open}
+        title="거래 내역 삭제"
+        message="선택한 거래 내역을 삭제하시겠습니까?"
+        confirmLabel="삭제"
+        danger
+        onConfirm={transactionDeleteModal.onConfirm}
+        onCancel={transactionDeleteModal.onCancel}
       />
       <Toast toast={toast} />
 

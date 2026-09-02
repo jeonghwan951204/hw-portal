@@ -135,6 +135,14 @@ export const updateTransaction = async (contractId, transactionId, body) =>
     })
   );
 
+// 거래 삭제 (삭제 가능 여부는 서버 정책으로 최종 검증)
+export const deleteTransaction = async (contractId, transactionId) =>
+  asJson(
+    await apiFetch(`/api/contracts/${contractId}/transactions/${transactionId}`, {
+      method: "DELETE",
+    })
+  );
+
 // 마지막 거래의 정산 단가·정산금액 미리 계산 (저장하지 않음)
 export const calculateSettlement = async (contractId, body) =>
   asJson(
