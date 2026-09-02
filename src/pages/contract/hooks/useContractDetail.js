@@ -18,6 +18,7 @@ import {
   updateTransactionPayment,
 } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
+import { getLocalDateString } from "../constants";
 import { useEnums } from "./useEnums";
 import { useToast } from "./useToast";
 
@@ -29,10 +30,9 @@ const DETAIL_ENUMS = [
   ENUM_GROUPS.CALC_METHOD,
 ];
 
-const today = () => new Date().toISOString().slice(0, 10);
 const numOrUndef = (v) => (v === "" || v == null ? undefined : Number(v));
 const emptyTxForm = () => ({
-  date: today(),
+  date: getLocalDateString(),
   itemId: "",
   priceType: "",
   quantity: "",
@@ -390,6 +390,9 @@ export function useContractDetail() {
           finalSettlement: value,
           priceType,
         };
+      }
+      if (field === "withPayment" && value && !prev.paidDate) {
+        return { ...prev, withPayment: true, paidDate: getLocalDateString() };
       }
       return { ...prev, [field]: value };
     });

@@ -52,6 +52,15 @@ export const MOCK_ITEM_NAMES = ["A동", "B동", "상동", "파동", "밀베리"]
 // yyyy-MM-dd → yyyy.MM.dd
 export const formatDate = (iso) => (iso ? iso.replaceAll("-", ".") : "-");
 
+// 현재 로컬 날짜를 date input 형식(yyyy-MM-dd)으로 반환한다.
+export const getLocalDateString = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 // 계약기간 카드 표기: yyyy.MM.dd – MM.dd
 export const formatShortPeriod = (start, end) =>
   `${formatDate(start)} – ${end ? end.slice(5).replaceAll("-", ".") : "-"}`;
