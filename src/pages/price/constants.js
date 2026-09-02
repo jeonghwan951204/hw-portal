@@ -30,3 +30,10 @@ export const parsePercentRate = (value) => {
   const numericValue = Number(String(value).replace(/[%\s,]/g, ""));
   return Number.isFinite(numericValue) ? numericValue / 100 : 0;
 };
+
+export const normalizeDecimalInput = (value) => {
+  const stripped = String(value ?? "").replaceAll(",", "").replace(/[^\d.]/g, "");
+  const dotIndex = stripped.indexOf(".");
+  if (dotIndex === -1) return stripped;
+  return `${stripped.slice(0, dotIndex + 1)}${stripped.slice(dotIndex + 1).replaceAll(".", "")}`;
+};

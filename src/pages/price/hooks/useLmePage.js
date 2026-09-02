@@ -3,6 +3,25 @@ import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/val
 import { fetchLmeAverage, fetchLmePriceHistory, requestCrawlingSync } from "../api/priceApi";
 import { AVG_FIELDS, LIST_FIELDS, PAGE_SIZE, parsePercentRate } from "../constants";
 
+const calculateKrwPrice = (avgClose, exchangeRate, percent) => {
+  const close = Number(avgClose);
+  const rate = Number(exchangeRate);
+  const multiplier = parsePercentRate(percent);
+  if (!Number.isFinite(close) || !Number.isFinite(rate) || !multiplier) return "";
+  return Math.floor((close * rate * multiplier) / 1000);
+};
+
+const calculateRatePercent = (avgClose, exchangeRate, krwPrice) => {
+  const close = Number(avgClose);
+  const rate = Number(exchangeRate);
+  const price = Number(krwPrice);
+  if (!Number.isFinite(close) || !Number.isFinite(rate) || !Number.isFinite(price) || !close || !rate)
+    return "";
+  return ((price * 1000 * 100) / (close * rate))
+    .toFixed(6)
+    .replace(/\.?0+$/, "");
+};
+
 export const useLmePage = () => {
   const [history, setHistory] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -16,6 +35,7 @@ export const useLmePage = () => {
   const [avgResult, setAvgResult] = useState(null);
   const [currentRate, setCurrentRate] = useState("");
   const [ratePercent, setRatePercent] = useState("100");
+  const [calculatedAvgKrw, setCalculatedAvgKrw] = useState("");
 
   const [rateModalOpen, setRateModalOpen] = useState(false);
 
@@ -53,11 +73,14 @@ export const useLmePage = () => {
         endDate: avgEndDate,
       });
 
-      setAvgResult({
+      const nextResult = {
         avgClose: data[AVG_FIELDS.avgClose],
         avgRate: data[AVG_FIELDS.avgRate],
-      });
-      setCurrentRate(String(data[AVG_FIELDS.avgRate].toFixed(2)));
+      };
+      const nextRate = String(data[AVG_FIELDS.avgRate].toFixed(2));
+      setAvgResult(nextResult);
+      setCurrentRate(nextRate);
+      setCalculatedAvgKrw(calculateKrwPrice(nextResult.avgClose, nextRate, ratePercent));
     } catch (err) {
       console.error("평균 조회 실패:", err);
     }
@@ -106,16 +129,25 @@ export const useLmePage = () => {
     setTableEndDate(nextRange.endDate);
   };
 
+  const handleCurrentRateChange = (value) => {
+    setCurrentRate(value);
+    setCalculatedAvgKrw(calculateKrwPrice(avgResult?.avgClose, value, ratePercent));
+  };
+
+  const handleRatePercentChange = (value) => {
+    setRatePercent(value);
+    setCalculatedAvgKrw(calculateKrwPrice(avgResult?.avgClose, currentRate, value));
+  };
+
+  const handleCalculatedAvgKrwChange = (value) => {
+    setCalculatedAvgKrw(value);
+    setRatePercent(calculateRatePercent(avgResult?.avgClose, currentRate, value));
+  };
+
   useEffect(() => {
     fetchHistory(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const rateMultiplier = parsePercentRate(ratePercent);
-  const calculatedAvgKrw =
-    avgResult && Number(currentRate) && rateMultiplier
-      ? Math.floor((Number(avgResult.avgClose) * Number(currentRate) * rateMultiplier) / 1000)
-      : "";
 
   return {
     average: {
@@ -126,7 +158,9 @@ export const useLmePage = () => {
       ratePercent,
       calculatedAvgKrw,
       avgDateLimits: getDateRangeLimits(avgStartDate, avgEndDate),
-      setRatePercent,
+      handleCurrentRateChange,
+      handleRatePercentChange,
+      handleCalculatedAvgKrwChange,
       fetchAverage,
       handleAvgDateRangeChange,
     },

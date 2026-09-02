@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatNumber } from "../constants";
+import { formatNumber, getLocalDateString } from "../constants";
 import NumericInput from "./NumericInput";
 
 const INPUT_CLASS =
@@ -40,7 +40,7 @@ export default function PaymentForm({ isExport, tx, submitting, onSave, onCancel
     paidForeign: tx.paidForeign ?? "",
     paidExchange: tx.paidExchange ?? "",
     paidAmount: paymentFormRule.initialPaidAmount(tx),
-    paidDate: tx.paidDate ?? "",
+    paidDate: tx.paidDate ?? getLocalDateString(),
     paymentMemo: tx.paymentMemo ?? "",
   }));
 

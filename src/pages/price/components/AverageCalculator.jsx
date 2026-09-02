@@ -1,4 +1,5 @@
-import { formatKRW, formatRate, formatUSD } from "../../../utils/format";
+import { formatRate, formatUSD } from "../../../utils/format";
+import { normalizeDecimalInput } from "../constants";
 
 export default function AverageCalculator({
   avgStartDate,
@@ -8,10 +9,14 @@ export default function AverageCalculator({
   ratePercent,
   calculatedAvgKrw,
   avgDateLimits,
-  setRatePercent,
+  handleCurrentRateChange,
+  handleRatePercentChange,
+  handleCalculatedAvgKrwChange,
   fetchAverage,
   handleAvgDateRangeChange,
 }) {
+  const hasCalculatedAvgKrw = calculatedAvgKrw !== "";
+
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center">
@@ -79,15 +84,24 @@ export default function AverageCalculator({
             </div>
 
             <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
-              <p className="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wide">
-                기간 평균 환율
-              </p>
-              <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold text-slate-800 font-mono">
-                  {formatRate(currentRate)}
-                  <span className="text-sm font-normal text-slate-400 ml-1">₩/$</span>
-                </p>
+              <label className="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wide block">
+                적용 환율
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={currentRate}
+                  onChange={(event) => handleCurrentRateChange(normalizeDecimalInput(event.target.value))}
+                  className="w-full min-w-0 text-2xl font-bold text-slate-800 font-mono bg-white border border-slate-200 rounded-lg pl-3 pr-12 py-1.5 outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">
+                  ₩/$
+                </span>
               </div>
+              <p className="text-xs text-slate-400 mt-2">
+                기간 평균 {formatRate(avgResult.avgRate)} · 수정 가능
+              </p>
             </div>
 
             <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
@@ -99,7 +113,7 @@ export default function AverageCalculator({
                   type="text"
                   inputMode="decimal"
                   value={ratePercent}
-                  onChange={(e) => setRatePercent(e.target.value.replace(/%/g, ""))}
+                  onChange={(event) => handleRatePercentChange(normalizeDecimalInput(event.target.value))}
                   placeholder="100"
                   className="w-full min-w-0 text-2xl font-bold text-amber-700 font-mono bg-white/70 border border-amber-200 rounded-lg pl-3 pr-9 py-1.5 outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400"
                 />
@@ -112,31 +126,37 @@ export default function AverageCalculator({
 
             <div
               className={`rounded-xl p-5 border transition-all ${
-                calculatedAvgKrw
+                hasCalculatedAvgKrw
                   ? "bg-emerald-50 border-emerald-100"
                   : "bg-slate-50 border-slate-200"
               }`}
             >
-              <p
+              <label
                 className={`text-xs font-semibold mb-2 uppercase tracking-wide ${
-                  calculatedAvgKrw ? "text-emerald-500" : "text-slate-400"
+                  hasCalculatedAvgKrw ? "text-emerald-500" : "text-slate-400"
                 }`}
               >
                 원화 환산가
-              </p>
-              <p
-                className={`text-2xl font-bold font-mono ${
-                  calculatedAvgKrw ? "text-emerald-700" : "text-slate-300"
-                }`}
-              >
-                {calculatedAvgKrw ? formatKRW(calculatedAvgKrw) : "—"}
-                {calculatedAvgKrw && <span className="text-sm font-normal text-emerald-400 ml-1">/kg</span>}
-              </p>
-              {calculatedAvgKrw && (
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={calculatedAvgKrw}
+                  onChange={(event) => handleCalculatedAvgKrwChange(normalizeDecimalInput(event.target.value))}
+                  placeholder="원화 단가"
+                  className="w-full min-w-0 text-2xl font-bold text-emerald-700 font-mono bg-white/70 border border-emerald-200 rounded-lg pl-3 pr-14 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 placeholder:text-slate-300"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-emerald-400 pointer-events-none">
+                  원/kg
+                </span>
+              </div>
+              {hasCalculatedAvgKrw && (
                 <p className="text-xs text-emerald-400 mt-2">
                   {formatUSD(avgResult.avgClose)} × {Number(currentRate).toLocaleString()} × {ratePercent}%
                 </p>
               )}
+              <p className="text-xs text-emerald-500 mt-1">금액 수정 시 요율을 역계산합니다.</p>
             </div>
           </div>
         )}
