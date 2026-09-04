@@ -13,10 +13,11 @@ const NAV_ITEMS = [
     ],
   },
   {
-    label: "재고/물류",
+    label: "운영관리",
     children: [
       { label: "재고관리", to: "/inventory" },
       { label: "계근 조회", to: "/weighing" },
+      { label: "거래처관리", to: "/companies" },
     ],
   },
   {
