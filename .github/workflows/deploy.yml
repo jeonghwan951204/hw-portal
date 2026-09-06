@@ -17,5 +17,5 @@ jobs:
     steps:
       - name: Deploy hw-portal
         run: |
-          /srv/hw-project/scripts/deploy-hw-portal.sh
+          /srv/docker/hw-project/scripts/deploy-hw-portal.sh
         
