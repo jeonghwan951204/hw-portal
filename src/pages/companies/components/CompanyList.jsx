@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Link } from "react-router-dom";
 import CompanyDetail from "./CompanyDetail";
 import CopyableValue from "./CopyableValue";
 import PhoneNumbers from "./PhoneNumbers";
@@ -39,7 +40,35 @@ function CompanyName({ company }) {
   );
 }
 
-export default function CompanyList({ companies, totalCount, expandedId, onToggleDetail, onCopy }) {
+function CompanyActions({ company, expanded, onToggleDetail, onDeleteRequest }) {
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+      <DetailButton expanded={expanded} onClick={() => onToggleDetail(company.id)} />
+      <Link
+        to={`/companies/${company.id}/edit`}
+        className="text-xs font-bold text-slate-500 hover:text-blue-600"
+      >
+        수정
+      </Link>
+      <button
+        type="button"
+        onClick={() => onDeleteRequest(company)}
+        className="text-xs font-bold text-slate-400 hover:text-red-600"
+      >
+        삭제
+      </button>
+    </div>
+  );
+}
+
+export default function CompanyList({
+  companies,
+  totalCount,
+  expandedId,
+  onToggleDetail,
+  onCopy,
+  onDeleteRequest,
+}) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -57,7 +86,7 @@ export default function CompanyList({ companies, totalCount, expandedId, onToggl
               <th className="px-4 py-3 text-left font-semibold">사업자등록번호</th>
               <th className="px-4 py-3 text-left font-semibold">전화번호</th>
               <th className="px-4 py-3 text-left font-semibold">계좌정보</th>
-              <th className="px-4 py-3 text-center font-semibold">상세</th>
+              <th className="px-4 py-3 text-center font-semibold">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -82,7 +111,12 @@ export default function CompanyList({ companies, totalCount, expandedId, onToggl
                       <BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} />
                     </td>
                     <td className="px-4 py-4 text-center">
-                      <DetailButton expanded={expanded} onClick={() => onToggleDetail(company.id)} />
+                      <CompanyActions
+                        company={company}
+                        expanded={expanded}
+                        onToggleDetail={onToggleDetail}
+                        onDeleteRequest={onDeleteRequest}
+                      />
                     </td>
                   </tr>
                   {expanded && (
@@ -111,7 +145,12 @@ export default function CompanyList({ companies, totalCount, expandedId, onToggl
             <article key={company.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <CompanyName company={company} />
-                <DetailButton expanded={expanded} onClick={() => onToggleDetail(company.id)} />
+                <CompanyActions
+                  company={company}
+                  expanded={expanded}
+                  onToggleDetail={onToggleDetail}
+                  onDeleteRequest={onDeleteRequest}
+                />
               </div>
               <dl className="mt-3 grid grid-cols-[7rem_1fr] gap-y-2 text-sm">
                 <dt className="text-xs font-semibold text-slate-400">사업자등록번호</dt>

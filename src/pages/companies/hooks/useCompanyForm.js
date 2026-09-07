@@ -1,15 +1,24 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  createMockCompany,
+  getMockCompany,
+  updateMockCompany,
+} from "../api/companyMockApi";
 
 let fieldSequence = 0;
 const nextFieldId = () => `company-field-${++fieldSequence}`;
 
-const createValueItem = (label = "") => ({ id: nextFieldId(), label, value: "" });
-const createBankAccount = (label = "") => ({
+const createValueItem = (label = "", value = "") => ({
   id: nextFieldId(),
   label,
-  bankName: "",
-  accountNumber: "",
+  value,
+});
+const createBankAccount = (label = "", bankName = "", accountNumber = "") => ({
+  id: nextFieldId(),
+  label,
+  bankName,
+  accountNumber,
 });
 
 const createInitialForm = () => ({
@@ -25,6 +34,17 @@ const createInitialForm = () => ({
   attachments: [],
 });
 
+const createFormFromCompany = (company) => ({
+  ...company,
+  bankAccounts: company.bankAccounts.map(({ label, bankName, accountNumber }) =>
+    createBankAccount(label, bankName, accountNumber)
+  ),
+  phoneNumbers: company.phoneNumbers.map(({ label, value }) => createValueItem(label, value)),
+  emails: company.emails.map(({ label, value }) => createValueItem(label, value)),
+  addresses: company.addresses.map(({ label, value }) => createValueItem(label, value)),
+  attachments: company.attachments.map((file) => ({ ...file })),
+});
+
 const ITEM_FACTORIES = {
   bankAccounts: () => createBankAccount(),
   phoneNumbers: () => createValueItem(),
@@ -34,7 +54,12 @@ const ITEM_FACTORIES = {
 
 export function useCompanyForm() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(createInitialForm);
+  const { id } = useParams();
+  const isEdit = id !== undefined;
+  const [existingCompany] = useState(() => (isEdit ? getMockCompany(id) : null));
+  const [form, setForm] = useState(() =>
+    existingCompany ? createFormFromCompany(existingCompany) : createInitialForm()
+  );
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -102,14 +127,25 @@ export function useCompanyForm() {
       setError("사업자등록번호를 입력해 주세요.");
       return;
     }
+
+    if (isEdit) {
+      updateMockCompany(id, form);
+    } else {
+      createMockCompany(form);
+    }
     setError("");
-    setSuccessMessage("목업 등록이 완료되었습니다. API 연동 전이므로 서버에는 저장되지 않습니다.");
+    setSuccessMessage(
+      `목업 ${isEdit ? "수정" : "등록"}이 완료되었습니다. 같은 브라우저 탭에서 목록에 반영됩니다.`
+    );
   };
 
   return {
     form,
+    isEdit,
+    notFound: isEdit && !existingCompany,
     error,
     successMessage,
+    submitLabel: isEdit ? "수정 완료" : "등록",
     onBasicChange: changeBasic,
     onItemChange: changeItem,
     onItemAdd: addItem,

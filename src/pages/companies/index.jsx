@@ -2,6 +2,7 @@ import Header from "../../components/Header";
 import { Link } from "react-router-dom";
 import CompanyList from "./components/CompanyList";
 import CompanyToolbar from "./components/CompanyToolbar";
+import CompanyDeleteModal from "./components/CompanyDeleteModal";
 import { useCompanyList } from "./hooks/useCompanyList";
 
 export default function CompaniesPage() {
@@ -35,6 +36,11 @@ export default function CompaniesPage() {
           {companyList.copyMessage}
         </div>
       )}
+      <CompanyDeleteModal
+        company={companyList.deleteTarget}
+        onConfirm={companyList.onDeleteConfirm}
+        onCancel={companyList.onDeleteCancel}
+      />
     </div>
   );
 }

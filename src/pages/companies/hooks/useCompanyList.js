@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { MOCK_COMPANIES } from "../mockData";
+import { deleteMockCompany, getMockCompanies } from "../api/companyMockApi";
 
 const copyWithFallback = async (text) => {
   if (navigator.clipboard?.writeText) {
@@ -18,19 +18,21 @@ const copyWithFallback = async (text) => {
 };
 
 export function useCompanyList() {
+  const [sourceCompanies, setSourceCompanies] = useState(getMockCompanies);
   const [expandedId, setExpandedId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [copyMessage, setCopyMessage] = useState("");
   const [keyword, setKeyword] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
   const companies = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLocaleLowerCase("ko-KR");
-    return MOCK_COMPANIES.filter(
+    return sourceCompanies.filter(
       (company) =>
         (!typeFilter || company.type === typeFilter) &&
         (!normalizedKeyword || company.name.toLocaleLowerCase("ko-KR").includes(normalizedKeyword))
     );
-  }, [keyword, typeFilter]);
+  }, [keyword, sourceCompanies, typeFilter]);
 
   const toggleDetail = (companyId) => {
     setExpandedId((current) => (current === companyId ? null : companyId));
@@ -46,10 +48,20 @@ export function useCompanyList() {
     setTimeout(() => setCopyMessage(""), 1800);
   };
 
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+
+    const nextCompanies = deleteMockCompany(deleteTarget.id);
+    setSourceCompanies(nextCompanies);
+    setExpandedId((current) => (current === deleteTarget.id ? null : current));
+    setDeleteTarget(null);
+  };
+
   return {
     companies,
-    totalCount: MOCK_COMPANIES.length,
+    totalCount: sourceCompanies.length,
     expandedId,
+    deleteTarget,
     copyMessage,
     keyword,
     typeFilter,
@@ -57,5 +69,8 @@ export function useCompanyList() {
     onTypeFilterChange: setTypeFilter,
     onToggleDetail: toggleDetail,
     onCopy: copyValue,
+    onDeleteRequest: setDeleteTarget,
+    onDeleteConfirm: confirmDelete,
+    onDeleteCancel: () => setDeleteTarget(null),
   };
 }

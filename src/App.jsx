@@ -32,6 +32,7 @@ export default function App() {
           <Route path="/weighing" element={<RequireAuth roles={["USER", "ADMIN"]}><WeighingPage /></RequireAuth>} />
           <Route path="/companies" element={<RequireAuth roles={["USER", "ADMIN"]}><CompaniesPage /></RequireAuth>} />
           <Route path="/companies/new" element={<RequireAuth roles={["USER", "ADMIN"]}><CompanyFormPage /></RequireAuth>} />
+          <Route path="/companies/:id/edit" element={<RequireAuth roles={["USER", "ADMIN"]}><CompanyFormPage /></RequireAuth>} />
           <Route path="/documents" element={<RequireAuth roles={["USER", "ADMIN"]}><DocumentsPage /></RequireAuth>} />
           <Route path="/contract" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractListPage /></RequireAuth>} />
           <Route path="/contract/new" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />

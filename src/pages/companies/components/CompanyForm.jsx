@@ -153,6 +153,7 @@ export default function CompanyForm({
   form,
   error,
   successMessage,
+  submitLabel,
   onBasicChange,
   onItemChange,
   onItemAdd,
@@ -217,7 +218,7 @@ export default function CompanyForm({
           취소
         </button>
         <button type="button" onClick={onSubmit} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
-          등록
+          {submitLabel}
         </button>
       </div>
     </div>
