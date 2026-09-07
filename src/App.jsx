@@ -7,7 +7,8 @@ import LmePage from "./pages/price";
 import NoticePage from "./pages/NoticePage";
 import InventoryPage from "./pages/InventoryPage";
 import WeighingPage from "./pages/WeighingPage";
-import CompaniesPage from "./pages/CompaniesPage";
+import CompaniesPage from "./pages/companies";
+import CompanyFormPage from "./pages/companies/form";
 import DocumentsPage from "./pages/DocumentsPage";
 import ContractListPage from "./pages/contract";
 import ContractDetailPage from "./pages/contract/detail";
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/inventory" element={<RequireAuth roles={["USER", "ADMIN"]}><InventoryPage /></RequireAuth>} />
           <Route path="/weighing" element={<RequireAuth roles={["USER", "ADMIN"]}><WeighingPage /></RequireAuth>} />
           <Route path="/companies" element={<RequireAuth roles={["USER", "ADMIN"]}><CompaniesPage /></RequireAuth>} />
+          <Route path="/companies/new" element={<RequireAuth roles={["USER", "ADMIN"]}><CompanyFormPage /></RequireAuth>} />
           <Route path="/documents" element={<RequireAuth roles={["USER", "ADMIN"]}><DocumentsPage /></RequireAuth>} />
           <Route path="/contract" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractListPage /></RequireAuth>} />
           <Route path="/contract/new" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
