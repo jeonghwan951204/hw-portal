@@ -18,9 +18,10 @@ const asJson = async (response) => {
 };
 
 const mapPhoneNumber = (phone) => ({
+  recordId: phone.id ?? null,
   label: phone.label ?? "",
   value: phone.phoneNumber ?? "",
-  listVisible: phone.listVisible,
+  listVisible: phone.isListVisible ?? phone.listVisible,
 });
 
 const mapCompanyListItem = (company) => ({
@@ -31,7 +32,10 @@ const mapCompanyListItem = (company) => ({
     ...mapPhoneNumber(phone),
     listVisible: true,
   })),
-  bankAccounts: company.bankAccounts ?? [],
+  bankAccounts: (company.bankAccounts ?? []).map((account) => ({
+    ...account,
+    recordId: account.id ?? null,
+  })),
 });
 
 const mapCompanyDetail = (company) => ({
@@ -41,14 +45,19 @@ const mapCompanyDetail = (company) => ({
   representative: company.representativeName ?? "",
   businessNumber: company.businessRegistrationNumber ?? "",
   aliases: company.aliases ?? [],
-  bankAccounts: company.bankAccounts ?? [],
+  bankAccounts: (company.bankAccounts ?? []).map((account) => ({
+    ...account,
+    recordId: account.id ?? null,
+  })),
   phoneNumbers: (company.phoneNumbers ?? []).map(mapPhoneNumber),
   emails: (company.emails ?? []).map((email) => ({
+    recordId: email.id ?? null,
     label: email.label ?? "",
     value: email.email ?? "",
-    listVisible: email.listVisible ?? false,
+    listVisible: email.isListVisible ?? email.listVisible ?? false,
   })),
   addresses: (company.addresses ?? []).map((address) => ({
+    recordId: address.id ?? null,
     label: address.label ?? "",
     value: address.address ?? "",
   })),
@@ -62,6 +71,7 @@ const mapCompanyDetail = (company) => ({
 });
 
 const nonEmpty = (value) => String(value ?? "").trim();
+const optionalRecordId = (recordId) => (recordId == null ? {} : { id: recordId });
 
 const createCompanyBody = (form, fileIds) => ({
   type: form.type,
@@ -72,6 +82,7 @@ const createCompanyBody = (form, fileIds) => ({
   bankAccounts: form.bankAccounts
     .filter((account) => nonEmpty(account.bankName) || nonEmpty(account.accountNumber))
     .map((account) => ({
+      ...optionalRecordId(account.recordId),
       label: nonEmpty(account.label),
       bankName: nonEmpty(account.bankName),
       accountNumber: nonEmpty(account.accountNumber),
@@ -79,20 +90,23 @@ const createCompanyBody = (form, fileIds) => ({
   contacts: form.phoneNumbers
     .filter((phone) => nonEmpty(phone.value))
     .map((phone) => ({
+      ...optionalRecordId(phone.recordId),
       label: nonEmpty(phone.label),
       phoneNumber: nonEmpty(phone.value),
-      listVisible: Boolean(phone.listVisible),
+      isListVisible: Boolean(phone.listVisible),
     })),
   emails: form.emails
     .filter((email) => nonEmpty(email.value))
     .map((email) => ({
+      ...optionalRecordId(email.recordId),
       label: nonEmpty(email.label),
       email: nonEmpty(email.value),
-      listVisible: Boolean(email.listVisible),
+      isListVisible: Boolean(email.listVisible),
     })),
   addresses: form.addresses
     .filter((address) => nonEmpty(address.value))
     .map((address) => ({
+      ...optionalRecordId(address.recordId),
       label: nonEmpty(address.label),
       address: nonEmpty(address.value),
     })),

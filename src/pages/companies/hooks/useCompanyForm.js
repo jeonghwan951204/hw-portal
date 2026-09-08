@@ -5,15 +5,17 @@ import { createCompany, fetchCompanyForEdit, updateCompany } from "../api/compan
 let fieldSequence = 0;
 const nextFieldId = () => `company-field-${++fieldSequence}`;
 
-const createValueItem = (label = "", value = "", listVisible = false) => ({
+const createValueItem = (label = "", value = "", listVisible = false, recordId = null) => ({
   id: nextFieldId(),
+  recordId,
   label,
   value,
   listVisible,
 });
 const createAlias = (value = "") => ({ id: nextFieldId(), value });
-const createBankAccount = (label = "", bankName = "", accountNumber = "") => ({
+const createBankAccount = (label = "", bankName = "", accountNumber = "", recordId = null) => ({
   id: nextFieldId(),
+  recordId,
   label,
   bankName,
   accountNumber,
@@ -38,16 +40,18 @@ const createFormFromCompany = (company) => ({
   aliases: company.aliases?.length
     ? company.aliases.map((alias) => createAlias(alias))
     : [createAlias()],
-  bankAccounts: company.bankAccounts.map(({ label, bankName, accountNumber }) =>
-    createBankAccount(label ?? "", bankName, accountNumber)
+  bankAccounts: company.bankAccounts.map(({ label, bankName, accountNumber, recordId }) =>
+    createBankAccount(label ?? "", bankName, accountNumber, recordId)
   ),
-  phoneNumbers: company.phoneNumbers.map(({ label, value, listVisible }) =>
-    createValueItem(label, value, listVisible)
+  phoneNumbers: company.phoneNumbers.map(({ label, value, listVisible, recordId }) =>
+    createValueItem(label, value, listVisible, recordId)
   ),
-  emails: company.emails.map(({ label, value, listVisible }) =>
-    createValueItem(label, value, listVisible)
+  emails: company.emails.map(({ label, value, listVisible, recordId }) =>
+    createValueItem(label, value, listVisible, recordId)
   ),
-  addresses: company.addresses.map(({ label, value }) => createValueItem(label ?? "", value)),
+  addresses: company.addresses.map(({ label, value, recordId }) =>
+    createValueItem(label ?? "", value, false, recordId)
+  ),
   attachments: company.attachments.map((file) => ({ ...file })),
 });
 
