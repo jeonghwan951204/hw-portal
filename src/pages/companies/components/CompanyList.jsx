@@ -64,11 +64,37 @@ function CompanyActions({ company, expanded, onToggleDetail, onDeleteRequest }) 
 export default function CompanyList({
   companies,
   totalCount,
+  loading,
+  error,
   expandedId,
   onToggleDetail,
   onCopy,
+  onRetry,
   onDeleteRequest,
 }) {
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white px-5 py-14 text-center text-sm text-slate-400 shadow-sm">
+        거래처 목록을 불러오는 중입니다.
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-10 text-center shadow-sm">
+        <p className="text-sm text-red-600">{error}</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-4 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100"
+        >
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">

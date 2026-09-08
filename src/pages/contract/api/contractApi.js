@@ -169,5 +169,5 @@ export const fetchCompanies = async (keyword) => {
   const params = new URLSearchParams();
   if (keyword) params.set("keyword", keyword);
   const qs = params.toString();
-  return asJson(await apiFetch(`/api/companies${qs ? `?${qs}` : ""}`));
+  return asJson(await apiFetch(`/api/companies/options${qs ? `?${qs}` : ""}`));
 };

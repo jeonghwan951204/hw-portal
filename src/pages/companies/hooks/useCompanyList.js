@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { deleteMockCompany, getMockCompanies } from "../api/companyMockApi";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { deleteCompany, fetchCompanies } from "../api/companyApi";
 
 const copyWithFallback = async (text) => {
   if (navigator.clipboard?.writeText) {
@@ -18,12 +18,34 @@ const copyWithFallback = async (text) => {
 };
 
 export function useCompanyList() {
-  const [sourceCompanies, setSourceCompanies] = useState(getMockCompanies);
+  const copyTimerRef = useRef(null);
+  const [sourceCompanies, setSourceCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [keyword, setKeyword] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+
+  const loadCompanies = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      setSourceCompanies(await fetchCompanies());
+    } catch (loadError) {
+      setError(loadError.message || "거래처 목록을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCompanies();
+    return () => clearTimeout(copyTimerRef.current);
+  }, [loadCompanies]);
 
   const companies = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLocaleLowerCase("ko-KR");
@@ -45,23 +67,38 @@ export function useCompanyList() {
     } catch {
       setCopyMessage("복사하지 못했습니다.");
     }
-    setTimeout(() => setCopyMessage(""), 1800);
+    clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopyMessage(""), 1800);
   };
 
-  const confirmDelete = () => {
-    if (!deleteTarget) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
 
-    const nextCompanies = deleteMockCompany(deleteTarget.id);
-    setSourceCompanies(nextCompanies);
-    setExpandedId((current) => (current === deleteTarget.id ? null : current));
-    setDeleteTarget(null);
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteCompany(deleteTarget.id);
+      setSourceCompanies((current) =>
+        current.filter((company) => company.id !== deleteTarget.id)
+      );
+      setExpandedId((current) => (current === deleteTarget.id ? null : current));
+      setDeleteTarget(null);
+    } catch (deleteFailure) {
+      setDeleteError(deleteFailure.message || "거래처를 삭제하지 못했습니다.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return {
     companies,
     totalCount: sourceCompanies.length,
+    loading,
+    error,
     expandedId,
     deleteTarget,
+    deleting,
+    deleteError,
     copyMessage,
     keyword,
     typeFilter,
@@ -69,8 +106,16 @@ export function useCompanyList() {
     onTypeFilterChange: setTypeFilter,
     onToggleDetail: toggleDetail,
     onCopy: copyValue,
-    onDeleteRequest: setDeleteTarget,
+    onRetry: loadCompanies,
+    onDeleteRequest: (company) => {
+      setDeleteError("");
+      setDeleteTarget(company);
+    },
     onDeleteConfirm: confirmDelete,
-    onDeleteCancel: () => setDeleteTarget(null),
+    onDeleteCancel: () => {
+      if (deleting) return;
+      setDeleteError("");
+      setDeleteTarget(null);
+    },
   };
 }

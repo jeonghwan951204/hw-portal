@@ -38,6 +38,8 @@ export default function CompaniesPage() {
       )}
       <CompanyDeleteModal
         company={companyList.deleteTarget}
+        deleting={companyList.deleting}
+        error={companyList.deleteError}
         onConfirm={companyList.onDeleteConfirm}
         onCancel={companyList.onDeleteCancel}
       />

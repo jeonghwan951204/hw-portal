@@ -1,4 +1,4 @@
-export default function CompanyDeleteModal({ company, onConfirm, onCancel }) {
+export default function CompanyDeleteModal({ company, deleting, error, onConfirm, onCancel }) {
   if (!company) return null;
 
   return (
@@ -8,7 +8,7 @@ export default function CompanyDeleteModal({ company, onConfirm, onCancel }) {
       aria-modal="true"
       aria-labelledby="company-delete-title"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onCancel();
+        if (!deleting && event.target === event.currentTarget) onCancel();
       }}
     >
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
@@ -19,20 +19,27 @@ export default function CompanyDeleteModal({ company, onConfirm, onCancel }) {
           <strong className="font-bold text-slate-700">{company.name}</strong>의 정보가 목록에서
           삭제됩니다.
         </p>
+        {error && (
+          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+            {error}
+          </p>
+        )}
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            disabled={deleting}
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             취소
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700"
+            disabled={deleting}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            삭제
+            {deleting ? "삭제 중..." : "삭제"}
           </button>
         </div>
       </div>

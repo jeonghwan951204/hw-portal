@@ -1,10 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  createMockCompany,
-  getMockCompany,
-  updateMockCompany,
-} from "../api/companyMockApi";
+import { createCompany, fetchCompanyDetail, updateCompany } from "../api/companyApi";
 
 let fieldSequence = 0;
 const nextFieldId = () => `company-field-${++fieldSequence}`;
@@ -14,6 +10,7 @@ const createValueItem = (label = "", value = "") => ({
   label,
   value,
 });
+const createAlias = (value = "") => ({ id: nextFieldId(), value });
 const createBankAccount = (label = "", bankName = "", accountNumber = "") => ({
   id: nextFieldId(),
   label,
@@ -26,6 +23,7 @@ const createInitialForm = () => ({
   name: "",
   representative: "",
   businessNumber: "",
+  aliases: [createAlias()],
   bankAccounts: [createBankAccount("거래용"), createBankAccount("세금용")],
   phoneNumbers: [createValueItem("대표전화"), createValueItem("팩스")],
   emails: [createValueItem("세금계산서")],
@@ -36,16 +34,20 @@ const createInitialForm = () => ({
 
 const createFormFromCompany = (company) => ({
   ...company,
+  aliases: company.aliases?.length
+    ? company.aliases.map((alias) => createAlias(alias))
+    : [createAlias()],
   bankAccounts: company.bankAccounts.map(({ label, bankName, accountNumber }) =>
-    createBankAccount(label, bankName, accountNumber)
+    createBankAccount(label ?? "", bankName, accountNumber)
   ),
   phoneNumbers: company.phoneNumbers.map(({ label, value }) => createValueItem(label, value)),
   emails: company.emails.map(({ label, value }) => createValueItem(label, value)),
-  addresses: company.addresses.map(({ label, value }) => createValueItem(label, value)),
+  addresses: company.addresses.map(({ label, value }) => createValueItem(label ?? "", value)),
   attachments: company.attachments.map((file) => ({ ...file })),
 });
 
 const ITEM_FACTORIES = {
+  aliases: () => createAlias(),
   bankAccounts: () => createBankAccount(),
   phoneNumbers: () => createValueItem(),
   emails: () => createValueItem(),
@@ -56,12 +58,36 @@ export function useCompanyForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = id !== undefined;
-  const [existingCompany] = useState(() => (isEdit ? getMockCompany(id) : null));
-  const [form, setForm] = useState(() =>
-    existingCompany ? createFormFromCompany(existingCompany) : createInitialForm()
-  );
+  const [form, setForm] = useState(createInitialForm);
+  const [loading, setLoading] = useState(isEdit);
+  const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isEdit) return;
+
+    let active = true;
+    setLoading(true);
+    fetchCompanyDetail(id)
+      .then((company) => {
+        if (active) setForm(createFormFromCompany(company));
+      })
+      .catch((fetchError) => {
+        if (!active) return;
+        if (fetchError.status === 404) setNotFound(true);
+        else setLoadError(fetchError.message || "거래처 정보를 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id, isEdit]);
 
   const changeBasic = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -76,6 +102,7 @@ export function useCompanyForm() {
         item.id === itemId ? { ...item, [field]: value } : item
       ),
     }));
+    setError("");
     setSuccessMessage("");
   };
 
@@ -108,6 +135,7 @@ export function useCompanyForm() {
         ),
       ],
     }));
+    setError("");
     setSuccessMessage("");
   };
 
@@ -118,7 +146,8 @@ export function useCompanyForm() {
     }));
   };
 
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     if (!form.name.trim()) {
       setError("회사명을 입력해 주세요.");
       return;
@@ -127,25 +156,35 @@ export function useCompanyForm() {
       setError("사업자등록번호를 입력해 주세요.");
       return;
     }
-
-    if (isEdit) {
-      updateMockCompany(id, form);
-    } else {
-      createMockCompany(form);
+    if (form.aliases.some((alias) => alias.value.trim())) {
+      setError("거래처 별칭은 아직 서버 API에서 지원하지 않습니다.");
+      return;
     }
+
+    setSubmitting(true);
     setError("");
-    setSuccessMessage(
-      `목업 ${isEdit ? "수정" : "등록"}이 완료되었습니다. 같은 브라우저 탭에서 목록에 반영됩니다.`
-    );
+    setSuccessMessage("");
+    try {
+      if (isEdit) await updateCompany(id, form);
+      else await createCompany(form);
+      setSuccessMessage(`거래처가 ${isEdit ? "수정" : "등록"}되었습니다.`);
+    } catch (submitError) {
+      setError(submitError.message || `거래처를 ${isEdit ? "수정" : "등록"}하지 못했습니다.`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return {
     form,
     isEdit,
-    notFound: isEdit && !existingCompany,
+    loading,
+    notFound,
+    loadError,
     error,
     successMessage,
-    submitLabel: isEdit ? "수정 완료" : "등록",
+    submitting,
+    submitLabel: submitting ? "저장 중..." : isEdit ? "수정 완료" : "등록",
     onBasicChange: changeBasic,
     onItemChange: changeItem,
     onItemAdd: addItem,

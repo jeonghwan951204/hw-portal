@@ -101,9 +101,14 @@ export default function CompanyDetail({ company, onCopy }) {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L18 9.828a4 4 0 10-5.657-5.657L5.757 10.757a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
-                <span className="truncate font-semibold text-blue-600 underline decoration-blue-200 underline-offset-2">
+                <a
+                  href={file.downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="truncate font-semibold text-blue-600 underline decoration-blue-200 underline-offset-2"
+                >
                   {file.name}
-                </span>
+                </a>
               </li>
             ))}
           </ul>

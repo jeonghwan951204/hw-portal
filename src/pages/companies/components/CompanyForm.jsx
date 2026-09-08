@@ -39,6 +39,39 @@ function AddButton({ onClick, children }) {
   );
 }
 
+function AliasFields({ items, onChange, onAdd, onRemove }) {
+  return (
+    <div className="mt-5 border-t border-slate-100 pt-4">
+      <div>
+        <p className="text-xs font-bold text-slate-500">거래처 별칭</p>
+        <p className="mt-1 text-xs text-slate-400">
+          거래처를 구분하거나 검색할 때 사용하는 별칭입니다. 현재 서버 API의 별칭 저장 기능을
+          기다리고 있습니다.
+        </p>
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {items.map((alias) => (
+          <div key={alias.id} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <input
+              type="text"
+              value={alias.value}
+              onChange={(event) => onChange("aliases", alias.id, "value", event.target.value)}
+              placeholder="거래처 별칭"
+              aria-label="거래처 별칭"
+              className={INPUT_CLASS}
+            />
+            <RemoveButton
+              onClick={() => onRemove("aliases", alias.id)}
+              label="거래처 별칭 삭제"
+            />
+          </div>
+        ))}
+      </div>
+      <AddButton onClick={() => onAdd("aliases")}>별칭 추가</AddButton>
+    </div>
+  );
+}
+
 function ValueListFields({ title, description, group, items, valuePlaceholder, onChange, onAdd, onRemove }) {
   return (
     <FormSection title={title} description={description}>
@@ -154,6 +187,7 @@ export default function CompanyForm({
   error,
   successMessage,
   submitLabel,
+  submitting,
   onBasicChange,
   onItemChange,
   onItemAdd,
@@ -187,6 +221,12 @@ export default function CompanyForm({
             <input type="text" inputMode="numeric" value={form.businessNumber} onChange={(event) => onBasicChange("businessNumber", event.target.value)} placeholder="000-00-00000" className={INPUT_CLASS} />
           </div>
         </div>
+        <AliasFields
+          items={form.aliases}
+          onChange={onItemChange}
+          onAdd={onItemAdd}
+          onRemove={onItemRemove}
+        />
       </FormSection>
 
       <BankAccountFields items={form.bankAccounts} onChange={onItemChange} onAdd={onItemAdd} onRemove={onItemRemove} />
@@ -217,7 +257,7 @@ export default function CompanyForm({
         <button type="button" onClick={onCancel} className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
           취소
         </button>
-        <button type="button" onClick={onSubmit} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
+        <button type="button" onClick={onSubmit} disabled={submitting} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
           {submitLabel}
         </button>
       </div>
