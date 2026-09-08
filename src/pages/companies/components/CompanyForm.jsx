@@ -217,7 +217,7 @@ export default function CompanyForm({
             <input type="text" value={form.representative} onChange={(event) => onBasicChange("representative", event.target.value)} placeholder="대표자명" className={INPUT_CLASS} />
           </div>
           <div>
-            <label className={LABEL_CLASS}>사업자등록번호 <span className="text-red-400">*</span></label>
+            <label className={LABEL_CLASS}>사업자등록번호</label>
             <input type="text" inputMode="numeric" value={form.businessNumber} onChange={(event) => onBasicChange("businessNumber", event.target.value)} placeholder="000-00-00000" className={INPUT_CLASS} />
           </div>
         </div>
