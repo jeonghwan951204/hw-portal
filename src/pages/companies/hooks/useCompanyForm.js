@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createCompany, fetchCompanyDetail, updateCompany } from "../api/companyApi";
+import { createCompany, fetchCompanyForEdit, updateCompany } from "../api/companyApi";
 
 let fieldSequence = 0;
 const nextFieldId = () => `company-field-${++fieldSequence}`;
 
-const createValueItem = (label = "", value = "") => ({
+const createValueItem = (label = "", value = "", listVisible = false) => ({
   id: nextFieldId(),
   label,
   value,
+  listVisible,
 });
 const createAlias = (value = "") => ({ id: nextFieldId(), value });
 const createBankAccount = (label = "", bankName = "", accountNumber = "") => ({
@@ -40,8 +41,12 @@ const createFormFromCompany = (company) => ({
   bankAccounts: company.bankAccounts.map(({ label, bankName, accountNumber }) =>
     createBankAccount(label ?? "", bankName, accountNumber)
   ),
-  phoneNumbers: company.phoneNumbers.map(({ label, value }) => createValueItem(label, value)),
-  emails: company.emails.map(({ label, value }) => createValueItem(label, value)),
+  phoneNumbers: company.phoneNumbers.map(({ label, value, listVisible }) =>
+    createValueItem(label, value, listVisible)
+  ),
+  emails: company.emails.map(({ label, value, listVisible }) =>
+    createValueItem(label, value, listVisible)
+  ),
   addresses: company.addresses.map(({ label, value }) => createValueItem(label ?? "", value)),
   attachments: company.attachments.map((file) => ({ ...file })),
 });
@@ -63,7 +68,6 @@ export function useCompanyForm() {
   const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -71,7 +75,7 @@ export function useCompanyForm() {
 
     let active = true;
     setLoading(true);
-    fetchCompanyDetail(id)
+    fetchCompanyForEdit(id)
       .then((company) => {
         if (active) setForm(createFormFromCompany(company));
       })
@@ -92,7 +96,6 @@ export function useCompanyForm() {
   const changeBasic = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
     setError("");
-    setSuccessMessage("");
   };
 
   const changeItem = (group, itemId, field, value) => {
@@ -103,7 +106,6 @@ export function useCompanyForm() {
       ),
     }));
     setError("");
-    setSuccessMessage("");
   };
 
   const addItem = (group) => {
@@ -136,7 +138,6 @@ export function useCompanyForm() {
       ],
     }));
     setError("");
-    setSuccessMessage("");
   };
 
   const removeAttachment = (fileId) => {
@@ -154,11 +155,10 @@ export function useCompanyForm() {
     }
     setSubmitting(true);
     setError("");
-    setSuccessMessage("");
     try {
       if (isEdit) await updateCompany(id, form);
       else await createCompany(form);
-      setSuccessMessage(`거래처가 ${isEdit ? "수정" : "등록"}되었습니다.`);
+      navigate("/companies", { replace: true });
     } catch (submitError) {
       setError(submitError.message || `거래처를 ${isEdit ? "수정" : "등록"}하지 못했습니다.`);
     } finally {
@@ -173,7 +173,6 @@ export function useCompanyForm() {
     notFound,
     loadError,
     error,
-    successMessage,
     submitting,
     submitLabel: submitting ? "저장 중..." : isEdit ? "수정 완료" : "등록",
     onBasicChange: changeBasic,

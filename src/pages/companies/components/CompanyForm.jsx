@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const INPUT_CLASS =
   "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
 const LABEL_CLASS = "mb-1.5 block text-xs font-bold text-slate-500";
@@ -71,12 +73,29 @@ function AliasFields({ items, onChange, onAdd, onRemove }) {
   );
 }
 
-function ValueListFields({ title, description, group, items, valuePlaceholder, onChange, onAdd, onRemove }) {
+function ValueListFields({
+  title,
+  description,
+  group,
+  items,
+  valuePlaceholder,
+  showListVisibility = false,
+  onChange,
+  onAdd,
+  onRemove,
+}) {
   return (
     <FormSection title={title} description={description}>
       <div className="space-y-2">
         {items.map((item) => (
-          <div key={item.id} className="grid grid-cols-[minmax(0,0.65fr)_minmax(0,1.5fr)_auto] gap-2">
+          <div
+            key={item.id}
+            className={`grid gap-2 ${
+              showListVisibility
+                ? "grid-cols-[minmax(0,0.65fr)_minmax(0,1.5fr)_auto_auto]"
+                : "grid-cols-[minmax(0,0.65fr)_minmax(0,1.5fr)_auto]"
+            }`}
+          >
             <input
               type="text"
               value={item.label}
@@ -93,6 +112,19 @@ function ValueListFields({ title, description, group, items, valuePlaceholder, o
               aria-label={title}
               className={INPUT_CLASS}
             />
+            {showListVisibility && (
+              <label className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">
+                <input
+                  type="checkbox"
+                  checked={Boolean(item.listVisible)}
+                  onChange={(event) =>
+                    onChange(group, item.id, "listVisible", event.target.checked)
+                  }
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 accent-blue-600"
+                />
+                목록 노출
+              </label>
+            )}
             <RemoveButton onClick={() => onRemove(group, item.id)} label={`${title} 삭제`} />
           </div>
         ))}
@@ -144,10 +176,37 @@ function BankAccountFields({ items, onChange, onAdd, onRemove }) {
 }
 
 function AttachmentFields({ attachments, onAdd, onRemove }) {
+  const [dragging, setDragging] = useState(false);
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setDragging(false);
+    if (event.dataTransfer.files.length > 0) onAdd(event.dataTransfer.files);
+  };
+
   return (
     <FormSection title="첨부파일" description="사업자등록증과 기타 거래처 관련 파일을 선택합니다.">
-      <label className="inline-flex cursor-pointer items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-600 hover:bg-blue-100">
-        파일 선택
+      <label
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false);
+        }}
+        onDrop={handleDrop}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors ${
+          dragging
+            ? "border-blue-500 bg-blue-50 text-blue-700"
+            : "border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:bg-blue-50/50"
+        }`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 16V4m0 0L7 9m5-5l5 5M5 15v3a2 2 0 002 2h10a2 2 0 002-2v-3" />
+        </svg>
+        <span className="mt-2 text-sm font-bold">파일을 끌어다 놓거나 클릭해서 선택</span>
+        <span className="mt-1 text-xs text-slate-400">여러 파일을 한 번에 추가할 수 있습니다.</span>
         <input
           type="file"
           multiple
@@ -184,7 +243,6 @@ function AttachmentFields({ attachments, onAdd, onRemove }) {
 export default function CompanyForm({
   form,
   error,
-  successMessage,
   submitLabel,
   submitting,
   onBasicChange,
@@ -231,8 +289,8 @@ export default function CompanyForm({
       <BankAccountFields items={form.bankAccounts} onChange={onItemChange} onAdd={onItemAdd} onRemove={onItemRemove} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ValueListFields title="전화번호" description="대표전화, 팩스 등 용도를 입력합니다." group="phoneNumbers" items={form.phoneNumbers} valuePlaceholder="전화번호" onChange={onItemChange} onAdd={onItemAdd} onRemove={onItemRemove} />
-        <ValueListFields title="이메일" description="세금계산서, 업무용 등 용도를 입력합니다." group="emails" items={form.emails} valuePlaceholder="이메일 주소" onChange={onItemChange} onAdd={onItemAdd} onRemove={onItemRemove} />
+        <ValueListFields title="전화번호" description="대표전화, 팩스 등 용도를 입력하고 목록 노출 여부를 선택합니다." group="phoneNumbers" items={form.phoneNumbers} valuePlaceholder="전화번호" showListVisibility onChange={onItemChange} onAdd={onItemAdd} onRemove={onItemRemove} />
+        <ValueListFields title="이메일" description="세금계산서, 업무용 등 용도를 입력하고 목록 노출 여부를 선택합니다." group="emails" items={form.emails} valuePlaceholder="이메일 주소" showListVisibility onChange={onItemChange} onAdd={onItemAdd} onRemove={onItemRemove} />
       </div>
 
       <ValueListFields title="주소" description="사업장, 우편물, 하차지 등 용도를 입력합니다." group="addresses" items={form.addresses} valuePlaceholder="주소" onChange={onItemChange} onAdd={onItemAdd} onRemove={onItemRemove} />
@@ -250,7 +308,6 @@ export default function CompanyForm({
       <AttachmentFields attachments={form.attachments} onAdd={onAttachmentsAdd} onRemove={onAttachmentRemove} />
 
       {error && <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
-      {successMessage && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{successMessage}</p>}
 
       <div className="flex justify-end gap-2 pb-8">
         <button type="button" onClick={onCancel} className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">

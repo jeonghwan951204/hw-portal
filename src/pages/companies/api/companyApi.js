@@ -20,13 +20,17 @@ const asJson = async (response) => {
 const mapPhoneNumber = (phone) => ({
   label: phone.label ?? "",
   value: phone.phoneNumber ?? "",
+  listVisible: phone.listVisible,
 });
 
 const mapCompanyListItem = (company) => ({
   id: company.companyId,
   name: company.companyName ?? "",
   businessNumber: company.businessRegistrationNumber ?? "",
-  phoneNumbers: (company.phoneNumbers ?? []).map(mapPhoneNumber),
+  phoneNumbers: (company.phoneNumbers ?? []).map((phone) => ({
+    ...mapPhoneNumber(phone),
+    listVisible: true,
+  })),
   bankAccounts: company.bankAccounts ?? [],
 });
 
@@ -77,14 +81,14 @@ const createCompanyBody = (form, fileIds) => ({
     .map((phone) => ({
       label: nonEmpty(phone.label),
       phoneNumber: nonEmpty(phone.value),
-      listVisible: true,
+      listVisible: Boolean(phone.listVisible),
     })),
   emails: form.emails
     .filter((email) => nonEmpty(email.value))
     .map((email) => ({
       label: nonEmpty(email.label),
       email: nonEmpty(email.value),
-      listVisible: true,
+      listVisible: Boolean(email.listVisible),
     })),
   addresses: form.addresses
     .filter((address) => nonEmpty(address.value))
@@ -99,18 +103,42 @@ const createCompanyBody = (form, fileIds) => ({
 export const fetchCompanyDetail = async (companyId) =>
   mapCompanyDetail(await asJson(await apiFetch(`/api/companies/${companyId}`)));
 
+const phoneKey = (phone) => `${phone.label}\u0000${phone.value}`;
+
+const applyPhoneVisibility = (detail, summary) => {
+  const visiblePhoneKeys = new Set((summary?.phoneNumbers ?? []).map(phoneKey));
+  return {
+    ...detail,
+    phoneNumbers: detail.phoneNumbers.map((phone) => ({
+      ...phone,
+      listVisible: phone.listVisible ?? visiblePhoneKeys.has(phoneKey(phone)),
+    })),
+  };
+};
+
+const fetchCompanySummaries = async () =>
+  (await asJson(await apiFetch("/api/companies"))).map(mapCompanyListItem);
+
 export const fetchCompanies = async () => {
-  const list = await asJson(await apiFetch("/api/companies"));
+  const summaries = await fetchCompanySummaries();
   return Promise.all(
-    list.map(async (item) => {
-      const summary = mapCompanyListItem(item);
+    summaries.map(async (summary) => {
       try {
-        return await fetchCompanyDetail(summary.id);
+        return applyPhoneVisibility(await fetchCompanyDetail(summary.id), summary);
       } catch {
         return summary;
       }
     })
   );
+};
+
+export const fetchCompanyForEdit = async (companyId) => {
+  const [detail, summaries] = await Promise.all([
+    fetchCompanyDetail(companyId),
+    fetchCompanySummaries(),
+  ]);
+  const summary = summaries.find((company) => String(company.id) === String(companyId));
+  return applyPhoneVisibility(detail, summary);
 };
 
 const uploadFile = async (file) => {

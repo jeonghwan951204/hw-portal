@@ -40,6 +40,23 @@ function CompanyName({ company }) {
   );
 }
 
+function EmailAddresses({ emails = [], onCopy }) {
+  if (emails.length === 0) return <span className="text-slate-400">-</span>;
+
+  return (
+    <div className="space-y-1.5">
+      {emails.map((email, index) => (
+        <div key={`${email.label}-${email.value}-${index}`} className="flex items-center gap-2">
+          <span className="min-w-14 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500">
+            {email.label}
+          </span>
+          <CopyableValue label={`${email.label} 이메일`} value={email.value} onCopy={onCopy} mono={false} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function CompanyActions({ company, expanded, onToggleDetail, onDeleteRequest }) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
@@ -111,6 +128,7 @@ export default function CompanyList({
               <th className="px-4 py-3 text-left font-semibold">회사명</th>
               <th className="px-4 py-3 text-left font-semibold">사업자등록번호</th>
               <th className="px-4 py-3 text-left font-semibold">전화번호</th>
+              <th className="px-4 py-3 text-left font-semibold">이메일</th>
               <th className="px-4 py-3 text-left font-semibold">계좌정보</th>
               <th className="px-4 py-3 text-center font-semibold">관리</th>
             </tr>
@@ -118,13 +136,17 @@ export default function CompanyList({
           <tbody className="divide-y divide-slate-100">
             {companies.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
                   {totalCount === 0 ? "등록된 거래처가 없습니다." : "검색 조건에 맞는 거래처가 없습니다."}
                 </td>
               </tr>
             )}
             {companies.map((company) => {
               const expanded = expandedId === company.id;
+              const visiblePhoneNumbers = (company.phoneNumbers ?? []).filter(
+                (phone) => phone.listVisible
+              );
+              const visibleEmails = (company.emails ?? []).filter((email) => email.listVisible);
               return (
                 <Fragment key={company.id}>
                   <tr className={expanded ? "bg-blue-50/20" : ""}>
@@ -132,7 +154,8 @@ export default function CompanyList({
                     <td className="px-4 py-4">
                       <CopyableValue label="사업자등록번호" value={company.businessNumber} onCopy={onCopy} />
                     </td>
-                    <td className="px-4 py-4"><PhoneNumbers phoneNumbers={company.phoneNumbers} onCopy={onCopy} /></td>
+                    <td className="px-4 py-4"><PhoneNumbers phoneNumbers={visiblePhoneNumbers} onCopy={onCopy} /></td>
+                    <td className="px-4 py-4"><EmailAddresses emails={visibleEmails} onCopy={onCopy} /></td>
                     <td className="px-4 py-4">
                       <BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} />
                     </td>
@@ -147,7 +170,7 @@ export default function CompanyList({
                   </tr>
                   {expanded && (
                     <tr>
-                      <td colSpan={5} className="px-4 pb-4 pt-1">
+                      <td colSpan={6} className="px-4 pb-4 pt-1">
                         <CompanyDetail company={company} onCopy={onCopy} />
                       </td>
                     </tr>
@@ -167,6 +190,10 @@ export default function CompanyList({
         )}
         {companies.map((company) => {
           const expanded = expandedId === company.id;
+          const visiblePhoneNumbers = (company.phoneNumbers ?? []).filter(
+            (phone) => phone.listVisible
+          );
+          const visibleEmails = (company.emails ?? []).filter((email) => email.listVisible);
           return (
             <article key={company.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
@@ -182,7 +209,9 @@ export default function CompanyList({
                 <dt className="text-xs font-semibold text-slate-400">사업자등록번호</dt>
                 <dd><CopyableValue label="사업자등록번호" value={company.businessNumber} onCopy={onCopy} /></dd>
                 <dt className="text-xs font-semibold text-slate-400">전화번호</dt>
-                <dd><PhoneNumbers phoneNumbers={company.phoneNumbers} onCopy={onCopy} /></dd>
+                <dd><PhoneNumbers phoneNumbers={visiblePhoneNumbers} onCopy={onCopy} /></dd>
+                <dt className="text-xs font-semibold text-slate-400">이메일</dt>
+                <dd><EmailAddresses emails={visibleEmails} onCopy={onCopy} /></dd>
                 <dt className="text-xs font-semibold text-slate-400">계좌정보</dt>
                 <dd><BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} /></dd>
               </dl>
