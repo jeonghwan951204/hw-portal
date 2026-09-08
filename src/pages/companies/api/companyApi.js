@@ -36,7 +36,7 @@ const mapCompanyDetail = (company) => ({
   name: company.companyName ?? "",
   representative: company.representativeName ?? "",
   businessNumber: company.businessRegistrationNumber ?? "",
-  aliases: [],
+  aliases: company.aliases ?? [],
   bankAccounts: company.bankAccounts ?? [],
   phoneNumbers: (company.phoneNumbers ?? []).map(mapPhoneNumber),
   emails: (company.emails ?? []).map((email) => ({
@@ -62,6 +62,7 @@ const nonEmpty = (value) => String(value ?? "").trim();
 const createCompanyBody = (form, fileIds) => ({
   type: form.type,
   companyName: form.name.trim(),
+  aliases: form.aliases.map((alias) => nonEmpty(alias.value)).filter(Boolean),
   representativeName: nonEmpty(form.representative) || null,
   businessRegistrationNumber: nonEmpty(form.businessNumber) || null,
   bankAccounts: form.bankAccounts

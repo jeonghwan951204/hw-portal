@@ -152,11 +152,6 @@ export function useCompanyForm() {
       setError("회사명을 입력해 주세요.");
       return;
     }
-    if (form.aliases.some((alias) => alias.value.trim())) {
-      setError("거래처 별칭은 아직 서버 API에서 지원하지 않습니다.");
-      return;
-    }
-
     setSubmitting(true);
     setError("");
     setSuccessMessage("");

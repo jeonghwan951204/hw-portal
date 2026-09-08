@@ -18,8 +18,8 @@ export default function CompanyToolbar({ keyword, typeFilter, onKeywordChange, o
           type="search"
           value={keyword}
           onChange={(event) => onKeywordChange(event.target.value)}
-          placeholder="거래처명 검색"
-          aria-label="거래처명 검색"
+          placeholder="거래처명 또는 별칭 검색"
+          aria-label="거래처명 또는 별칭 검색"
           className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
         />
       </div>

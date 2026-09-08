@@ -45,8 +45,7 @@ function AliasFields({ items, onChange, onAdd, onRemove }) {
       <div>
         <p className="text-xs font-bold text-slate-500">거래처 별칭</p>
         <p className="mt-1 text-xs text-slate-400">
-          거래처를 구분하거나 검색할 때 사용하는 별칭입니다. 현재 서버 API의 별칭 저장 기능을
-          기다리고 있습니다.
+          거래처를 구분하거나 검색할 때 사용하는 별칭을 여러 개 입력할 수 있습니다.
         </p>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">

@@ -27,6 +27,7 @@ function LabeledValues({ values = [], fieldLabel, onCopy }) {
 
 export default function CompanyDetail({ company, onCopy }) {
   const attachments = company.attachments ?? [];
+  const aliases = company.aliases ?? [];
 
   return (
     <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
@@ -35,11 +36,22 @@ export default function CompanyDetail({ company, onCopy }) {
         <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-[1fr_0.7fr_1fr_2fr]">
           <div>
             <dt className="text-[11px] font-bold text-slate-400">회사명</dt>
-            <dd className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-700">
-              <span>{company.name || "-"}</span>
-              <span className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
-                {COMPANY_TYPE_LABELS[company.type] ?? company.type}
-              </span>
+            <dd className="mt-0.5 text-sm text-slate-700">
+              <div className="flex flex-wrap items-center gap-2">
+                <span>{company.name || "-"}</span>
+                <span className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
+                  {COMPANY_TYPE_LABELS[company.type] ?? company.type}
+                </span>
+              </div>
+              {aliases.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {aliases.map((alias, index) => (
+                    <span key={`${alias}-${index}`} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
+                      {alias}
+                    </span>
+                  ))}
+                </div>
+              )}
             </dd>
           </div>
           <div>

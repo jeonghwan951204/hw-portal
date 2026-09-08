@@ -52,7 +52,11 @@ export function useCompanyList() {
     return sourceCompanies.filter(
       (company) =>
         (!typeFilter || company.type === typeFilter) &&
-        (!normalizedKeyword || company.name.toLocaleLowerCase("ko-KR").includes(normalizedKeyword))
+        (!normalizedKeyword ||
+          company.name.toLocaleLowerCase("ko-KR").includes(normalizedKeyword) ||
+          company.aliases?.some((alias) =>
+            alias.toLocaleLowerCase("ko-KR").includes(normalizedKeyword)
+          ))
     );
   }, [keyword, sourceCompanies, typeFilter]);
 
