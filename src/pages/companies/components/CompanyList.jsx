@@ -104,6 +104,8 @@ export default function CompanyList({
   totalCount,
   loading,
   error,
+  searching,
+  searchError,
   expandedId,
   onToggleDetail,
   onCopy,
@@ -138,9 +140,19 @@ export default function CompanyList({
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <h2 className="text-sm font-bold text-slate-700">거래처 목록</h2>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-          {companies.length === totalCount ? `${totalCount}개사` : `${companies.length} / ${totalCount}개사`}
+          {searching
+            ? "검색 중..."
+            : companies.length === totalCount
+              ? `${totalCount}개사`
+              : `${companies.length} / ${totalCount}개사`}
         </span>
       </div>
+
+      {searchError && (
+        <p className="border-b border-red-100 bg-red-50 px-5 py-2.5 text-xs font-semibold text-red-600">
+          {searchError}
+        </p>
+      )}
 
       <div className="hidden overflow-x-auto md:block">
         {/* 자릿수가 고정인 사업자등록번호·전화번호·계좌번호 컬럼은 값 길이만큼 폭을 잡아 항상 전부 보여주고,

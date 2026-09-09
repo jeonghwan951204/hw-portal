@@ -72,7 +72,7 @@ src/pages/companies/
 | `POST /api/companies` | 거래처 등록 |
 | `PUT /api/companies/{companyId}` | 거래처 수정 |
 | `DELETE /api/companies/{companyId}` | 거래처 soft delete |
-| `GET /api/companies/options` | 계약 입력의 거래처 선택 목록 |
+| `GET /api/companies/options?keyword=` | 목록 검색(회사명·별칭), 계약 입력의 거래처 선택 목록 |
 | `GET /api/enums/COMPANY_TYPE` | 거래처 유형 선택값 |
 | `POST /api/files/uploads` | 파일 메타정보 등록 및 업로드 URL 발급 |
 | `POST /api/files/{fileId}/complete` | S3 업로드 완료 처리 |
@@ -113,7 +113,12 @@ GET /api/companies
 
 ### 검색과 필터
 
-- 검색은 이미 조회한 목록에서 회사명과 별칭을 대상으로 처리한다.
+- 검색은 `GET /api/companies/options?keyword=` 로 처리한다. 관리 목록 API 에는 검색
+  파라미터가 없어, 검색 API 가 돌려준 거래처 id 로 이미 조회한 목록을 거른다.
+- 서버가 회사명과 활성 별칭을 대소문자 무시 부분검색한다.
+- 입력이 멈추고 300ms 뒤에 호출하며, 검색 중에는 목록 헤더에 **검색 중...** 을 표시한다.
+- 검색이 실패하면 목록 위에 오류 문구를 표시하고 결과를 비운다. 검색어를 지우면 전체 목록으로
+  돌아간다.
 - 필터는 `GET /api/enums/COMPANY_TYPE` 응답의 거래처 유형을 대상으로 처리한다.
 - 필터 항목은 **전체** + 서버 enum 응답으로 구성한다([거래처 선택값 enum](#12-거래처-선택값-enum) 참고).
 

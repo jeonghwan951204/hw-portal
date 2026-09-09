@@ -153,6 +153,21 @@ export const fetchCompanies = async () => {
   return clone(companies);
 };
 
+// 실제 검색 API 와 같이 회사명·별칭을 대소문자 무시 부분검색한다.
+export const fetchCompanySearchIds = async (keyword) => {
+  await delay();
+  const normalized = String(keyword ?? "").trim().toLocaleLowerCase("ko-KR");
+  if (!normalized) return companies.map((company) => company.id);
+
+  return companies
+    .filter((company) =>
+      [company.name, ...(company.aliases ?? [])].some((name) =>
+        name.toLocaleLowerCase("ko-KR").includes(normalized)
+      )
+    )
+    .map((company) => company.id);
+};
+
 export const fetchCompanyDetail = async (companyId) => {
   await delay();
   const index = findIndex(companyId);

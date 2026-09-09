@@ -152,6 +152,16 @@ export const fetchCompanies = async () => {
   );
 };
 
+// 회사명·활성 별칭 부분검색(대소문자 무시) → 일치하는 거래처 id 배열.
+// 관리 목록 API 에는 검색 파라미터가 없어 셀렉트용 검색 API 로 id 를 받아 목록을 거른다.
+export const fetchCompanySearchIds = async (keyword) => {
+  if (USE_MOCK) return companyMock.fetchCompanySearchIds(keyword);
+
+  const params = new URLSearchParams({ keyword });
+  const options = await asJson(await apiFetch(`/api/companies/options?${params}`));
+  return options.map((option) => option.id);
+};
+
 export const fetchCompanyForEdit = async (companyId) => {
   if (USE_MOCK) return companyMock.fetchCompanyForEdit(companyId);
 
