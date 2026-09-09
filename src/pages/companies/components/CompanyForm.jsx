@@ -242,6 +242,7 @@ function AttachmentFields({ attachments, onAdd, onRemove }) {
 
 export default function CompanyForm({
   form,
+  typeOptions = [],
   error,
   submitLabel,
   submitting,
@@ -261,8 +262,11 @@ export default function CompanyForm({
           <div>
             <label className={LABEL_CLASS}>거래처 구분</label>
             <select value={form.type} onChange={(event) => onBasicChange("type", event.target.value)} className={INPUT_CLASS}>
-              <option value="PURCHASE">매입처</option>
-              <option value="SALES">매출처</option>
+              {typeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>

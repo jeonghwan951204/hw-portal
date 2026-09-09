@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { deleteCompany, fetchCompanies } from "../api/companyApi";
+import { useCompanyTypeOptions } from "./useCompanyTypeOptions";
 
 const copyWithFallback = async (text) => {
   if (navigator.clipboard?.writeText) {
@@ -18,6 +19,7 @@ const copyWithFallback = async (text) => {
 };
 
 export function useCompanyList() {
+  const { typeFilterOptions, typeLabelOf } = useCompanyTypeOptions();
   const copyTimerRef = useRef(null);
   const [sourceCompanies, setSourceCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +98,8 @@ export function useCompanyList() {
 
   return {
     companies,
+    typeFilterOptions,
+    typeLabelOf,
     totalCount: sourceCompanies.length,
     loading,
     error,

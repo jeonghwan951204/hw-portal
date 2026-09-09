@@ -4,7 +4,6 @@ import CompanyDetail from "./CompanyDetail";
 import CopyableValue from "./CopyableValue";
 import PhoneNumbers from "./PhoneNumbers";
 import BankAccounts from "./BankAccounts";
-import { COMPANY_TYPE_LABELS } from "../constants";
 
 function DetailButton({ expanded, onClick }) {
   return (
@@ -29,12 +28,12 @@ function DetailButton({ expanded, onClick }) {
   );
 }
 
-function CompanyName({ company }) {
+function CompanyName({ company, typeLabelOf }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="font-semibold text-slate-800">{company.name}</span>
       <span className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
-        {COMPANY_TYPE_LABELS[company.type] ?? company.type}
+        {typeLabelOf(company.type)}
       </span>
     </div>
   );
@@ -80,6 +79,7 @@ function CompanyActions({ company, expanded, onToggleDetail, onDeleteRequest }) 
 
 export default function CompanyList({
   companies,
+  typeLabelOf = (type) => type,
   totalCount,
   loading,
   error,
@@ -150,7 +150,7 @@ export default function CompanyList({
               return (
                 <Fragment key={company.id}>
                   <tr className={expanded ? "bg-blue-50/20" : ""}>
-                    <td className="px-4 py-4"><CompanyName company={company} /></td>
+                    <td className="px-4 py-4"><CompanyName company={company} typeLabelOf={typeLabelOf} /></td>
                     <td className="px-4 py-4">
                       <CopyableValue label="사업자등록번호" value={company.businessNumber} onCopy={onCopy} />
                     </td>
@@ -171,7 +171,7 @@ export default function CompanyList({
                   {expanded && (
                     <tr>
                       <td colSpan={6} className="px-4 pb-4 pt-1">
-                        <CompanyDetail company={company} onCopy={onCopy} />
+                        <CompanyDetail company={company} typeLabelOf={typeLabelOf} onCopy={onCopy} />
                       </td>
                     </tr>
                   )}
@@ -197,7 +197,7 @@ export default function CompanyList({
           return (
             <article key={company.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
-                <CompanyName company={company} />
+                <CompanyName company={company} typeLabelOf={typeLabelOf} />
                 <CompanyActions
                   company={company}
                   expanded={expanded}
@@ -215,7 +215,7 @@ export default function CompanyList({
                 <dt className="text-xs font-semibold text-slate-400">계좌정보</dt>
                 <dd><BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} /></dd>
               </dl>
-              {expanded && <div className="mt-4"><CompanyDetail company={company} onCopy={onCopy} /></div>}
+              {expanded && <div className="mt-4"><CompanyDetail company={company} typeLabelOf={typeLabelOf} onCopy={onCopy} /></div>}
             </article>
           );
         })}

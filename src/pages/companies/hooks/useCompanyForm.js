@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createCompany, fetchCompanyForEdit, updateCompany } from "../api/companyApi";
+import { useCompanyTypeOptions } from "./useCompanyTypeOptions";
 
 let fieldSequence = 0;
 const nextFieldId = () => `company-field-${++fieldSequence}`;
@@ -64,6 +65,7 @@ const ITEM_FACTORIES = {
 };
 
 export function useCompanyForm() {
+  const { typeOptions } = useCompanyTypeOptions();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = id !== undefined;
@@ -172,6 +174,7 @@ export function useCompanyForm() {
 
   return {
     form,
+    typeOptions,
     isEdit,
     loading,
     notFound,

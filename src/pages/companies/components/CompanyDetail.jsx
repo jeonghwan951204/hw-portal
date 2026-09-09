@@ -1,7 +1,6 @@
 import PhoneNumbers from "./PhoneNumbers";
 import CopyableValue from "./CopyableValue";
 import BankAccounts from "./BankAccounts";
-import { COMPANY_TYPE_LABELS } from "../constants";
 
 function LabeledValues({ values = [], fieldLabel, onCopy }) {
   if (values.length === 0) return <span className="text-slate-400">-</span>;
@@ -25,7 +24,7 @@ function LabeledValues({ values = [], fieldLabel, onCopy }) {
   );
 }
 
-export default function CompanyDetail({ company, onCopy }) {
+export default function CompanyDetail({ company, typeLabelOf = (type) => type, onCopy }) {
   const attachments = company.attachments ?? [];
   const aliases = company.aliases ?? [];
 
@@ -40,7 +39,7 @@ export default function CompanyDetail({ company, onCopy }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span>{company.name || "-"}</span>
                 <span className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
-                  {COMPANY_TYPE_LABELS[company.type] ?? company.type}
+                  {typeLabelOf(company.type)}
                 </span>
               </div>
               {aliases.length > 0 && (

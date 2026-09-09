@@ -1,6 +1,10 @@
-import { COMPANY_TYPE_FILTERS } from "../constants";
-
-export default function CompanyToolbar({ keyword, typeFilter, onKeywordChange, onTypeFilterChange }) {
+export default function CompanyToolbar({
+  keyword,
+  typeFilter,
+  typeFilterOptions = [],
+  onKeywordChange,
+  onTypeFilterChange,
+}) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="relative w-full sm:max-w-sm">
@@ -25,7 +29,7 @@ export default function CompanyToolbar({ keyword, typeFilter, onKeywordChange, o
       </div>
 
       <div className="inline-flex self-start rounded-lg border border-slate-200 bg-slate-50 p-1 sm:self-auto">
-        {COMPANY_TYPE_FILTERS.map((option) => (
+        {typeFilterOptions.map((option) => (
           <button
             key={option.value || "ALL"}
             type="button"
