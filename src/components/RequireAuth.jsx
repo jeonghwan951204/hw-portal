@@ -1,4 +1,5 @@
 import { getRefreshToken, getRole } from "../utils/auth";
+import { USE_MOCK } from "../utils/env";
 
 // ─── 인증·권한 가드 ────────────────────────────────────────────────────────────
 // 토큰(refreshToken)이 없으면 접근을 막는다.
@@ -19,6 +20,10 @@ const Blocked = ({ title, message }) => (
 );
 
 export default function RequireAuth({ roles, children }) {
+  // 로컬 목업 모드에서는 토큰 없이도 화면을 볼 수 있게 검사를 건너뛴다.
+  // USE_MOCK 은 dev 서버 + VITE_USE_MOCK=true 일 때만 참이므로 빌드 산출물에는 영향이 없다.
+  if (USE_MOCK) return children;
+
   // 미인증 → 공유링크 안내
   if (!getRefreshToken()) {
     return (

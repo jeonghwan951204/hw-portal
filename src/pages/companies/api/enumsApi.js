@@ -1,4 +1,6 @@
 import { apiFetch } from "../../../utils/api";
+import { USE_MOCK } from "../../../utils/env";
+import * as companyMock from "./companyMock";
 
 // 거래처 화면의 셀렉트/필터용 enum 옵션 그룹 (GET /api/enums/{group})
 export const COMPANY_ENUM_GROUPS = {
@@ -13,4 +15,7 @@ export const fetchEnum = async (group) => {
 };
 
 // 거래처 유형 선택값 조회
-export const fetchCompanyTypeOptions = () => fetchEnum(COMPANY_ENUM_GROUPS.COMPANY_TYPE);
+export const fetchCompanyTypeOptions = () =>
+  USE_MOCK
+    ? companyMock.fetchCompanyTypeOptions()
+    : fetchEnum(COMPANY_ENUM_GROUPS.COMPANY_TYPE);

@@ -40,7 +40,8 @@ src/pages/companies/
 ├── constants.js                      # 거래처 유형 전체 옵션 및 기본 선택값
 ├── api/
 │   ├── companyApi.js                 # 거래처·첨부파일 API와 데이터 변환
-│   └── enumsApi.js                   # 거래처 선택값 enum 조회
+│   ├── enumsApi.js                   # 거래처 선택값 enum 조회
+│   └── companyMock.js                # 로컬 목업 모드 데이터와 처리
 ├── hooks/
 │   ├── useCompanyTypeOptions.js      # 거래처 유형 선택값 로더(모듈 캐시)
 │   ├── useCompanyList.js             # 목록·검색·필터·삭제·복사 상태
@@ -78,6 +79,19 @@ src/pages/companies/
 
 조회 API는 응답 객체 또는 배열을 그대로 반환한다. 등록·수정·삭제와 파일 변경 API는
 `CommonResponse { message, data? }` 형식으로 반환한다.
+
+### 로컬 목업 모드
+
+로컬에서 백엔드 없이 화면을 확인할 수 있도록 목업 모드를 둔다.
+
+- 스위치는 `src/utils/env.js` 의 `USE_MOCK` 이며 **`import.meta.env.DEV` 이면서**
+  **`VITE_USE_MOCK=true`** 일 때만 켜진다. `.env.development` 에서만 `true` 이고
+  `.env.staging`·`.env.production` 은 `false` 이므로 빌드 산출물에서는 항상 꺼진다.
+- 켜지면 위 표의 거래처·enum API 대신 `api/companyMock.js` 가 응답한다. 첨부파일 업로드도
+  호출하지 않고 선택한 파일명만 유지한다.
+- 등록·수정·삭제 결과는 메모리에만 남으므로 새로고침하면 초기 데이터로 돌아간다.
+- 토큰 없이도 화면을 볼 수 있도록 `RequireAuth` 의 인증·권한 검사도 건너뛴다.
+- 목업 모드는 거래처 화면에만 적용된다. 계약·단가 등 다른 화면은 실제 API를 호출한다.
 
 ## 5. 목록 화면
 

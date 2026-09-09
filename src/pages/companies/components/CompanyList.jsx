@@ -28,28 +28,49 @@ function DetailButton({ expanded, onClick }) {
   );
 }
 
-function CompanyName({ company, typeLabelOf }) {
+function CompanyName({ company, typeLabelOf, overflow = "wrap" }) {
+  // 목록 표에서는 거래처 구분을 회사명 위에 올려 이름이 쓸 수 있는 가로 폭을 확보한다.
+  if (overflow === "truncate") {
+    return (
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold text-blue-500">{typeLabelOf(company.type)}</p>
+        <p className="truncate font-semibold text-slate-800" title={company.name}>
+          {company.name}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="font-semibold text-slate-800">{company.name}</span>
-      <span className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
+      <span className="shrink-0 rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
         {typeLabelOf(company.type)}
       </span>
     </div>
   );
 }
 
-function EmailAddresses({ emails = [], onCopy }) {
+function EmailAddresses({ emails = [], onCopy, overflow = "wrap" }) {
   if (emails.length === 0) return <span className="text-slate-400">-</span>;
 
   return (
     <div className="space-y-1.5">
       {emails.map((email, index) => (
-        <div key={`${email.label}-${email.value}-${index}`} className="flex items-center gap-2">
+        <div
+          key={`${email.label}-${email.value}-${index}`}
+          className={`flex items-center gap-2 ${overflow === "truncate" ? "min-w-0" : ""}`}
+        >
           <span className="min-w-14 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500">
             {email.label}
           </span>
-          <CopyableValue label={`${email.label} 이메일`} value={email.value} onCopy={onCopy} mono={false} />
+          <CopyableValue
+            label={`${email.label} 이메일`}
+            value={email.value}
+            onCopy={onCopy}
+            mono={false}
+            overflow={overflow}
+          />
         </div>
       ))}
     </div>
@@ -122,15 +143,17 @@ export default function CompanyList({
       </div>
 
       <div className="hidden overflow-x-auto md:block">
+        {/* 자릿수가 고정인 사업자등록번호·전화번호·계좌번호 컬럼은 값 길이만큼 폭을 잡아 항상 전부 보여주고,
+            길이가 들쭉날쭉한 회사명·이메일 컬럼만 `w-* max-w-0` 로 남은 폭을 나눠 갖고 말줄임 처리한다. */}
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold">회사명</th>
-              <th className="px-4 py-3 text-left font-semibold">사업자등록번호</th>
-              <th className="px-4 py-3 text-left font-semibold">전화번호</th>
-              <th className="px-4 py-3 text-left font-semibold">이메일</th>
-              <th className="px-4 py-3 text-left font-semibold">계좌정보</th>
-              <th className="px-4 py-3 text-center font-semibold">관리</th>
+              <th className="w-[22%] min-w-[8rem] max-w-0 px-4 py-3 text-left font-semibold">회사명</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">사업자등록번호</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">전화번호</th>
+              <th className="w-[78%] min-w-[12rem] max-w-0 px-4 py-3 text-left font-semibold">이메일</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">계좌정보</th>
+              <th className="whitespace-nowrap px-4 py-3 text-center font-semibold">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -150,16 +173,27 @@ export default function CompanyList({
               return (
                 <Fragment key={company.id}>
                   <tr className={expanded ? "bg-blue-50/20" : ""}>
-                    <td className="px-4 py-4"><CompanyName company={company} typeLabelOf={typeLabelOf} /></td>
-                    <td className="px-4 py-4">
-                      <CopyableValue label="사업자등록번호" value={company.businessNumber} onCopy={onCopy} />
+                    <td className="max-w-0 px-4 py-4">
+                      <CompanyName company={company} typeLabelOf={typeLabelOf} overflow="truncate" />
                     </td>
-                    <td className="px-4 py-4"><PhoneNumbers phoneNumbers={visiblePhoneNumbers} onCopy={onCopy} /></td>
-                    <td className="px-4 py-4"><EmailAddresses emails={visibleEmails} onCopy={onCopy} /></td>
-                    <td className="px-4 py-4">
-                      <BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} />
+                    <td className="whitespace-nowrap px-4 py-4">
+                      <CopyableValue
+                        label="사업자등록번호"
+                        value={company.businessNumber}
+                        onCopy={onCopy}
+                        overflow="nowrap"
+                      />
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="whitespace-nowrap px-4 py-4">
+                      <PhoneNumbers phoneNumbers={visiblePhoneNumbers} onCopy={onCopy} overflow="nowrap" />
+                    </td>
+                    <td className="max-w-0 px-4 py-4">
+                      <EmailAddresses emails={visibleEmails} onCopy={onCopy} overflow="truncate" />
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4">
+                      <BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} overflow="nowrap" />
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-center">
                       <CompanyActions
                         company={company}
                         expanded={expanded}

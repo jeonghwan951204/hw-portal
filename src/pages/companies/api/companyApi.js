@@ -1,4 +1,6 @@
 import { apiFetch } from "../../../utils/api";
+import { USE_MOCK } from "../../../utils/env";
+import * as companyMock from "./companyMock";
 
 const asJson = async (response) => {
   if (!response.ok) {
@@ -114,8 +116,10 @@ const createCompanyBody = (form, fileIds) => ({
   fileIds,
 });
 
-export const fetchCompanyDetail = async (companyId) =>
-  mapCompanyDetail(await asJson(await apiFetch(`/api/companies/${companyId}`)));
+export const fetchCompanyDetail = async (companyId) => {
+  if (USE_MOCK) return companyMock.fetchCompanyDetail(companyId);
+  return mapCompanyDetail(await asJson(await apiFetch(`/api/companies/${companyId}`)));
+};
 
 const phoneKey = (phone) => `${phone.label}\u0000${phone.value}`;
 
@@ -134,6 +138,8 @@ const fetchCompanySummaries = async () =>
   (await asJson(await apiFetch("/api/companies"))).map(mapCompanyListItem);
 
 export const fetchCompanies = async () => {
+  if (USE_MOCK) return companyMock.fetchCompanies();
+
   const summaries = await fetchCompanySummaries();
   return Promise.all(
     summaries.map(async (summary) => {
@@ -147,6 +153,8 @@ export const fetchCompanies = async () => {
 };
 
 export const fetchCompanyForEdit = async (companyId) => {
+  if (USE_MOCK) return companyMock.fetchCompanyForEdit(companyId);
+
   const [detail, summaries] = await Promise.all([
     fetchCompanyDetail(companyId),
     fetchCompanySummaries(),
@@ -192,6 +200,8 @@ const resolveFileIds = async (attachments) => {
 };
 
 export const createCompany = async (form) => {
+  if (USE_MOCK) return companyMock.createCompany(form);
+
   const fileIds = await resolveFileIds(form.attachments);
   return asJson(
     await apiFetch("/api/companies", {
@@ -203,6 +213,8 @@ export const createCompany = async (form) => {
 };
 
 export const updateCompany = async (companyId, form) => {
+  if (USE_MOCK) return companyMock.updateCompany(companyId, form);
+
   const fileIds = await resolveFileIds(form.attachments);
   return asJson(
     await apiFetch(`/api/companies/${companyId}`, {
@@ -213,5 +225,7 @@ export const updateCompany = async (companyId, form) => {
   );
 };
 
-export const deleteCompany = async (companyId) =>
-  asJson(await apiFetch(`/api/companies/${companyId}`, { method: "DELETE" }));
+export const deleteCompany = async (companyId) => {
+  if (USE_MOCK) return companyMock.deleteCompany(companyId);
+  return asJson(await apiFetch(`/api/companies/${companyId}`, { method: "DELETE" }));
+};
