@@ -28,22 +28,33 @@ function DetailButton({ expanded, onClick }) {
   );
 }
 
-function CompanyName({ company, typeLabelOf, overflow = "wrap" }) {
+function CompanyName({ company, typeLabelOf, overflow = "wrap", expanded, onToggleDetail }) {
+  // 회사명을 누르면 상세정보 버튼과 동일하게 상세 펼침을 토글한다.
+  const nameButton = (className) => (
+    <button
+      type="button"
+      onClick={() => onToggleDetail(company.id)}
+      aria-expanded={expanded}
+      title={company.name}
+      className={`font-semibold text-slate-800 hover:text-blue-600 hover:underline ${className}`}
+    >
+      {company.name}
+    </button>
+  );
+
   // 목록 표에서는 거래처 구분을 회사명 위에 올려 이름이 쓸 수 있는 가로 폭을 확보한다.
   if (overflow === "truncate") {
     return (
       <div className="min-w-0">
         <p className="text-[10px] font-bold text-blue-500">{typeLabelOf(company.type)}</p>
-        <p className="truncate font-semibold text-slate-800" title={company.name}>
-          {company.name}
-        </p>
+        {nameButton("block max-w-full truncate text-left")}
       </div>
     );
   }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-semibold text-slate-800">{company.name}</span>
+      {nameButton("text-left")}
       <span className="shrink-0 rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
         {typeLabelOf(company.type)}
       </span>
@@ -186,7 +197,13 @@ export default function CompanyList({
                 <Fragment key={company.id}>
                   <tr className={expanded ? "bg-blue-50/20" : ""}>
                     <td className="max-w-0 px-4 py-4">
-                      <CompanyName company={company} typeLabelOf={typeLabelOf} overflow="truncate" />
+                      <CompanyName
+                        company={company}
+                        typeLabelOf={typeLabelOf}
+                        overflow="truncate"
+                        expanded={expanded}
+                        onToggleDetail={onToggleDetail}
+                      />
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
                       <CopyableValue
@@ -243,7 +260,12 @@ export default function CompanyList({
           return (
             <article key={company.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
-                <CompanyName company={company} typeLabelOf={typeLabelOf} />
+                <CompanyName
+                  company={company}
+                  typeLabelOf={typeLabelOf}
+                  expanded={expanded}
+                  onToggleDetail={onToggleDetail}
+                />
                 <CompanyActions
                   company={company}
                   expanded={expanded}
