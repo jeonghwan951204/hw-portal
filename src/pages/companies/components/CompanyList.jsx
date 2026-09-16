@@ -5,22 +5,6 @@ import CopyableValue from "./CopyableValue";
 import PhoneNumbers from "./PhoneNumbers";
 import BankAccounts from "./BankAccounts";
 
-// 행 전체가 상세 펼침 버튼이므로, 펼침 여부만 알려주는 표시용 아이콘이다.
-function ExpandIndicator({ expanded }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  );
-}
-
 function CompanyName({ company, typeLabelOf, overflow = "wrap" }) {
   // 목록 표에서는 거래처 구분을 회사명 위에 올려 이름이 쓸 수 있는 가로 폭을 확보한다.
   if (overflow === "truncate") {
@@ -70,16 +54,16 @@ function EmailAddresses({ emails = [], onCopy, overflow = "wrap" }) {
   );
 }
 
-function CompanyActions({ company, expanded, onDeleteRequest }) {
+function CompanyActions({ company, onDeleteRequest }) {
   // 수정·삭제는 행 클릭(상세 펼침)과 겹치지 않도록 이벤트 전파를 막는다.
   const stop = (event) => event.stopPropagation();
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+    <div className="flex items-center justify-end gap-2 whitespace-nowrap">
       <Link
         to={`/companies/${company.id}/edit`}
         onClick={stop}
-        className="text-xs font-bold text-slate-500 hover:text-blue-600"
+        className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
       >
         수정
       </Link>
@@ -89,11 +73,10 @@ function CompanyActions({ company, expanded, onDeleteRequest }) {
           stop(event);
           onDeleteRequest(company);
         }}
-        className="text-xs font-bold text-slate-400 hover:text-red-600"
+        className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
       >
         삭제
       </button>
-      <ExpandIndicator expanded={expanded} />
     </div>
   );
 }
@@ -226,7 +209,6 @@ export default function CompanyList({
                     <td className="whitespace-nowrap px-4 py-4 text-center">
                       <CompanyActions
                         company={company}
-                        expanded={expanded}
                         onDeleteRequest={onDeleteRequest}
                       />
                     </td>
@@ -267,7 +249,6 @@ export default function CompanyList({
                 <CompanyName company={company} typeLabelOf={typeLabelOf} />
                 <CompanyActions
                   company={company}
-                  expanded={expanded}
                   onDeleteRequest={onDeleteRequest}
                 />
               </div>
