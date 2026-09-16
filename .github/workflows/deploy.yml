@@ -1,27 +1,37 @@
-name: Deploy production
+name: Deploy hw-portal
 
 on:
+  workflow_dispatch:
   push:
     branches:
+      - deploy
       - production
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write
-
-env:
-  AWS_REGION: ap-northeast-2
-  S3_BUCKET: work.hojaemetal.com-261949105760-ap-northeast-2-an
 
 concurrency:
-  group: hw-portal-production
+  group: hw-portal-${{ github.ref_name }}-deploy
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  deploy-home:
+    if: github.ref == 'refs/heads/deploy'
+    runs-on: [self-hosted, hw-portal, hw-portal-deploy]
+
+    steps:
+      - name: Deploy hw-portal
+        run: |
+          /srv/docker/hw-project/scripts/deploy-hw-portal.sh
+
+  deploy-production:
+    if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: ap-northeast-2
+      S3_BUCKET: work.hojaemetal.com-261949105760-ap-northeast-2-an
 
     steps:
       - name: Checkout
