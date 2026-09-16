@@ -161,7 +161,7 @@ export default function CompanyList({
               <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">전화번호</th>
               <th className="w-[78%] min-w-[12rem] max-w-0 px-4 py-3 text-left font-semibold">이메일</th>
               <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">계좌정보</th>
-              <th className="whitespace-nowrap px-4 py-3 text-center font-semibold">관리</th>
+              <th className="whitespace-nowrap py-3 pl-4 pr-6 text-right font-semibold">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -206,7 +206,7 @@ export default function CompanyList({
                     <td className="whitespace-nowrap px-4 py-4">
                       <BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} overflow="nowrap" />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-center">
+                    <td className="whitespace-nowrap py-4 pl-4 pr-6">
                       <CompanyActions
                         company={company}
                         onDeleteRequest={onDeleteRequest}
