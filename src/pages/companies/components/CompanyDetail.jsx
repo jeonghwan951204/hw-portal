@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import PhoneNumbers from "./PhoneNumbers";
 import CopyableValue from "./CopyableValue";
 import BankAccounts from "./BankAccounts";
@@ -24,14 +25,38 @@ function LabeledValues({ values = [], fieldLabel, onCopy }) {
   );
 }
 
-export default function CompanyDetail({ company, typeLabelOf = (type) => type, onCopy }) {
+export default function CompanyDetail({
+  company,
+  typeLabelOf = (type) => type,
+  onCopy,
+  onDeleteRequest,
+}) {
   const attachments = company.attachments ?? [];
   const aliases = company.aliases ?? [];
 
   return (
     <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
       <div>
-        <p className="text-xs font-bold text-blue-600">기본정보</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs font-bold text-blue-600">기본정보</p>
+          {onDeleteRequest && (
+            <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
+              <Link
+                to={`/companies/${company.id}/edit`}
+                className="text-xs font-bold text-slate-500 hover:text-blue-600 hover:underline"
+              >
+                수정
+              </Link>
+              <button
+                type="button"
+                onClick={() => onDeleteRequest(company)}
+                className="text-xs font-bold text-slate-400 hover:text-red-600 hover:underline"
+              >
+                삭제
+              </button>
+            </div>
+          )}
+        </div>
         <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-[1fr_0.7fr_1fr_2fr]">
           <div>
             <dt className="text-[11px] font-bold text-slate-400">회사명</dt>
@@ -74,7 +99,8 @@ export default function CompanyDetail({ company, typeLabelOf = (type) => type, o
 
       <div className="mt-3 border-t border-blue-100 pt-3">
         <p className="text-xs font-bold text-blue-600">연락정보</p>
-        <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 전화번호는 자릿수가 일정해 좁게 두고, 줄인 폭을 이메일·주소에 4:6 으로 나눠준다. */}
+        <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-[minmax(11rem,1fr)_1.9fr_2.1fr]">
           <div>
             <dt className="text-[11px] font-bold text-slate-400">전화번호</dt>
             <dd className="mt-0.5 text-sm"><PhoneNumbers phoneNumbers={company.phoneNumbers} onCopy={onCopy} /></dd>

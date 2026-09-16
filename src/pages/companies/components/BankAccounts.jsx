@@ -12,7 +12,12 @@ export default function BankAccounts({ bankAccounts = [], onCopy, overflow = "wr
             overflow === "wrap" ? "flex-wrap gap-y-1" : "min-w-0"
           }`}
         >
-          <span className="min-w-12 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500">
+          <span
+            className={`shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500 ${
+              overflow === "wrap" ? "min-w-12" : "max-w-20 truncate"
+            }`}
+            title={account.label}
+          >
             {account.label}
           </span>
           <span

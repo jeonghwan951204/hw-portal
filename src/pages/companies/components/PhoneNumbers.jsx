@@ -10,7 +10,12 @@ export default function PhoneNumbers({ phoneNumbers = [], onCopy, overflow = "wr
           key={`${phone.label}-${phone.value}-${index}`}
           className={`flex items-center gap-2 ${overflow === "truncate" ? "min-w-0" : ""}`}
         >
-          <span className="min-w-14 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500">
+          <span
+            className={`shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500 ${
+              overflow === "wrap" ? "min-w-14" : "max-w-20 truncate"
+            }`}
+            title={phone.label}
+          >
             {phone.label}
           </span>
           <CopyableValue label={phone.label} value={phone.value} onCopy={onCopy} overflow={overflow} />

@@ -38,7 +38,12 @@ function EmailAddresses({ emails = [], onCopy, overflow = "wrap" }) {
           key={`${email.label}-${email.value}-${index}`}
           className={`flex items-center gap-2 ${overflow === "truncate" ? "min-w-0" : ""}`}
         >
-          <span className="min-w-14 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500">
+          <span
+            className={`shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500 ${
+              overflow === "wrap" ? "min-w-14" : "max-w-20 truncate"
+            }`}
+            title={email.label}
+          >
             {email.label}
           </span>
           <CopyableValue
@@ -50,33 +55,6 @@ function EmailAddresses({ emails = [], onCopy, overflow = "wrap" }) {
           />
         </div>
       ))}
-    </div>
-  );
-}
-
-function CompanyActions({ company, onDeleteRequest }) {
-  // 수정·삭제는 행 클릭(상세 펼침)과 겹치지 않도록 이벤트 전파를 막는다.
-  const stop = (event) => event.stopPropagation();
-
-  return (
-    <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-      <Link
-        to={`/companies/${company.id}/edit`}
-        onClick={stop}
-        className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-      >
-        수정
-      </Link>
-      <button
-        type="button"
-        onClick={(event) => {
-          stop(event);
-          onDeleteRequest(company);
-        }}
-        className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-      >
-        삭제
-      </button>
     </div>
   );
 }
@@ -156,18 +134,17 @@ export default function CompanyList({
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
-              <th className="w-[22%] min-w-[8rem] max-w-0 px-4 py-3 text-left font-semibold">회사명</th>
+              <th className="w-[32%] min-w-[10rem] max-w-0 px-4 py-3 text-left font-semibold">회사명</th>
               <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">사업자등록번호</th>
               <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">전화번호</th>
-              <th className="w-[78%] min-w-[12rem] max-w-0 px-4 py-3 text-left font-semibold">이메일</th>
+              <th className="w-[68%] min-w-[16rem] max-w-0 px-4 py-3 text-left font-semibold">이메일</th>
               <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">계좌정보</th>
-              <th className="whitespace-nowrap py-3 pl-4 pr-6 text-right font-semibold">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {companies.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                <td colSpan={5} className="px-4 py-12 text-center text-slate-400">
                   {totalCount === 0 ? "등록된 거래처가 없습니다." : "검색 조건에 맞는 거래처가 없습니다."}
                 </td>
               </tr>
@@ -206,17 +183,16 @@ export default function CompanyList({
                     <td className="whitespace-nowrap px-4 py-4">
                       <BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} overflow="nowrap" />
                     </td>
-                    <td className="whitespace-nowrap py-4 pl-4 pr-6">
-                      <CompanyActions
-                        company={company}
-                        onDeleteRequest={onDeleteRequest}
-                      />
-                    </td>
                   </tr>
                   {expanded && (
                     <tr>
-                      <td colSpan={6} className="px-4 pb-4 pt-1">
-                        <CompanyDetail company={company} typeLabelOf={typeLabelOf} onCopy={onCopy} />
+                      <td colSpan={5} className="px-4 pb-4 pt-1">
+                        <CompanyDetail
+                          company={company}
+                          typeLabelOf={typeLabelOf}
+                          onCopy={onCopy}
+                          onDeleteRequest={onDeleteRequest}
+                        />
                       </td>
                     </tr>
                   )}
@@ -245,13 +221,7 @@ export default function CompanyList({
               {...rowToggleProps(company, expanded, onToggleDetail)}
               className={`cursor-pointer p-4 transition-colors ${expanded ? "bg-blue-50/20" : ""}`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <CompanyName company={company} typeLabelOf={typeLabelOf} />
-                <CompanyActions
-                  company={company}
-                  onDeleteRequest={onDeleteRequest}
-                />
-              </div>
+              <CompanyName company={company} typeLabelOf={typeLabelOf} />
               <dl className="mt-3 grid grid-cols-[7rem_1fr] gap-y-2 text-sm">
                 <dt className="text-xs font-semibold text-slate-400">사업자등록번호</dt>
                 <dd><CopyableValue label="사업자등록번호" value={company.businessNumber} onCopy={onCopy} /></dd>
@@ -265,7 +235,12 @@ export default function CompanyList({
               {/* 펼쳐진 상세 영역을 눌렀다고 다시 접히지 않도록 전파를 막는다. */}
               {expanded && (
                 <div className="mt-4" onClick={(event) => event.stopPropagation()}>
-                  <CompanyDetail company={company} typeLabelOf={typeLabelOf} onCopy={onCopy} />
+                  <CompanyDetail
+                    company={company}
+                    typeLabelOf={typeLabelOf}
+                    onCopy={onCopy}
+                    onDeleteRequest={onDeleteRequest}
+                  />
                 </div>
               )}
             </article>
