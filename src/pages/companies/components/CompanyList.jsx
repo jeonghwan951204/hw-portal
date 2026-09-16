@@ -5,56 +5,38 @@ import CopyableValue from "./CopyableValue";
 import PhoneNumbers from "./PhoneNumbers";
 import BankAccounts from "./BankAccounts";
 
-function DetailButton({ expanded, onClick }) {
+// 행 전체가 상세 펼침 버튼이므로, 펼침 여부만 알려주는 표시용 아이콘이다.
+function ExpandIndicator({ expanded }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-expanded={expanded}
-      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700"
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
     >
-      상세정보
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        aria-hidden="true"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
   );
 }
 
-function CompanyName({ company, typeLabelOf, overflow = "wrap", expanded, onToggleDetail }) {
-  // 회사명을 누르면 상세정보 버튼과 동일하게 상세 펼침을 토글한다.
-  const nameButton = (className) => (
-    <button
-      type="button"
-      onClick={() => onToggleDetail(company.id)}
-      aria-expanded={expanded}
-      title={company.name}
-      className={`font-semibold text-slate-800 hover:text-blue-600 hover:underline ${className}`}
-    >
-      {company.name}
-    </button>
-  );
-
+function CompanyName({ company, typeLabelOf, overflow = "wrap" }) {
   // 목록 표에서는 거래처 구분을 회사명 위에 올려 이름이 쓸 수 있는 가로 폭을 확보한다.
   if (overflow === "truncate") {
     return (
       <div className="min-w-0">
         <p className="text-[10px] font-bold text-blue-500">{typeLabelOf(company.type)}</p>
-        {nameButton("block max-w-full truncate text-left")}
+        <p className="truncate font-semibold text-slate-800" title={company.name}>
+          {company.name}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {nameButton("text-left")}
+      <span className="font-semibold text-slate-800">{company.name}</span>
       <span className="shrink-0 rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-600">
         {typeLabelOf(company.type)}
       </span>
@@ -88,26 +70,46 @@ function EmailAddresses({ emails = [], onCopy, overflow = "wrap" }) {
   );
 }
 
-function CompanyActions({ company, expanded, onToggleDetail, onDeleteRequest }) {
+function CompanyActions({ company, expanded, onDeleteRequest }) {
+  // 수정·삭제는 행 클릭(상세 펼침)과 겹치지 않도록 이벤트 전파를 막는다.
+  const stop = (event) => event.stopPropagation();
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-      <DetailButton expanded={expanded} onClick={() => onToggleDetail(company.id)} />
       <Link
         to={`/companies/${company.id}/edit`}
+        onClick={stop}
         className="text-xs font-bold text-slate-500 hover:text-blue-600"
       >
         수정
       </Link>
       <button
         type="button"
-        onClick={() => onDeleteRequest(company)}
+        onClick={(event) => {
+          stop(event);
+          onDeleteRequest(company);
+        }}
         className="text-xs font-bold text-slate-400 hover:text-red-600"
       >
         삭제
       </button>
+      <ExpandIndicator expanded={expanded} />
     </div>
   );
 }
+
+// 행 전체를 눌러 상세를 펼친다. 행 안의 링크·버튼은 각자 전파를 막는다.
+const rowToggleProps = (company, expanded, onToggleDetail) => ({
+  onClick: () => onToggleDetail(company.id),
+  onKeyDown: (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onToggleDetail(company.id);
+  },
+  tabIndex: 0,
+  "aria-expanded": expanded,
+  title: "누르면 상세정보를 펼칩니다",
+});
 
 export default function CompanyList({
   companies,
@@ -195,15 +197,14 @@ export default function CompanyList({
               const visibleEmails = (company.emails ?? []).filter((email) => email.listVisible);
               return (
                 <Fragment key={company.id}>
-                  <tr className={expanded ? "bg-blue-50/20" : ""}>
+                  <tr
+                    {...rowToggleProps(company, expanded, onToggleDetail)}
+                    className={`cursor-pointer transition-colors hover:bg-blue-50/40 ${
+                      expanded ? "bg-blue-50/20" : ""
+                    }`}
+                  >
                     <td className="max-w-0 px-4 py-4">
-                      <CompanyName
-                        company={company}
-                        typeLabelOf={typeLabelOf}
-                        overflow="truncate"
-                        expanded={expanded}
-                        onToggleDetail={onToggleDetail}
-                      />
+                      <CompanyName company={company} typeLabelOf={typeLabelOf} overflow="truncate" />
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
                       <CopyableValue
@@ -226,7 +227,6 @@ export default function CompanyList({
                       <CompanyActions
                         company={company}
                         expanded={expanded}
-                        onToggleDetail={onToggleDetail}
                         onDeleteRequest={onDeleteRequest}
                       />
                     </td>
@@ -258,18 +258,16 @@ export default function CompanyList({
           );
           const visibleEmails = (company.emails ?? []).filter((email) => email.listVisible);
           return (
-            <article key={company.id} className="p-4">
+            <article
+              key={company.id}
+              {...rowToggleProps(company, expanded, onToggleDetail)}
+              className={`cursor-pointer p-4 transition-colors ${expanded ? "bg-blue-50/20" : ""}`}
+            >
               <div className="flex items-start justify-between gap-3">
-                <CompanyName
-                  company={company}
-                  typeLabelOf={typeLabelOf}
-                  expanded={expanded}
-                  onToggleDetail={onToggleDetail}
-                />
+                <CompanyName company={company} typeLabelOf={typeLabelOf} />
                 <CompanyActions
                   company={company}
                   expanded={expanded}
-                  onToggleDetail={onToggleDetail}
                   onDeleteRequest={onDeleteRequest}
                 />
               </div>
@@ -283,7 +281,12 @@ export default function CompanyList({
                 <dt className="text-xs font-semibold text-slate-400">계좌정보</dt>
                 <dd><BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} /></dd>
               </dl>
-              {expanded && <div className="mt-4"><CompanyDetail company={company} typeLabelOf={typeLabelOf} onCopy={onCopy} /></div>}
+              {/* 펼쳐진 상세 영역을 눌렀다고 다시 접히지 않도록 전파를 막는다. */}
+              {expanded && (
+                <div className="mt-4" onClick={(event) => event.stopPropagation()}>
+                  <CompanyDetail company={company} typeLabelOf={typeLabelOf} onCopy={onCopy} />
+                </div>
+              )}
             </article>
           );
         })}

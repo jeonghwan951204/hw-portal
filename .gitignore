@@ -29,4 +29,7 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
-.claude/
+.claude
+
+# 거래처 엑셀 이관 변환 결과
+scripts/companies-import/out/

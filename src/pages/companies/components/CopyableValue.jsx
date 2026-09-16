@@ -16,7 +16,11 @@ export default function CopyableValue({ label, value, onCopy, mono = true, overf
   return (
     <button
       type="button"
-      onClick={() => onCopy(label, value)}
+      // 목록 행 클릭(상세 펼침)과 겹치지 않도록 전파를 막는다.
+      onClick={(event) => {
+        event.stopPropagation();
+        onCopy(label, value);
+      }}
       // 말줄임 표시일 때는 잘린 값을 확인할 수 있도록 전체 값을 함께 노출한다.
       title={overflow === "truncate" ? `${value} (클릭하여 ${label} 복사)` : `${label} 복사`}
       className={`group max-w-full gap-1.5 text-left text-slate-600 hover:text-blue-600 ${root} ${

@@ -33,13 +33,8 @@ export function useCompanyTypeOptions() {
   const [loading, setLoading] = useState(() => !cache);
 
   useEffect(() => {
-    if (cache) {
-      setLoading(false);
-      return;
-    }
-
     let alive = true;
-    setLoading(true);
+    // 캐시가 있으면 즉시 resolve 되므로 별도 분기 없이 콜백에서만 상태를 갱신한다.
     loadCompanyTypeOptions().then((options) => {
       if (!alive) return;
       setTypeOptions(options);
