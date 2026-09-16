@@ -1,0 +1,194 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { createCompany, fetchCompanyForEdit, updateCompany } from "../api/companyApi";
+import { useCompanyTypeOptions } from "./useCompanyTypeOptions";
+
+let fieldSequence = 0;
+const nextFieldId = () => `company-field-${++fieldSequence}`;
+
+const createValueItem = (label = "", value = "", listVisible = false, recordId = null) => ({
+  id: nextFieldId(),
+  recordId,
+  label,
+  value,
+  listVisible,
+});
+const createAlias = (value = "") => ({ id: nextFieldId(), value });
+const createBankAccount = (label = "", bankName = "", accountNumber = "", recordId = null) => ({
+  id: nextFieldId(),
+  recordId,
+  label,
+  bankName,
+  accountNumber,
+});
+
+const createInitialForm = () => ({
+  type: "PURCHASE",
+  name: "",
+  representative: "",
+  businessNumber: "",
+  aliases: [createAlias()],
+  bankAccounts: [createBankAccount("거래용"), createBankAccount("세금용")],
+  phoneNumbers: [createValueItem("대표전화"), createValueItem("팩스")],
+  emails: [createValueItem("세금계산서")],
+  addresses: [createValueItem("사업장")],
+  memo: "",
+  attachments: [],
+});
+
+const createFormFromCompany = (company) => ({
+  ...company,
+  aliases: company.aliases?.length
+    ? company.aliases.map((alias) => createAlias(alias))
+    : [createAlias()],
+  bankAccounts: company.bankAccounts.map(({ label, bankName, accountNumber, recordId }) =>
+    createBankAccount(label ?? "", bankName, accountNumber, recordId)
+  ),
+  phoneNumbers: company.phoneNumbers.map(({ label, value, listVisible, recordId }) =>
+    createValueItem(label, value, listVisible, recordId)
+  ),
+  emails: company.emails.map(({ label, value, listVisible, recordId }) =>
+    createValueItem(label, value, listVisible, recordId)
+  ),
+  addresses: company.addresses.map(({ label, value, recordId }) =>
+    createValueItem(label ?? "", value, false, recordId)
+  ),
+  attachments: company.attachments.map((file) => ({ ...file })),
+});
+
+const ITEM_FACTORIES = {
+  aliases: () => createAlias(),
+  bankAccounts: () => createBankAccount(),
+  phoneNumbers: () => createValueItem(),
+  emails: () => createValueItem(),
+  addresses: () => createValueItem(),
+};
+
+export function useCompanyForm() {
+  const { typeOptions } = useCompanyTypeOptions();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = id !== undefined;
+  const [form, setForm] = useState(createInitialForm);
+  const [loading, setLoading] = useState(isEdit);
+  const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isEdit) return;
+
+    let active = true;
+    setLoading(true);
+    fetchCompanyForEdit(id)
+      .then((company) => {
+        if (active) setForm(createFormFromCompany(company));
+      })
+      .catch((fetchError) => {
+        if (!active) return;
+        if (fetchError.status === 404) setNotFound(true);
+        else setLoadError(fetchError.message || "거래처 정보를 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [id, isEdit]);
+
+  const changeBasic = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setError("");
+  };
+
+  const changeItem = (group, itemId, field, value) => {
+    setForm((current) => ({
+      ...current,
+      [group]: current[group].map((item) =>
+        item.id === itemId ? { ...item, [field]: value } : item
+      ),
+    }));
+    setError("");
+  };
+
+  const addItem = (group) => {
+    setForm((current) => ({
+      ...current,
+      [group]: [...current[group], ITEM_FACTORIES[group]()],
+    }));
+  };
+
+  const removeItem = (group, itemId) => {
+    setForm((current) => ({
+      ...current,
+      [group]: current[group].filter((item) => item.id !== itemId),
+    }));
+  };
+
+  const addAttachments = (files) => {
+    const nextFiles = Array.from(files).map((file) => ({
+      id: `${file.name}-${file.lastModified}-${file.size}`,
+      name: file.name,
+      file,
+    }));
+    setForm((current) => ({
+      ...current,
+      attachments: [
+        ...current.attachments,
+        ...nextFiles.filter(
+          (nextFile) => !current.attachments.some((file) => file.id === nextFile.id)
+        ),
+      ],
+    }));
+    setError("");
+  };
+
+  const removeAttachment = (fileId) => {
+    setForm((current) => ({
+      ...current,
+      attachments: current.attachments.filter((file) => file.id !== fileId),
+    }));
+  };
+
+  const submit = async () => {
+    if (submitting) return;
+    if (!form.name.trim()) {
+      setError("회사명을 입력해 주세요.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      if (isEdit) await updateCompany(id, form);
+      else await createCompany(form);
+      navigate("/companies", { replace: true });
+    } catch (submitError) {
+      setError(submitError.message || `거래처를 ${isEdit ? "수정" : "등록"}하지 못했습니다.`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return {
+    form,
+    typeOptions,
+    isEdit,
+    loading,
+    notFound,
+    loadError,
+    error,
+    submitting,
+    submitLabel: submitting ? "저장 중..." : isEdit ? "수정 완료" : "등록",
+    onBasicChange: changeBasic,
+    onItemChange: changeItem,
+    onItemAdd: addItem,
+    onItemRemove: removeItem,
+    onAttachmentsAdd: addAttachments,
+    onAttachmentRemove: removeAttachment,
+    onSubmit: submit,
+    onCancel: () => navigate("/companies"),
+  };
+}

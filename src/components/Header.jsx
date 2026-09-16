@@ -33,7 +33,9 @@ function DropdownMenu({ item }) {
   const ref = useRef(null);
   const location = useLocation();
 
-  const isActive = item.children.some((child) => location.pathname === child.to);
+  const isActive = item.children.some(
+    (child) => location.pathname === child.to || location.pathname.startsWith(`${child.to}/`)
+  );
 
   useEffect(() => {
     const handleClickOutside = (e) => {
