@@ -16,10 +16,9 @@ export default function FormStepConfirm({
   prices,
   items,
   primaryItemId,
-  companies = [],
+  customerName,
   labelOf = (_g, v) => v,
 }) {
-  const customerName = companies.find((c) => String(c.id) === String(basic.customerId))?.name;
   const priceTypeLabel = (v) => labelOf(ENUM_GROUPS.PRICE_TYPE, v);
 
   return (

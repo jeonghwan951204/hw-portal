@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createContract, fetchCompanies, fetchContractDetail, updateContract } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
+import { useCompanySearch } from "./useCompanySearch";
 import { useEnums } from "./useEnums";
 import { useToast } from "./useToast";
 
@@ -69,14 +70,8 @@ export function useContractForm() {
   const [primaryItemId, setPrimaryItemId] = useState(() => items?.[0]?.tempId ?? null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [companies, setCompanies] = useState([]);
-
-  // 거래처 목록 (셀렉트용)
-  useEffect(() => {
-    fetchCompanies()
-      .then((list) => setCompanies(list ?? []))
-      .catch(() => {});
-  }, []);
+  const [customerName, setCustomerName] = useState(""); // 선택된 거래처명 (표시용)
+  const companySearch = useCompanySearch();
 
   // 수정 모드 프리필 — 헤더만 수정 가능(PUT). 단가·품목은 이 폼에서 바꾸지 않음
   useEffect(() => {
@@ -95,6 +90,15 @@ export function useContractForm() {
           endDate: d.endDate ?? "",
           memo: d.memo ?? "",
         });
+        // 상세 응답엔 customerId 만 있으므로 거래처명은 셀렉트용 목록에서 찾는다
+        if (d.customerId != null) {
+          fetchCompanies()
+            .then((list) => {
+              const found = (list ?? []).find((c) => String(c.id) === String(d.customerId));
+              setCustomerName(found?.name ?? "");
+            })
+            .catch(() => {});
+        }
       })
       .catch((e) => showToast("error", e.message || "계약을 불러오지 못했습니다"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,6 +108,11 @@ export function useContractForm() {
   const handleBasicChange = (field, value) => {
     if (field === "contractQuantity" && value !== "" && Number(value) < 0) return;
     setBasic((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCustomerSelect = (company) => {
+    setBasic((prev) => ({ ...prev, customerId: company.id != null ? String(company.id) : "" }));
+    setCustomerName(company.name ?? "");
   };
 
   // ── 스텝 2: 단가 (추가형) ──
@@ -288,7 +297,12 @@ export function useContractForm() {
     basicStep: {
       basic,
       onChange: handleBasicChange,
-      companies,
+      companySelect: {
+        ...companySearch,
+        value: basic.customerId,
+        selectedName: customerName,
+        onSelect: handleCustomerSelect,
+      },
       ownerOptions: enums[ENUM_GROUPS.OWNER_COMPANY] ?? [],
       tradeOptions: enums[ENUM_GROUPS.TRADE_TYPE] ?? [],
       statusOptions: enums[ENUM_GROUPS.CONTRACT_STATUS] ?? [],
@@ -322,7 +336,7 @@ export function useContractForm() {
       prices,
       items,
       primaryItemId,
-      companies,
+      customerName,
       labelOf,
     },
     saveModal: {
