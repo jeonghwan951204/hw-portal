@@ -1,3 +1,4 @@
+import CompanySelect from "./CompanySelect";
 import NumericInput from "./NumericInput";
 
 const INPUT_CLASS =
@@ -30,7 +31,7 @@ function SegmentGroup({ options, value, onChange }) {
 export default function FormStepBasic({
   basic,
   onChange,
-  companies = [],
+  companySelect,
   ownerOptions = [],
   tradeOptions = [],
   statusOptions = [],
@@ -74,16 +75,7 @@ export default function FormStepBasic({
         </div>
         <div>
           <label className={LABEL_CLASS}>거래처</label>
-          <select
-            value={basic.customerId}
-            onChange={(e) => onChange("customerId", e.target.value)}
-            className={INPUT_CLASS}
-          >
-            <option value="">거래처 선택</option>
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+          <CompanySelect {...companySelect} className={INPUT_CLASS} />
         </div>
         <div>
           <label className={LABEL_CLASS}>상태</label>
