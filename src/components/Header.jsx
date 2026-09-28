@@ -18,6 +18,7 @@ const NAV_ITEMS = [
       { label: "재고관리", to: "/inventory" },
       { label: "계근 조회", to: "/weighing" },
       { label: "거래처관리", to: "/companies" },
+      { label: "품목관리", to: "/items" },
     ],
   },
   {
