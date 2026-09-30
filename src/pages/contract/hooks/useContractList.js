@@ -14,16 +14,40 @@ const LIST_ENUMS = [
   ENUM_GROUPS.PRICE_TYPE,
 ];
 
+// 목록 조회 조건(필터·검색어·페이지) 보존 — 상세 화면에 다녀와도 유지되도록 세션 스토리지에 저장
+const LIST_STATE_KEY = "contract:listState";
+const DEFAULT_LIST_STATE = { ownerFilter: "", statusFilter: "IN_PROGRESS", search: "", page: 1 };
+
+const loadListState = () => {
+  try {
+    return { ...DEFAULT_LIST_STATE, ...JSON.parse(sessionStorage.getItem(LIST_STATE_KEY)) };
+  } catch {
+    return DEFAULT_LIST_STATE;
+  }
+};
+
 export function useContractList() {
   const navigate = useNavigate();
   const { toast, showToast } = useToast();
   const { enums, labelOf } = useEnums(LIST_ENUMS);
 
   // 필터 — "" = 전체(파라미터 미전송)
-  const [ownerFilter, setOwnerFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("IN_PROGRESS");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [initialState] = useState(loadListState);
+  const [ownerFilter, setOwnerFilter] = useState(initialState.ownerFilter);
+  const [statusFilter, setStatusFilter] = useState(initialState.statusFilter);
+  const [search, setSearch] = useState(initialState.search);
+  const [page, setPage] = useState(initialState.page);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        LIST_STATE_KEY,
+        JSON.stringify({ ownerFilter, statusFilter, search, page })
+      );
+    } catch {
+      // 저장 실패 시 보존만 생략
+    }
+  }, [ownerFilter, statusFilter, search, page]);
 
   const [contracts, setContracts] = useState([]);
   const [companyMap, setCompanyMap] = useState({}); // customerId → 회사명
@@ -79,6 +103,8 @@ export function useContractList() {
       setContracts(res.content ?? []);
       setTotalCount(res.totalElements ?? 0);
       setTotalPages(res.totalPages ?? 1);
+      // 복원한 페이지가 삭제 등으로 범위를 벗어나면 마지막 페이지로 보정
+      if (res.totalPages > 0 && p > res.totalPages) setPage(res.totalPages);
     } catch (e) {
       setError(e.message || "목록을 불러오지 못했습니다");
       setContracts([]);
