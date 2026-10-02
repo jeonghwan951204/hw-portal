@@ -10,7 +10,7 @@ function MetricCard({ label, value, detail, valueClass = "text-slate-800" }) {
   );
 }
 
-export default function TransactionStatistics({ data, loading, error }) {
+export default function TransactionStatistics({ data, loading, error, contractCompleted = false }) {
   if (loading) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-5 py-8 text-center text-sm text-slate-400">
@@ -40,6 +40,12 @@ export default function TransactionStatistics({ data, loading, error }) {
     remainingQuantity < 0
       ? `+${formatNumber(Math.abs(remainingQuantity), 3)} ton`
       : `${formatNumber(remainingQuantity, 3)} ton`;
+  const transactionCompleted = contractCompleted || data.allItemsFinalSettlementCompleted;
+  const transactionStatusLabel = data.allItemsFinalSettlementCompleted
+    ? "전체 정산 완료"
+    : contractCompleted
+      ? "거래 완료"
+      : "정산 진행 중";
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-slate-200 px-5 py-5 space-y-4">
@@ -48,12 +54,12 @@ export default function TransactionStatistics({ data, loading, error }) {
         <div className="flex items-center gap-2 text-[11px]">
           <span
             className={`font-bold px-2 py-0.5 rounded-full border ${
-              data.allItemsFinalSettlementCompleted
+              transactionCompleted
                 ? "text-emerald-600 bg-emerald-50 border-emerald-200"
                 : "text-slate-500 bg-white border-slate-200"
             }`}
           >
-            {data.allItemsFinalSettlementCompleted ? "전체 정산 완료" : "정산 진행 중"}
+            {transactionStatusLabel}
           </span>
           <span className="text-slate-400">
             {data.firstTransactionDate
@@ -112,7 +118,9 @@ export default function TransactionStatistics({ data, loading, error }) {
           <p className="mt-1 font-semibold text-slate-700">
             {data.hasFinalSettlement
               ? `${formatNumber(data.finalSettlementItemCount)}개 품목 완료`
-              : "미완료"}
+              : contractCompleted
+                ? "정산 없이 완료"
+                : "미완료"}
           </p>
           {isUsd && data.totalPaidKrw != null && (
             <p className="mt-0.5 text-[11px] text-slate-400">

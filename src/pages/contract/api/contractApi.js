@@ -115,6 +115,23 @@ export const fetchTransactions = async (contractId) =>
 export const fetchTransactionStatistics = async (contractId) =>
   asJson(await apiFetch(`/api/contracts/${contractId}/transactions/statistics`));
 
+// 전체 계약 거래 내역 조회 (날짜·소속회사 필터, 페이지 1-기반)
+export const fetchContractTransactions = async ({
+  startDate,
+  endDate,
+  ownerCompany,
+  page,
+  size,
+} = {}) => {
+  const params = new URLSearchParams();
+  if (startDate) params.set("startDate", startDate);
+  if (endDate) params.set("endDate", endDate);
+  if (ownerCompany) params.set("ownerCompany", ownerCompany);
+  params.set("page", String(page));
+  params.set("size", String(size));
+  return asJson(await apiFetch(`/api/contract-transactions?${params.toString()}`));
+};
+
 // 거래 등록 (결제 정보 포함 가능. 금액은 서버 계산)
 export const createTransaction = async (contractId, body) =>
   asJson(

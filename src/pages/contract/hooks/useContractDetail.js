@@ -698,6 +698,7 @@ export function useContractDetail() {
         data: transactionStatistics,
         loading: statisticsLoading,
         error: statisticsError,
+        contractCompleted: detail?.status === "COMPLETED",
       },
       form: {
         open: txFormOpen,
