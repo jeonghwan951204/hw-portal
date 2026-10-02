@@ -11,7 +11,7 @@ const numberOrUndefined = (value) =>
 const calculatePaidAmount = (form) => {
   const operands = [form.paidForeign, form.paidExchange];
   if (operands.some((value) => value === "")) return "";
-  return String(operands.reduce((result, value) => result * Number(value), 1));
+  return String(Math.floor(operands.reduce((result, value) => result * Number(value), 1)));
 };
 
 const withCalculatedPaidAmount = (form) => ({

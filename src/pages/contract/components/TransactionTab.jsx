@@ -229,6 +229,7 @@ export default function TransactionTab({
               <th className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">단가유형</th>
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">수량(kg)</th>
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">단가</th>
+              <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">실단가(원/kg)</th>
               <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">정산금액</th>
               <th className="px-4 py-2.5 text-center font-semibold whitespace-nowrap">관리</th>
             </tr>
@@ -236,21 +237,21 @@ export default function TransactionTab({
           <tbody className="divide-y divide-slate-100">
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-slate-400">
                   거래 내역을 불러오는 중입니다...
                 </td>
               </tr>
             )}
             {!loading && error && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-red-500">
+                <td colSpan={8} className="px-4 py-10 text-center text-red-500">
                   {error}
                 </td>
               </tr>
             )}
             {!loading && !error && transactions.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-slate-400">
                   등록된 거래가 없습니다.
                 </td>
               </tr>
@@ -267,6 +268,7 @@ export default function TransactionTab({
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-slate-600">{formatNumber(tx.quantity)}</td>
                 <td className="px-4 py-3 text-right font-mono text-slate-600">{formatNumber(tx.unitPrice, moneyDigits)}</td>
+                <td className="px-4 py-3 text-right font-mono text-slate-600">{formatNumber(tx.actualUnitPriceKrwPerKg)}</td>
                 <td className="px-4 py-3 text-right font-mono font-bold text-slate-700">{formatNumber(tx.amount, moneyDigits)}</td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-2">
@@ -303,7 +305,7 @@ export default function TransactionTab({
                 </tr>
                 {payment.expandedId === tx.transactionId && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-3 bg-slate-50/50">
+                    <td colSpan={8} className="px-4 py-3 bg-slate-50/50">
                       <PaymentForm
                         isExport={isExport}
                         tx={tx}
@@ -316,7 +318,7 @@ export default function TransactionTab({
                 )}
                 {edit.expandedId === tx.transactionId && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-3 bg-slate-50/50">
+                    <td colSpan={8} className="px-4 py-3 bg-slate-50/50">
                       <TransactionEditForm
                         tx={tx}
                         itemOptions={edit.itemOptions}
@@ -394,6 +396,9 @@ export default function TransactionTab({
               <span className="font-mono font-bold text-slate-700">
                 {formatNumber(tx.amount, moneyDigits)}
               </span>
+            </div>
+            <div className="mt-1 text-right text-xs text-slate-400">
+              실단가 <span className="font-mono font-medium text-slate-600">{formatNumber(tx.actualUnitPriceKrwPerKg)} 원/kg</span>
             </div>
             {payment.expandedId === tx.transactionId && (
               <div className="mt-3">
