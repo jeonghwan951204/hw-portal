@@ -1,22 +1,36 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { PAGE_SIZE } from "../constants";
-import { fetchContractTransactions } from "../api/contractApi";
-import { ENUM_GROUPS } from "../api/enumsApi";
-import { useEnums } from "./useEnums";
+import { fetchCompanies, fetchContractTransactions } from "../api/contractApi";
 
-const EMPTY_FILTERS = { startDate: "", endDate: "", ownerCompany: "" };
+const EMPTY_FILTERS = { startDate: "", endDate: "", customerId: "" };
 
 export function useAllTransactions(active) {
-  const { enums, labelOf } = useEnums([ENUM_GROUPS.OWNER_COMPANY]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
+  const [companies, setCompanies] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!active || companies.length > 0) return undefined;
+
+    let alive = true;
+    fetchCompanies()
+      .then((response) => {
+        if (alive) setCompanies(response ?? []);
+      })
+      .catch(() => {
+        if (alive) setCompanies([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [active, companies.length]);
 
   const loadTransactions = useCallback(async () => {
     setLoading(true);
@@ -43,15 +57,6 @@ export function useAllTransactions(active) {
   useEffect(() => {
     if (active) loadTransactions();
   }, [active, loadTransactions]);
-
-  const transactionRows = useMemo(
-    () =>
-      transactions.map((transaction) => ({
-        ...transaction,
-        ownerLabel: labelOf(ENUM_GROUPS.OWNER_COMPANY, transaction.ownerCompany),
-      })),
-    [labelOf, transactions]
-  );
 
   const handleDateRangeChange = (field, value) => {
     setFilters((current) => ({
@@ -83,20 +88,20 @@ export function useAllTransactions(active) {
       hasFilters: Boolean(
         filters.startDate ||
           filters.endDate ||
-          filters.ownerCompany ||
+          filters.customerId ||
           appliedFilters.startDate ||
           appliedFilters.endDate ||
-          appliedFilters.ownerCompany
+          appliedFilters.customerId
       ),
       onDateRangeChange: handleDateRangeChange,
-      ownerOptions: enums[ENUM_GROUPS.OWNER_COMPANY] ?? [],
-      onCompanyChange: (ownerCompany) =>
-        setFilters((current) => ({ ...current, ownerCompany })),
+      companyOptions: companies,
+      onCompanyChange: (customerId) =>
+        setFilters((current) => ({ ...current, customerId })),
       onSearch: handleSearch,
       onReset: handleReset,
     },
     list: {
-      transactions: transactionRows,
+      transactions,
       totalCount,
       loading,
       error,
