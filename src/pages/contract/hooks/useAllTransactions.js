@@ -1,36 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { PAGE_SIZE } from "../constants";
-import { fetchCompanies, fetchContractTransactions } from "../api/contractApi";
+import { fetchContractTransactions } from "../api/contractApi";
+import { useCompanySearch } from "./useCompanySearch";
 
 const EMPTY_FILTERS = { startDate: "", endDate: "", customerId: "" };
 
 export function useAllTransactions(active) {
+  const companySearch = useCompanySearch(active);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
-  const [companies, setCompanies] = useState([]);
-  const [transactions, setTransactions] = useState([]);
+  const [selectedCompanyName, setSelectedCompanyName] = useState("");
+  const [contractGroups, setContractGroups] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!active || companies.length > 0) return undefined;
-
-    let alive = true;
-    fetchCompanies()
-      .then((response) => {
-        if (alive) setCompanies(response ?? []);
-      })
-      .catch(() => {
-        if (alive) setCompanies([]);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [active, companies.length]);
 
   const loadTransactions = useCallback(async () => {
     setLoading(true);
@@ -41,11 +27,11 @@ export function useAllTransactions(active) {
         page,
         size: PAGE_SIZE,
       });
-      setTransactions(response.content ?? []);
+      setContractGroups(response.content ?? []);
       setTotalCount(response.totalElements ?? 0);
       setTotalPages(Math.max(1, response.totalPages ?? 1));
     } catch (loadError) {
-      setTransactions([]);
+      setContractGroups([]);
       setTotalCount(0);
       setTotalPages(1);
       setError(loadError.message || "전체 거래내역을 불러오지 못했습니다.");
@@ -78,7 +64,17 @@ export function useAllTransactions(active) {
   const handleReset = () => {
     setFilters(EMPTY_FILTERS);
     setAppliedFilters(EMPTY_FILTERS);
+    setSelectedCompanyName("");
+    companySearch.onKeywordChange("");
     setPage(1);
+  };
+
+  const handleCompanySelect = (company) => {
+    setFilters((current) => ({
+      ...current,
+      customerId: company.id === "" ? "" : String(company.id),
+    }));
+    setSelectedCompanyName(company.name ?? "");
   };
 
   return {
@@ -91,17 +87,21 @@ export function useAllTransactions(active) {
           filters.customerId ||
           appliedFilters.startDate ||
           appliedFilters.endDate ||
-          appliedFilters.customerId
+          appliedFilters.customerId ||
+          companySearch.keyword
       ),
       onDateRangeChange: handleDateRangeChange,
-      companyOptions: companies,
-      onCompanyChange: (customerId) =>
-        setFilters((current) => ({ ...current, customerId })),
+      companySelect: {
+        ...companySearch,
+        value: filters.customerId,
+        selectedName: selectedCompanyName,
+        onSelect: handleCompanySelect,
+      },
       onSearch: handleSearch,
       onReset: handleReset,
     },
     list: {
-      transactions,
+      contractGroups,
       totalCount,
       loading,
       error,
