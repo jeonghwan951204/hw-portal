@@ -10,8 +10,8 @@ const formatValueWithUnit = (value, unit, digits = 0) =>
 function TransactionsFilter({
   startDate,
   endDate,
-  ownerCompany,
-  ownerOptions,
+  customerId,
+  companyOptions,
   dateLimits,
   hasFilters,
   onDateRangeChange,
@@ -43,16 +43,16 @@ function TransactionsFilter({
           />
         </div>
         <div>
-          <label className={LABEL_CLASS}>회사명</label>
+          <label className={LABEL_CLASS}>계약 거래처</label>
           <select
-            value={ownerCompany}
+            value={customerId}
             onChange={(event) => onCompanyChange(event.target.value)}
             className={INPUT_CLASS}
           >
-            <option value="">전체 회사</option>
-            {ownerOptions.map((company) => (
-              <option key={company.value} value={company.value}>
-                {company.label}
+            <option value="">전체 거래처</option>
+            {companyOptions.map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.name}
               </option>
             ))}
           </select>
@@ -131,7 +131,7 @@ function MobileTransactionCard({ transaction }) {
         <div>
           <p className="font-semibold text-slate-700">{transaction.contractName}</p>
           <p className="mt-0.5 text-xs text-slate-400">
-            {formatDate(transaction.transactionDate)} · {transaction.ownerLabel}
+            {formatDate(transaction.transactionDate)}
           </p>
         </div>
         <span className="shrink-0 text-xs font-semibold text-slate-500">
