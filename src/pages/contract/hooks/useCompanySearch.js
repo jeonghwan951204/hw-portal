@@ -5,13 +5,15 @@ const SEARCH_DEBOUNCE_MS = 250;
 
 // 거래처 셀렉트 검색 — 회사명·별칭 부분검색(/api/companies/options?keyword=)
 // 입력 중 과도한 호출을 막기 위해 디바운스한다. 빈 검색어는 전체 목록.
-export function useCompanySearch() {
+export function useCompanySearch(enabled = true) {
   const [keyword, setKeyword] = useState("");
   // 어떤 검색어의 결과인지 함께 보관 — 현재 검색어와 다르면 로딩 중으로 본다
   const [result, setResult] = useState({ query: null, options: [], error: "" });
   const query = keyword.trim();
 
   useEffect(() => {
+    if (!enabled) return undefined;
+
     let alive = true;
     const timer = setTimeout(
       () => {
@@ -31,7 +33,7 @@ export function useCompanySearch() {
       alive = false;
       clearTimeout(timer);
     };
-  }, [query]);
+  }, [enabled, query]);
 
   return {
     keyword,

@@ -1,5 +1,6 @@
 import Pagination from "../../../components/Pagination";
 import { formatDate, formatNumber } from "../constants";
+import CompanySelect from "./CompanySelect";
 
 const INPUT_CLASS =
   "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/30";
@@ -10,12 +11,10 @@ const formatValueWithUnit = (value, unit, digits = 0) =>
 function TransactionsFilter({
   startDate,
   endDate,
-  customerId,
-  companyOptions,
+  companySelect,
   dateLimits,
   hasFilters,
   onDateRangeChange,
-  onCompanyChange,
   onSearch,
   onReset,
 }) {
@@ -44,18 +43,7 @@ function TransactionsFilter({
         </div>
         <div>
           <label className={LABEL_CLASS}>계약 거래처</label>
-          <select
-            value={customerId}
-            onChange={(event) => onCompanyChange(event.target.value)}
-            className={INPUT_CLASS}
-          >
-            <option value="">전체 거래처</option>
-            {companyOptions.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
+          <CompanySelect {...companySelect} className={INPUT_CLASS} />
         </div>
         <div className="flex gap-2">
           <button
@@ -80,24 +68,21 @@ function TransactionsFilter({
         </div>
       </div>
       <p className="mt-2 text-[11px] text-slate-400">
-        날짜를 선택하지 않으면 오늘까지 최근 1개월의 거래내역을 조회합니다.
+        날짜를 선택하지 않으면 전체 기간의 거래내역을 조회합니다.
       </p>
     </div>
   );
 }
 
-function TransactionRows({ transactions }) {
+function TransactionRows({ contractId, tradeType, transactions }) {
   return transactions.map((transaction) => {
-    const isExport = transaction.tradeType === "EXPORT";
+    const isExport = tradeType === "EXPORT";
     const unitPriceDigits = isExport ? 2 : 0;
     const unitSuffix = transaction.unitPriceUnit === "TON" ? "ton" : "kg";
     const unitPriceUnit = `${isExport ? "USD" : "원"}/${unitSuffix}`;
 
     return (
-      <tr key={`${transaction.contractId}-${transaction.transactionId}`}>
-        <td className="px-4 py-3 font-semibold text-slate-700 whitespace-nowrap">
-          {transaction.contractName}
-        </td>
+      <tr key={`${contractId}-${transaction.transactionId}`}>
         <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
           {formatDate(transaction.transactionDate)}
         </td>
@@ -119,8 +104,8 @@ function TransactionRows({ transactions }) {
   });
 }
 
-function MobileTransactionCard({ transaction }) {
-  const isExport = transaction.tradeType === "EXPORT";
+function MobileTransactionCard({ transaction, tradeType }) {
+  const isExport = tradeType === "EXPORT";
   const unitPriceDigits = isExport ? 2 : 0;
   const unitSuffix = transaction.unitPriceUnit === "TON" ? "ton" : "kg";
   const unitPriceUnit = `${isExport ? "USD" : "원"}/${unitSuffix}`;
@@ -128,12 +113,7 @@ function MobileTransactionCard({ transaction }) {
   return (
     <div className="px-5 py-4">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold text-slate-700">{transaction.contractName}</p>
-          <p className="mt-0.5 text-xs text-slate-400">
-            {formatDate(transaction.transactionDate)}
-          </p>
-        </div>
+        <p className="text-xs text-slate-400">{formatDate(transaction.transactionDate)}</p>
         <span className="shrink-0 text-xs font-semibold text-slate-500">
           {transaction.itemName}
         </span>
@@ -168,8 +148,66 @@ function MobileTransactionCard({ transaction }) {
   );
 }
 
+function ContractTransactionGroup({ group }) {
+  const transactions = group.transactions ?? [];
+  const tradeTypeLabel = group.tradeType === "EXPORT" ? "수출" : "내수";
+
+  return (
+    <section className="border-b border-slate-200 last:border-b-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/70 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold text-slate-700">{group.contractName}</h3>
+          <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+            {tradeTypeLabel}
+          </span>
+        </div>
+        <span className="text-xs text-slate-400">거래 {formatNumber(transactions.length)}건</span>
+      </div>
+
+      {transactions.length === 0 ? (
+        <p className="px-5 py-8 text-center text-sm text-slate-400">
+          조건에 맞는 거래내역이 없습니다.
+        </p>
+      ) : (
+        <>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-white text-xs text-slate-400">
+                  <th className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">거래날짜</th>
+                  <th className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">품목</th>
+                  <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">수량</th>
+                  <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">단가</th>
+                  <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">실단가</th>
+                  <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">실제 입금액</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                <TransactionRows
+                  contractId={group.contractId}
+                  tradeType={group.tradeType}
+                  transactions={transactions}
+                />
+              </tbody>
+            </table>
+          </div>
+          <div className="divide-y divide-slate-100 md:hidden">
+            {transactions.map((transaction) => (
+              <MobileTransactionCard
+                key={`${group.contractId}-${transaction.transactionId}`}
+                transaction={transaction}
+                tradeType={group.tradeType}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function AllTransactionsTab({ filters, list, pagination }) {
-  const { transactions, totalCount, loading, error, onRetry } = list;
+  const { contractGroups, totalCount, loading, error, onRetry } = list;
 
   return (
     <div className="space-y-4">
@@ -179,7 +217,7 @@ export default function AllTransactionsTab({ filters, list, pagination }) {
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
           <h2 className="text-sm font-bold text-slate-700">전체 거래내역</h2>
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-400">
-            {formatNumber(totalCount)}건
+            {formatNumber(totalCount)}개 계약
           </span>
         </div>
 
@@ -198,39 +236,14 @@ export default function AllTransactionsTab({ filters, list, pagination }) {
               다시 시도
             </button>
           </div>
-        ) : transactions.length === 0 ? (
+        ) : contractGroups.length === 0 ? (
           <div className="px-5 py-16 text-center text-sm text-slate-400">
             조건에 맞는 거래내역이 없습니다.
           </div>
         ) : (
-          <>
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-xs text-slate-400">
-                    <th className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">계약명</th>
-                    <th className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">거래날짜</th>
-                    <th className="px-4 py-2.5 text-left font-semibold whitespace-nowrap">품목</th>
-                    <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">수량</th>
-                    <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">단가</th>
-                    <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">실단가</th>
-                    <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">실제 입금액</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  <TransactionRows transactions={transactions} />
-                </tbody>
-              </table>
-            </div>
-            <div className="divide-y divide-slate-100 md:hidden">
-              {transactions.map((transaction) => (
-                <MobileTransactionCard
-                  key={`${transaction.contractId}-${transaction.transactionId}`}
-                  transaction={transaction}
-                />
-              ))}
-            </div>
-          </>
+          contractGroups.map((group) => (
+            <ContractTransactionGroup key={group.contractId} group={group} />
+          ))
         )}
       </div>
 
