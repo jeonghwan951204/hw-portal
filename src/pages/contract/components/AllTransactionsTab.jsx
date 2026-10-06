@@ -148,9 +148,21 @@ function MobileTransactionCard({ transaction, tradeType }) {
   );
 }
 
+function ContractMetric({ label, value }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold text-slate-400">{label}</p>
+      <p className="mt-1 font-mono text-sm font-bold text-slate-700">{value}</p>
+    </div>
+  );
+}
+
 function ContractTransactionGroup({ group }) {
   const transactions = group.transactions ?? [];
-  const tradeTypeLabel = group.tradeType === "EXPORT" ? "수출" : "내수";
+  const isExport = group.tradeType === "EXPORT";
+  const tradeTypeLabel = isExport ? "수출" : "내수";
+  const unitSuffix = group.unitPriceUnit === "TON" ? "ton" : "kg";
+  const averageUnitPriceUnit = `${isExport ? "USD" : "원"}/${unitSuffix}`;
 
   return (
     <section className="border-b border-slate-200 last:border-b-0">
@@ -162,6 +174,29 @@ function ContractTransactionGroup({ group }) {
           </span>
         </div>
         <span className="text-xs text-slate-400">거래 {formatNumber(transactions.length)}건</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b border-slate-100 bg-white px-5 py-3 sm:grid-cols-4">
+        <ContractMetric
+          label="총 수량"
+          value={formatValueWithUnit(group.totalQuantity, "kg")}
+        />
+        <ContractMetric
+          label="평균단가"
+          value={formatValueWithUnit(
+            group.averageUnitPrice,
+            averageUnitPriceUnit,
+            isExport ? 2 : 0
+          )}
+        />
+        <ContractMetric
+          label="평균실단가"
+          value={formatValueWithUnit(group.averageActualUnitPriceKrwPerKg, "원/kg")}
+        />
+        <ContractMetric
+          label="총 입금액"
+          value={formatValueWithUnit(group.totalPaidAmount, "원")}
+        />
       </div>
 
       {transactions.length === 0 ? (
