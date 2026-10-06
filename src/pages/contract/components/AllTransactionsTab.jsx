@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Pagination from "../../../components/Pagination";
 import { formatDate, formatNumber } from "../constants";
 import CompanySelect from "./CompanySelect";
@@ -168,7 +169,14 @@ function ContractTransactionGroup({ group }) {
     <section className="border-b border-slate-200 last:border-b-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/70 px-5 py-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-bold text-slate-700">{group.contractName}</h3>
+          <h3>
+            <Link
+              to={`/contract/${group.contractId}`}
+              className="font-bold text-slate-700 transition-colors hover:text-blue-600 hover:underline focus-visible:text-blue-600 focus-visible:outline-none focus-visible:underline"
+            >
+              {group.contractName}
+            </Link>
+          </h3>
           <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">
             {tradeTypeLabel}
           </span>
