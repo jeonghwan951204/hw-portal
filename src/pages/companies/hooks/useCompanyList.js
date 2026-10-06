@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { deleteCompany, fetchCompanies, fetchCompanySearchIds } from "../api/companyApi";
+import {
+  deleteCompany,
+  fetchCompanies,
+  fetchCompanyDetail,
+  fetchCompanySearchIds,
+} from "../api/companyApi";
 import { useCompanyTypeOptions } from "./useCompanyTypeOptions";
 
 // 검색어 입력이 멈춘 뒤 API 를 호출하기까지의 대기 시간(ms)
@@ -28,6 +33,8 @@ export function useCompanyList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState(null);
+  // 펼친 거래처의 상세 조회 결과. companyId → { loading, data, error }
+  const [details, setDetails] = useState({});
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -101,8 +108,32 @@ export function useCompanyList() {
     [searchIds, sourceCompanies, typeFilter]
   );
 
+  const loadDetail = useCallback(async (companyId) => {
+    setDetails((current) => ({ ...current, [companyId]: { loading: true, data: null, error: "" } }));
+    try {
+      const data = await fetchCompanyDetail(companyId);
+      setDetails((current) => ({ ...current, [companyId]: { loading: false, data, error: "" } }));
+    } catch (loadError) {
+      setDetails((current) => ({
+        ...current,
+        [companyId]: {
+          loading: false,
+          data: null,
+          error: loadError.message || "거래처 상세정보를 불러오지 못했습니다.",
+        },
+      }));
+    }
+  }, []);
+
+  // 상세는 처음 펼칠 때만 조회하고, 이미 받은 상세는 다시 펼쳐도 재사용한다.
   const toggleDetail = (companyId) => {
-    setExpandedId((current) => (current === companyId ? null : companyId));
+    if (expandedId === companyId) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(companyId);
+    const detail = details[companyId];
+    if (!detail || detail.error) loadDetail(companyId);
   };
 
   const copyValue = async (label, value) => {
@@ -145,6 +176,7 @@ export function useCompanyList() {
     loading,
     error,
     expandedId,
+    expandedDetail: expandedId == null ? null : details[expandedId] ?? null,
     deleteTarget,
     deleting,
     deleteError,
@@ -154,6 +186,7 @@ export function useCompanyList() {
     onKeywordChange: setKeyword,
     onTypeFilterChange: setTypeFilter,
     onToggleDetail: toggleDetail,
+    onRetryDetail: loadDetail,
     onCopy: copyValue,
     onRetry: loadCompanies,
     onDeleteRequest: (company) => {

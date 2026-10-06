@@ -59,6 +59,48 @@ function EmailAddresses({ emails = [], onCopy, overflow = "wrap" }) {
   );
 }
 
+// 펼친 행의 상세는 처음 펼칠 때 조회하므로 조회 중·실패 상태를 함께 보여준다.
+function ExpandedCompanyDetail({
+  companyId,
+  detail,
+  typeLabelOf,
+  onCopy,
+  onDeleteRequest,
+  onRetryDetail,
+}) {
+  if (detail?.data) {
+    return (
+      <CompanyDetail
+        company={detail.data}
+        typeLabelOf={typeLabelOf}
+        onCopy={onCopy}
+        onDeleteRequest={onDeleteRequest}
+      />
+    );
+  }
+
+  if (detail?.error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center">
+        <p className="text-sm text-red-600">{detail.error}</p>
+        <button
+          type="button"
+          onClick={() => onRetryDetail(companyId)}
+          className="mt-3 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100"
+        >
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-6 text-center text-sm text-slate-400">
+      상세정보를 불러오는 중입니다.
+    </div>
+  );
+}
+
 // 행 전체를 눌러 상세를 펼친다. 행 안의 링크·버튼은 각자 전파를 막는다.
 const rowToggleProps = (company, expanded, onToggleDetail) => ({
   onClick: () => onToggleDetail(company.id),
@@ -81,7 +123,9 @@ export default function CompanyList({
   searching,
   searchError,
   expandedId,
+  expandedDetail,
   onToggleDetail,
+  onRetryDetail,
   onCopy,
   onRetry,
   onDeleteRequest,
@@ -187,11 +231,13 @@ export default function CompanyList({
                   {expanded && (
                     <tr>
                       <td colSpan={5} className="px-4 pb-4 pt-1">
-                        <CompanyDetail
-                          company={company}
+                        <ExpandedCompanyDetail
+                          companyId={company.id}
+                          detail={expandedDetail}
                           typeLabelOf={typeLabelOf}
                           onCopy={onCopy}
                           onDeleteRequest={onDeleteRequest}
+                          onRetryDetail={onRetryDetail}
                         />
                       </td>
                     </tr>
@@ -235,11 +281,13 @@ export default function CompanyList({
               {/* 펼쳐진 상세 영역을 눌렀다고 다시 접히지 않도록 전파를 막는다. */}
               {expanded && (
                 <div className="mt-4" onClick={(event) => event.stopPropagation()}>
-                  <CompanyDetail
-                    company={company}
+                  <ExpandedCompanyDetail
+                    companyId={company.id}
+                    detail={expandedDetail}
                     typeLabelOf={typeLabelOf}
                     onCopy={onCopy}
                     onDeleteRequest={onDeleteRequest}
+                    onRetryDetail={onRetryDetail}
                   />
                 </div>
               )}

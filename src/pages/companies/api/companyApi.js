@@ -26,12 +26,19 @@ const mapPhoneNumber = (phone) => ({
   listVisible: phone.isListVisible ?? phone.listVisible,
 });
 
+// 관리 목록 응답의 전화번호·이메일은 서버에서 목록 노출 허용 항목만 내려온다.
 const mapCompanyListItem = (company) => ({
   id: company.companyId,
+  type: company.type,
   name: company.companyName ?? "",
   businessNumber: company.businessRegistrationNumber ?? "",
   phoneNumbers: (company.phoneNumbers ?? []).map((phone) => ({
     ...mapPhoneNumber(phone),
+    listVisible: true,
+  })),
+  emails: (company.emails ?? []).map((email) => ({
+    label: email.label ?? "",
+    value: email.email ?? "",
     listVisible: true,
   })),
   bankAccounts: (company.bankAccounts ?? []).map((account) => ({
@@ -137,19 +144,10 @@ const applyPhoneVisibility = (detail, summary) => {
 const fetchCompanySummaries = async () =>
   (await asJson(await apiFetch("/api/companies"))).map(mapCompanyListItem);
 
+// 목록은 관리 목록 API 한 번으로 구성한다. 상세는 행을 펼칠 때 fetchCompanyDetail 로 따로 조회한다.
 export const fetchCompanies = async () => {
   if (USE_MOCK) return companyMock.fetchCompanies();
-
-  const summaries = await fetchCompanySummaries();
-  return Promise.all(
-    summaries.map(async (summary) => {
-      try {
-        return applyPhoneVisibility(await fetchCompanyDetail(summary.id), summary);
-      } catch {
-        return summary;
-      }
-    })
-  );
+  return fetchCompanySummaries();
 };
 
 // 회사명·활성 별칭 부분검색(대소문자 무시) → 일치하는 거래처 id 배열.
