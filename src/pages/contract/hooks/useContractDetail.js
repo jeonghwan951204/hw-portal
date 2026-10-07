@@ -578,8 +578,12 @@ export function useContractDetail() {
   const handleUpdatePrice = async () => {
     if (!priceEditForm || updatingPriceId) return;
     const isCalculated = priceEditForm.priceSource === "CALCULATED";
-    if (isCalculated && (!priceEditForm.calcMethod || !priceEditForm.periodStart)) {
-      showToast("error", "계산 단가는 계산식과 산정 시작일을 입력해 주세요");
+    if (!priceEditForm.calcMethod) {
+      showToast("error", "계산식을 선택해 주세요");
+      return;
+    }
+    if (isCalculated && !priceEditForm.periodStart) {
+      showToast("error", "계산 단가는 산정 시작일을 입력해 주세요");
       return;
     }
     if (
@@ -603,7 +607,7 @@ export function useContractDetail() {
     try {
       const response = await updateContractPrice(id, priceEditForm.priceId, {
         priceSource: priceEditForm.priceSource,
-        calcMethod: isCalculated ? priceEditForm.calcMethod : null,
+        calcMethod: priceEditForm.calcMethod,
         periodStart: isCalculated ? priceEditForm.periodStart : null,
         periodEnd: isCalculated && priceEditForm.periodEnd ? priceEditForm.periodEnd : null,
         fixedUnitPrice: isCalculated ? null : Number(priceEditForm.fixedUnitPrice),

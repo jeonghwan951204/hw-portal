@@ -84,8 +84,20 @@ export default function FormStepPrices({
               </>
             )}
 
-            {/* 계산 단가면 계산식, 고정 단가면 고정 단가 입력 */}
-            {price.priceSource === "FIXED" ? (
+            {/* 계산식(수출/내수)은 공통 — 고정 단가도 입력 통화(USD/원) 구분에 필요 */}
+            <div>
+              <label className={LABEL_CLASS}>계산식</label>
+              <select
+                value={price.calcMethod}
+                onChange={(e) => onChange(price.tempId, "calcMethod", e.target.value)}
+                className={INPUT_CLASS}
+              >
+                {calcMethodOptions.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+            {price.priceSource === "FIXED" && (
               <div>
                 <label className={LABEL_CLASS}>고정 단가</label>
                 <NumericInput
@@ -94,19 +106,6 @@ export default function FormStepPrices({
                   onChange={(value) => onChange(price.tempId, "fixedUnitPrice", value)}
                   className={INPUT_CLASS}
                 />
-              </div>
-            ) : (
-              <div>
-                <label className={LABEL_CLASS}>계산식</label>
-                <select
-                  value={price.calcMethod}
-                  onChange={(e) => onChange(price.tempId, "calcMethod", e.target.value)}
-                  className={INPUT_CLASS}
-                >
-                  {calcMethodOptions.map((m) => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
               </div>
             )}
           </div>

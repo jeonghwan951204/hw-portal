@@ -39,7 +39,7 @@ const newPrice = () => ({
   tempId: nextTempId("np"),
   priceType: "PROVISIONAL", // PRICE_TYPE
   priceSource: "CALCULATED", // PRICE_SOURCE
-  calcMethod: "EXPORT_STANDARD", // CALC_METHOD (CALCULATED 일 때)
+  calcMethod: "EXPORT_STANDARD", // CALC_METHOD (FIXED 도 수출/내수 구분용으로 전송)
   periodStart: "",
   periodEnd: "",
   fixedUnitPrice: "", // FIXED 일 때
@@ -213,7 +213,7 @@ export function useContractForm() {
       prices: prices.map((p) => ({
         priceType: p.priceType,
         priceSource: p.priceSource,
-        calcMethod: p.priceSource === "CALCULATED" ? p.calcMethod : undefined,
+        calcMethod: p.calcMethod || undefined,
         periodStart: p.priceSource === "CALCULATED" ? p.periodStart || undefined : undefined,
         periodEnd: p.priceSource === "CALCULATED" ? p.periodEnd || undefined : undefined,
         fixedUnitPrice: p.priceSource === "FIXED" ? numOrUndef(p.fixedUnitPrice) : undefined,
