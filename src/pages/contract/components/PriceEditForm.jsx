@@ -41,24 +41,26 @@ export default function PriceEditForm({
           </select>
         </div>
 
+        {/* 계산식(수출/내수)은 공통 — 고정 단가도 입력 통화(USD/원) 구분에 필요 */}
+        <div>
+          <label className={LABEL_CLASS}>계산식</label>
+          <select
+            value={form.calcMethod}
+            onChange={(event) => onChange("calcMethod", event.target.value)}
+            className={INPUT_CLASS}
+            disabled={submitting}
+          >
+            <option value="">선택</option>
+            {calcMethodOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {isCalculated ? (
           <>
-            <div>
-              <label className={LABEL_CLASS}>계산식</label>
-              <select
-                value={form.calcMethod}
-                onChange={(event) => onChange("calcMethod", event.target.value)}
-                className={INPUT_CLASS}
-                disabled={submitting}
-              >
-                <option value="">선택</option>
-                {calcMethodOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div>
               <label className={LABEL_CLASS}>산정 시작</label>
               <input

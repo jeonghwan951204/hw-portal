@@ -64,9 +64,9 @@ export default function FormStepConfirm({
                   </span>
                 )}
                 <span className="text-xs text-slate-400">
-                  {price.priceSource === "FIXED"
-                    ? `고정 단가${price.fixedUnitPrice !== "" ? ` · ${price.fixedUnitPrice}` : ""}`
-                    : labelOf(ENUM_GROUPS.CALC_METHOD, price.calcMethod)}
+                  {labelOf(ENUM_GROUPS.CALC_METHOD, price.calcMethod)}
+                  {price.priceSource === "FIXED" &&
+                    ` · 고정 단가${price.fixedUnitPrice !== "" ? ` · ${price.fixedUnitPrice}` : ""}`}
                 </span>
               </div>
             ))}
