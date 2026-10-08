@@ -73,6 +73,22 @@ export const formatNumber = (value, digits = 0) =>
         maximumFractionDigits: digits,
       });
 
+// 숫자 → 소수점 셋째자리 반올림한 둘째자리 입력 문자열 (예: 1385.126 → "1385.13"). 값이 없으면 ""
+export const toRoundedInput = (value) => {
+  if (value === "" || value == null || !Number.isFinite(Number(value))) return "";
+  // EPSILON 보정으로 1.005 같은 값이 1.00 으로 내려가지 않게 한다
+  return (Math.round((Number(value) + Number.EPSILON) * 100) / 100).toFixed(2);
+};
+
+// 원화 환산 — USD/ton 단가 × 환율 ÷ 1000 → 원/kg (소수점 절삭). 입력이 비면 null
+export const toKrwPerKg = (unitPrice, exchange) => {
+  if (unitPrice === "" || unitPrice == null || exchange === "" || exchange == null) return null;
+  const value = (Number(unitPrice) * Number(exchange)) / 1000;
+  if (!Number.isFinite(value)) return null;
+  // 부동소수점 오차(예: 12150.9999…)로 1원 덜 절삭되지 않도록 반올림 후 절삭
+  return Math.trunc(Number(value.toFixed(6)));
+};
+
 // 계약 거래 단가 표기 — 수출 USD/ton, 내수 원/kg로 고정
 export const unitLabel = (contract) =>
   contract?.tradeType === "수출" || contract?.tradeType === "EXPORT" ? "USD/ton" : "원/kg";
