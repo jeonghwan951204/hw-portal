@@ -73,6 +73,15 @@ export const formatNumber = (value, digits = 0) =>
         maximumFractionDigits: digits,
       });
 
+// 원화 환산 — USD/ton 단가 × 환율 ÷ 1000 → 원/kg (소수점 절삭). 입력이 비면 null
+export const toKrwPerKg = (unitPrice, exchange) => {
+  if (unitPrice === "" || unitPrice == null || exchange === "" || exchange == null) return null;
+  const value = (Number(unitPrice) * Number(exchange)) / 1000;
+  if (!Number.isFinite(value)) return null;
+  // 부동소수점 오차(예: 12150.9999…)로 1원 덜 절삭되지 않도록 반올림 후 절삭
+  return Math.trunc(Number(value.toFixed(6)));
+};
+
 // 계약 거래 단가 표기 — 수출 USD/ton, 내수 원/kg로 고정
 export const unitLabel = (contract) =>
   contract?.tradeType === "수출" || contract?.tradeType === "EXPORT" ? "USD/ton" : "원/kg";

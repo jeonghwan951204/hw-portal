@@ -1,4 +1,5 @@
 import { PRICE_TYPE_STYLE, formatDate, formatNumber } from "../constants";
+import KrwConverter from "./KrwConverter";
 import PriceEditForm from "./PriceEditForm";
 
 // 탭 1 — 계약·단가: 단가별 기간 줄(확정 버튼) + 품목 × 단가 매트릭스
@@ -21,6 +22,8 @@ export default function PriceInfoTab({
   onItemChange,
   onEditSubmit,
   onEditCancel,
+  onUnitPriceClick,
+  krwConverter,
 }) {
   if (loading) {
     return (
@@ -180,13 +183,27 @@ export default function PriceInfoTab({
                   </td>
                   {columns.map((col) => {
                     const cell = row.cells[col.priceId];
+                    const unitPriceText =
+                      cell?.unitPrice != null
+                        ? formatNumber(cell.unitPrice, col.unitHint === "원/kg" ? 0 : 2)
+                        : "-";
+                    // 원화 단가는 환산 대상이 아니므로 USD 단가만 계산기로 보낸다
+                    const clickable =
+                      onUnitPriceClick && cell?.unitPrice != null && col.unitHint !== "원/kg";
                     return (
                       <td key={col.priceId} className="px-5 py-3 text-right whitespace-nowrap">
-                        <p className="font-mono font-bold text-slate-700">
-                          {cell?.unitPrice != null
-                            ? formatNumber(cell.unitPrice, col.unitHint === "원/kg" ? 0 : 2)
-                            : "-"}
-                        </p>
+                        {clickable ? (
+                          <button
+                            type="button"
+                            onClick={() => onUnitPriceClick(cell.unitPrice)}
+                            title="원화 환산 계산기에 입력"
+                            className="font-mono font-bold text-slate-700 underline decoration-dotted decoration-slate-300 underline-offset-4 hover:text-blue-600 hover:decoration-blue-400 transition-colors"
+                          >
+                            {unitPriceText}
+                          </button>
+                        ) : (
+                          <p className="font-mono font-bold text-slate-700">{unitPriceText}</p>
+                        )}
                         <p className="text-[11px] text-slate-400 mt-0.5">
                           {cell?.rate != null && `요율 ${cell.rate}`}
                           {cell?.premium != null && cell.premium !== 0 && ` · +${formatNumber(cell.premium)}`}
@@ -200,6 +217,8 @@ export default function PriceInfoTab({
           </table>
         </div>
       </div>
+
+      {krwConverter && <KrwConverter {...krwConverter} />}
     </div>
   );
 }

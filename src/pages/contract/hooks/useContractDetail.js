@@ -18,7 +18,7 @@ import {
   updateTransactionPayment,
 } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
-import { getLocalDateString } from "../constants";
+import { getLocalDateString, toKrwPerKg } from "../constants";
 import { useEnums } from "./useEnums";
 import { useToast } from "./useToast";
 
@@ -72,6 +72,8 @@ export function useContractDetail() {
   const [updatingPriceId, setUpdatingPriceId] = useState(null);
   const [priceEditForm, setPriceEditForm] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  // 원화 환산 계산기 — 사용자가 바꾼 값만 보관 (null 이면 확정가 기본값 사용)
+  const [krwOverride, setKrwOverride] = useState({ unitPrice: null, exchange: null });
 
   const [txForm, setTxForm] = useState(emptyTxForm);
   const [txFormOpen, setTxFormOpen] = useState(false);
@@ -93,6 +95,7 @@ export function useContractDetail() {
     try {
       const prices = (await fetchContractPrices(id)) ?? [];
       setContractPrices(prices);
+      setKrwOverride({ unitPrice: null, exchange: null }); // 단가가 바뀌면 계산기도 기본값으로
     } catch (e) {
       setContractPrices([]);
       setPricesError(e.message || "계약 단가를 불러오지 못했습니다");
@@ -265,6 +268,26 @@ export function useContractDetail() {
       })),
     [contractPrices, enums]
   );
+
+  // 원화 환산 계산기 기본값 — 확정가의 대표 품목 단가 + 확정가 평균 환율
+  const krwDefaults = useMemo(() => {
+    const confirmedColumn = columns.find((col) => col.label === "확정가");
+    const confirmedPrice = contractPrices.find((p) => p.priceId === confirmedColumn?.priceId);
+    const priceItems = confirmedPrice?.items ?? [];
+    const primaryItemId = (detail?.items ?? []).find((item) => item.primary)?.itemId;
+    const targetItem = priceItems.find((item) => item.itemId === primaryItemId) ?? priceItems[0];
+    const toInput = (v) => (v == null ? "" : String(v));
+    return {
+      unitPrice: toInput(targetItem?.finalUnitPrice),
+      exchange: toInput(confirmedPrice?.avgExchange),
+    };
+  }, [columns, contractPrices, detail]);
+
+  const krwUnitPrice = krwOverride.unitPrice ?? krwDefaults.unitPrice;
+  const krwExchange = krwOverride.exchange ?? krwDefaults.exchange;
+
+  const handleKrwChange = (field, value) =>
+    setKrwOverride((current) => ({ ...current, [field]: value }));
 
   // 거래 단가유형 옵션 — 계약에 등록된 유형 + 거래 전용 정산가
   const txPriceTypeOptions = useMemo(
@@ -691,6 +714,18 @@ export function useContractDetail() {
       onItemChange: handlePriceItemChange,
       onEditSubmit: handleUpdatePrice,
       onEditCancel: () => setPriceEditForm(null),
+      // 수출 계약만 원화 환산 계산기 노출 + 품목 단가 클릭 시 계산기 단가로 입력
+      onUnitPriceClick: isExport
+        ? (unitPrice) => handleKrwChange("unitPrice", String(unitPrice))
+        : undefined,
+      krwConverter: isExport
+        ? {
+            unitPrice: krwUnitPrice,
+            exchange: krwExchange,
+            result: toKrwPerKg(krwUnitPrice, krwExchange),
+            onChange: handleKrwChange,
+          }
+        : null,
     },
     txTab: {
       loading: transactionsLoading,
