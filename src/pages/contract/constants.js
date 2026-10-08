@@ -73,6 +73,13 @@ export const formatNumber = (value, digits = 0) =>
         maximumFractionDigits: digits,
       });
 
+// 숫자 → 소수점 셋째자리 반올림한 둘째자리 입력 문자열 (예: 1385.126 → "1385.13"). 값이 없으면 ""
+export const toRoundedInput = (value) => {
+  if (value === "" || value == null || !Number.isFinite(Number(value))) return "";
+  // EPSILON 보정으로 1.005 같은 값이 1.00 으로 내려가지 않게 한다
+  return (Math.round((Number(value) + Number.EPSILON) * 100) / 100).toFixed(2);
+};
+
 // 원화 환산 — USD/ton 단가 × 환율 ÷ 1000 → 원/kg (소수점 절삭). 입력이 비면 null
 export const toKrwPerKg = (unitPrice, exchange) => {
   if (unitPrice === "" || unitPrice == null || exchange === "" || exchange == null) return null;

@@ -18,7 +18,7 @@ import {
   updateTransactionPayment,
 } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
-import { getLocalDateString, toKrwPerKg } from "../constants";
+import { getLocalDateString, toKrwPerKg, toRoundedInput } from "../constants";
 import { useEnums } from "./useEnums";
 import { useToast } from "./useToast";
 
@@ -276,10 +276,9 @@ export function useContractDetail() {
     const priceItems = confirmedPrice?.items ?? [];
     const primaryItemId = (detail?.items ?? []).find((item) => item.primary)?.itemId;
     const targetItem = priceItems.find((item) => item.itemId === primaryItemId) ?? priceItems[0];
-    const toInput = (v) => (v == null ? "" : String(v));
     return {
-      unitPrice: toInput(targetItem?.finalUnitPrice),
-      exchange: toInput(confirmedPrice?.avgExchange),
+      unitPrice: toRoundedInput(targetItem?.finalUnitPrice),
+      exchange: toRoundedInput(confirmedPrice?.avgExchange),
     };
   }, [columns, contractPrices, detail]);
 
@@ -716,7 +715,7 @@ export function useContractDetail() {
       onEditCancel: () => setPriceEditForm(null),
       // 수출 계약만 원화 환산 계산기 노출 + 품목 단가 클릭 시 계산기 단가로 입력
       onUnitPriceClick: isExport
-        ? (unitPrice) => handleKrwChange("unitPrice", String(unitPrice))
+        ? (unitPrice) => handleKrwChange("unitPrice", toRoundedInput(unitPrice))
         : undefined,
       krwConverter: isExport
         ? {
