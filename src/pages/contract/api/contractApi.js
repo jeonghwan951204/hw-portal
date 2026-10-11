@@ -84,6 +84,16 @@ export const deleteContract = async (contractId) =>
   asJson(await apiFetch(`/api/contracts/${contractId}`, { method: "DELETE" }));
 
 // ─── 계약 단가 ──────────────────────────────────────────────────────────────
+// 기존 계약에 단가 1건 추가 후 즉시 계산 → { message, data: { priceId } }
+export const createContractPrice = async (contractId, body) =>
+  asJson(
+    await apiFetch(`/api/contracts/${contractId}/prices`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+
 // 미확정 단가의 계산 조건·품목별 조정 수정 후 즉시 재계산 → { message }
 export const updateContractPrice = async (contractId, priceId, body) =>
   asJson(

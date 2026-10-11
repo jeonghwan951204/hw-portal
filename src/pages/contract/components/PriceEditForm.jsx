@@ -8,6 +8,9 @@ export default function PriceEditForm({
   form,
   sourceOptions = [],
   calcMethodOptions = [],
+  // 단가 추가 시에만 전달 — 단가 종류(priceType)는 수정 불가라 추가 폼에서만 노출
+  priceTypeOptions,
+  submitLabel = "저장 및 재계산",
   submitting,
   onChange,
   onItemChange,
@@ -25,6 +28,25 @@ export default function PriceEditForm({
       className="px-5 py-5 bg-slate-50 border-t border-slate-100"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {priceTypeOptions && (
+          <div>
+            <label className={LABEL_CLASS}>단가 종류</label>
+            <select
+              value={form.priceType}
+              onChange={(event) => onChange("priceType", event.target.value)}
+              className={INPUT_CLASS}
+              disabled={submitting}
+            >
+              <option value="">선택</option>
+              {priceTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className={LABEL_CLASS}>산출 방식</label>
           <select
@@ -151,7 +173,7 @@ export default function PriceEditForm({
           disabled={submitting}
           className="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
         >
-          {submitting ? "저장 중..." : "저장 및 재계산"}
+          {submitting ? "저장 중..." : submitLabel}
         </button>
       </div>
     </form>

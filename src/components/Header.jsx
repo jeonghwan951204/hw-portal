@@ -16,7 +16,6 @@ const NAV_ITEMS = [
     label: "운영관리",
     children: [
       { label: "재고관리", to: "/inventory" },
-      { label: "계근 조회", to: "/weighing" },
       { label: "거래처관리", to: "/companies" },
       { label: "품목관리", to: "/items" },
     ],
@@ -100,7 +99,16 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState({});
   const navItems = getRole() === "ADMIN"
-    ? [...NAV_ITEMS, { label: "관리자", to: "/admin" }]
+    ? [
+        ...NAV_ITEMS,
+        {
+          label: "관리자",
+          children: [
+            { label: "관리자 페이지", to: "/admin" },
+            { label: "계근 조회", to: "/weighing" },
+          ],
+        },
+      ]
     : NAV_ITEMS;
 
   const handleLogout = async () => {

@@ -4,7 +4,7 @@ const WEIGHINGS = [
   {
     id: 1,
     type: "매입",
-    weighedAt: "2026-09-18",
+    weighedAt: "2026-10-12",
     weighedTime: "09:42",
     companyName: "한국전선(주)",
     vehicleNumber: "86가 1234",
@@ -20,7 +20,7 @@ const WEIGHINGS = [
   {
     id: 2,
     type: "매입",
-    weighedAt: "2026-09-18",
+    weighedAt: "2026-10-12",
     weighedTime: "08:17",
     companyName: "대성금속",
     vehicleNumber: "92나 5678",
@@ -36,7 +36,7 @@ const WEIGHINGS = [
   {
     id: 3,
     type: "매입",
-    weighedAt: "2026-09-17",
+    weighedAt: "2026-10-11",
     weighedTime: "15:31",
     companyName: "우진자원",
     vehicleNumber: "81다 9087",
@@ -52,7 +52,7 @@ const WEIGHINGS = [
   {
     id: 4,
     type: "매출",
-    weighedAt: "2026-09-17",
+    weighedAt: "2026-10-11",
     weighedTime: "11:05",
     companyName: "삼성전기(주)",
     vehicleNumber: "83라 3412",
@@ -68,7 +68,7 @@ const WEIGHINGS = [
   {
     id: 5,
     type: "매입",
-    weighedAt: "2026-09-16",
+    weighedAt: "2026-10-10",
     weighedTime: "16:22",
     companyName: "동아비철",
     vehicleNumber: "95마 7754",
@@ -84,7 +84,7 @@ const WEIGHINGS = [
   {
     id: 6,
     type: "매입",
-    weighedAt: "2026-09-15",
+    weighedAt: "2026-10-09",
     weighedTime: "10:48",
     companyName: "한국전선(주)",
     vehicleNumber: "86가 1234",
@@ -100,7 +100,7 @@ const WEIGHINGS = [
   {
     id: 7,
     type: "매출",
-    weighedAt: "2026-09-14",
+    weighedAt: "2026-10-08",
     weighedTime: "13:09",
     companyName: "미래산업",
     vehicleNumber: "89바 2201",
