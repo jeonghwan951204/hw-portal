@@ -53,9 +53,7 @@ export default function WeighingList({
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
         <h2 className="text-sm font-bold text-slate-700">계근 목록</h2>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-          {weighings.length === totalCount
-            ? `${totalCount}건`
-            : `${weighings.length} / ${totalCount}건`}
+          {totalCount}건
         </span>
       </div>
 
@@ -107,8 +105,8 @@ export default function WeighingList({
                     <td className="truncate px-2 py-1.5 text-slate-600" title={weighing.itemName}>{weighing.itemName}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">{weighing.vehicleNumber}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-700">{formatWeight(weighing.receivedWeight)}</td>
-                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-600">{formatUnitPrice(weighing.unitPrice)}</td>
-                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono font-semibold text-slate-800">{formatAmount(weighing.amount)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-600">{formatUnitPrice(weighing.unitPrice, weighing.currency, weighing.priceUnit)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono font-semibold text-slate-800">{formatAmount(weighing.amount, weighing.currency)}</td>
                     <td className="whitespace-nowrap px-2 py-1 text-center">
                       <button
                         type="button"
@@ -174,8 +172,8 @@ export default function WeighingList({
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">품목</dt><dd className="font-medium text-slate-600">{weighing.itemName}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">차량번호</dt><dd className="font-medium text-slate-600">{weighing.vehicleNumber}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">인수량</dt><dd className="font-medium text-slate-700">{formatWeight(weighing.receivedWeight)}</dd></div>
-                <div className="flex justify-between gap-2"><dt className="text-slate-400">단가</dt><dd className="font-medium text-slate-600">{formatUnitPrice(weighing.unitPrice)}</dd></div>
-                <div className="flex justify-between gap-2"><dt className="text-slate-400">금액</dt><dd className="font-bold text-slate-800">{formatAmount(weighing.amount)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">단가</dt><dd className="font-medium text-slate-600">{formatUnitPrice(weighing.unitPrice, weighing.currency, weighing.priceUnit)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">금액</dt><dd className="font-bold text-slate-800">{formatAmount(weighing.amount, weighing.currency)}</dd></div>
               </dl>
               <button
                 type="button"
