@@ -13,6 +13,21 @@ export const formatNumber = (value, maximumFractionDigits = 0) => {
   return Number(value).toLocaleString("ko-KR", { maximumFractionDigits });
 };
 
-export const formatWeight = (value) => `${formatNumber(value, 3)} kg`;
-export const formatUnitPrice = (value) => `${formatNumber(value)}원/kg`;
-export const formatAmount = (value) => `${formatNumber(value)}원`;
+export const formatWeight = (value) =>
+  value == null || value === "" ? "-" : `${formatNumber(value, 3)} kg`;
+
+const currencyLabelOf = (currency) => ({ KRW: "원", USD: "USD" })[currency] ?? currency ?? "원";
+const unitLabelOf = (unit) => ({ KG: "kg", TON: "ton" })[unit] ?? unit?.toLowerCase() ?? "kg";
+
+export const formatUnitPrice = (value, currency, unit) =>
+  value == null ? "-" : `${formatNumber(value)}${currencyLabelOf(currency)}/${unitLabelOf(unit)}`;
+
+export const formatAmount = (value, currency) =>
+  value == null ? "-" : `${formatNumber(value)}${currencyLabelOf(currency)}`;
+
+export const formatDateTime = (value) => {
+  if (!value) return "-";
+  return value.replace("T", " ").slice(0, 16).replaceAll("-", ".");
+};
+
+export const WEIGHING_PAGE_SIZE = 20;

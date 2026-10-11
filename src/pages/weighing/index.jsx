@@ -1,10 +1,11 @@
 import Header from "../../components/Header";
+import Pagination from "../../components/Pagination";
 import WeighingList from "./components/WeighingList";
 import WeighingToolbar from "./components/WeighingToolbar";
 import { useWeighingList } from "./hooks/useWeighingList";
 
 export default function WeighingPage() {
-  const { toolbar, list } = useWeighingList();
+  const { toolbar, list, pagination } = useWeighingList();
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -19,6 +20,7 @@ export default function WeighingPage() {
 
         <WeighingToolbar {...toolbar} />
         <WeighingList {...list} />
+        <Pagination {...pagination} />
       </main>
     </div>
   );

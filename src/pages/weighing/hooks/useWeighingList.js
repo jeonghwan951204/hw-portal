@@ -1,62 +1,69 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { fetchWeighings } from "../api/weighingApi";
-import { getLocalDateString } from "../constants";
+import { getLocalDateString, WEIGHING_PAGE_SIZE } from "../constants";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function useWeighingList() {
   const [today] = useState(getLocalDateString);
-  const [sourceWeighings, setSourceWeighings] = useState([]);
+  const [weighings, setWeighings] = useState([]);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [companyName, setCompanyName] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [expandedId, setExpandedId] = useState(null);
   const [paidIds, setPaidIds] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const loadWeighings = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      setSourceWeighings(await fetchWeighings());
-    } catch (loadError) {
-      setError(loadError.message || "계근 목록을 불러오지 못했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    loadWeighings();
-  }, [loadWeighings]);
+    let alive = true;
+    setLoading(true);
+    setError("");
 
-  const weighings = useMemo(() => {
-    const normalizedCompany = companyName.trim().toLocaleLowerCase("ko-KR");
-    const normalizedVehicle = vehicleNumber.replaceAll(" ", "").toLocaleLowerCase("ko-KR");
+    const timer = setTimeout(() => {
+      fetchWeighings({
+        dateFrom: startDate,
+        dateTo: endDate,
+        counterpartyName: companyName,
+        vehicleNumber,
+        page,
+        size: WEIGHING_PAGE_SIZE,
+      })
+        .then((response) => {
+          if (!alive) return;
+          setWeighings(response.content ?? []);
+          setTotalCount(response.totalElements ?? 0);
+          setTotalPages(response.totalPages ?? 1);
+        })
+        .catch((loadError) => {
+          if (!alive) return;
+          setWeighings([]);
+          setTotalCount(0);
+          setTotalPages(1);
+          setError(loadError.message || "계근 목록을 불러오지 못했습니다.");
+        })
+        .finally(() => {
+          if (alive) setLoading(false);
+        });
+    }, SEARCH_DEBOUNCE_MS);
 
-    return sourceWeighings.filter((weighing) => {
-      const matchesPeriod =
-        (!startDate || weighing.weighedAt >= startDate) &&
-        (!endDate || weighing.weighedAt <= endDate);
-      const matchesCompany =
-        !normalizedCompany ||
-        weighing.companyName.toLocaleLowerCase("ko-KR").includes(normalizedCompany);
-      const matchesVehicle =
-        !normalizedVehicle ||
-        weighing.vehicleNumber
-          .replaceAll(" ", "")
-          .toLocaleLowerCase("ko-KR")
-          .includes(normalizedVehicle);
-
-      return matchesPeriod && matchesCompany && matchesVehicle;
-    });
-  }, [companyName, endDate, sourceWeighings, startDate, vehicleNumber]);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [companyName, endDate, page, retryCount, startDate, vehicleNumber]);
 
   const handleDateRangeChange = (field, value) => {
     const nextRange = normalizeDateRangeChange({ startDate, endDate, field, value });
     setStartDate(nextRange.startDate);
     setEndDate(nextRange.endDate);
+    setPage(1);
     setExpandedId(null);
   };
 
@@ -65,6 +72,7 @@ export function useWeighingList() {
     setEndDate(today);
     setCompanyName("");
     setVehicleNumber("");
+    setPage(1);
     setExpandedId(null);
   };
 
@@ -79,13 +87,21 @@ export function useWeighingList() {
         startDate !== today || endDate !== today || companyName || vehicleNumber
       ),
       onDateRangeChange: handleDateRangeChange,
-      onCompanyNameChange: setCompanyName,
-      onVehicleNumberChange: setVehicleNumber,
+      onCompanyNameChange: (value) => {
+        setCompanyName(value);
+        setPage(1);
+        setExpandedId(null);
+      },
+      onVehicleNumberChange: (value) => {
+        setVehicleNumber(value);
+        setPage(1);
+        setExpandedId(null);
+      },
       onReset: resetFilters,
     },
     list: {
       weighings,
-      totalCount: sourceWeighings.length,
+      totalCount,
       loading,
       error,
       expandedId,
@@ -98,7 +114,15 @@ export function useWeighingList() {
           return next;
         });
       },
-      onRetry: loadWeighings,
+      onRetry: () => setRetryCount((current) => current + 1),
+    },
+    pagination: {
+      currentPage: page,
+      totalPages,
+      onPageChange: (nextPage) => {
+        setPage(nextPage);
+        setExpandedId(null);
+      },
     },
   };
 }

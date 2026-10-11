@@ -1,5 +1,7 @@
-// 계근 조회 API 명세가 확정되기 전 목록 화면 검토용 데이터입니다.
-// API 연동 시 이 함수의 반환 형태를 유지하고 내부 호출만 apiFetch로 교체합니다.
+import { apiFetch } from "../../../utils/api";
+import { USE_MOCK } from "../../../utils/env";
+
+// 로컬 목업 모드에서 사용하는 화면 검토용 데이터입니다.
 const WEIGHINGS = [
   {
     id: 1,
@@ -115,4 +117,104 @@ const WEIGHINGS = [
   },
 ];
 
-export const fetchWeighings = async () => WEIGHINGS.map((item) => ({ ...item }));
+const asJson = async (response) => {
+  if (!response.ok) {
+    let message = `HTTP ${response.status}`;
+    try {
+      const body = await response.clone().json();
+      if (body?.message) message = body.message;
+    } catch {
+      const text = await response.text().catch(() => "");
+      if (text) message = text;
+    }
+    throw new Error(message);
+  }
+  return response.json();
+};
+
+const TRADE_TYPE_LABELS = {
+  PURCHASE: "매입",
+  BUY: "매입",
+  INBOUND: "매입",
+  SALES: "매출",
+  SALE: "매출",
+  SELL: "매출",
+  OUTBOUND: "매출",
+};
+
+const tradeTypeLabelOf = (value) => TRADE_TYPE_LABELS[value] ?? value ?? "-";
+const timeOf = (value) => (value ? value.slice(11, 16) : "");
+
+const mapWeighingRecord = (record) => ({
+  id: record.weighingRecordId,
+  type: tradeTypeLabelOf(record.tradeDirection ?? record.sourceTradeType),
+  weighedAt: record.weighingDate,
+  weighedTime: timeOf(record.secondWeighedAt ?? record.firstWeighedAt),
+  companyName: record.sourceCounterpartyName ?? "",
+  vehicleNumber: record.vehicleNumber ?? "",
+  itemName: record.sourceItemName ?? "",
+  firstWeight: record.firstWeightKg,
+  secondWeight: record.secondWeightKg,
+  netWeight: record.netWeightKg,
+  receivedWeight: record.acceptedWeightKg ?? record.netWeightKg,
+  unitPrice: record.unitPrice,
+  amount: record.amount,
+  currency: record.currency,
+  priceUnit: record.priceUnit,
+  carrierName: record.carrierName ?? "",
+  weigherName: record.weigherName ?? "",
+  memo: record.memo ?? "",
+  sourceCompanyName: record.sourceCompanyName ?? "",
+  ownerCompany: record.ownerCompany ?? "",
+  sourceCode: record.sourceCode ?? "",
+  externalId: record.externalId,
+  dailySequence: record.dailySequence,
+  firstWeighedAt: record.firstWeighedAt,
+  secondWeighedAt: record.secondWeighedAt,
+  deductionRate: record.deductionRatePercent,
+  deductionWeight: record.deductionWeightKg,
+});
+
+const fetchMockWeighings = ({ dateFrom, dateTo, counterpartyName, vehicleNumber, page, size }) => {
+  const normalizedCompany = counterpartyName.trim().toLocaleLowerCase("ko-KR");
+  const normalizedVehicle = vehicleNumber.replaceAll(" ", "").toLocaleLowerCase("ko-KR");
+  const filtered = WEIGHINGS.filter((weighing) =>
+    (!dateFrom || weighing.weighedAt >= dateFrom) &&
+    (!dateTo || weighing.weighedAt <= dateTo) &&
+    (!normalizedCompany || weighing.companyName.toLocaleLowerCase("ko-KR").includes(normalizedCompany)) &&
+    (!normalizedVehicle || weighing.vehicleNumber.replaceAll(" ", "").toLocaleLowerCase("ko-KR").includes(normalizedVehicle))
+  );
+  const offset = (page - 1) * size;
+  return {
+    content: filtered.slice(offset, offset + size).map((item) => ({ ...item })),
+    page,
+    size,
+    totalElements: filtered.length,
+    totalPages: Math.max(1, Math.ceil(filtered.length / size)),
+  };
+};
+
+export const fetchWeighings = async ({
+  dateFrom = "",
+  dateTo = "",
+  counterpartyName = "",
+  vehicleNumber = "",
+  page = 1,
+  size = 20,
+}) => {
+  if (USE_MOCK) {
+    return fetchMockWeighings({ dateFrom, dateTo, counterpartyName, vehicleNumber, page, size });
+  }
+
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+  if (counterpartyName.trim()) params.set("counterpartyName", counterpartyName.trim());
+  if (vehicleNumber.trim()) params.set("vehicleNumber", vehicleNumber.trim());
+
+  const response = await asJson(await apiFetch(`/api/admin/weighing-records?${params}`));
+  return {
+    ...response,
+    content: (response.content ?? []).map(mapWeighingRecord),
+  };
+};
