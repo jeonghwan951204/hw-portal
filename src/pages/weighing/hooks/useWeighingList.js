@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { fetchWeighings } from "../api/weighingApi";
+import { getLocalDateString } from "../constants";
 
 export function useWeighingList() {
+  const [today] = useState(getLocalDateString);
   const [sourceWeighings, setSourceWeighings] = useState([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
   const [companyName, setCompanyName] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [expandedId, setExpandedId] = useState(null);
@@ -59,8 +61,8 @@ export function useWeighingList() {
   };
 
   const resetFilters = () => {
-    setStartDate("");
-    setEndDate("");
+    setStartDate(today);
+    setEndDate(today);
     setCompanyName("");
     setVehicleNumber("");
     setExpandedId(null);
@@ -73,7 +75,9 @@ export function useWeighingList() {
       companyName,
       vehicleNumber,
       dateLimits: getDateRangeLimits(startDate, endDate),
-      hasFilters: Boolean(startDate || endDate || companyName || vehicleNumber),
+      hasFilters: Boolean(
+        startDate !== today || endDate !== today || companyName || vehicleNumber
+      ),
       onDateRangeChange: handleDateRangeChange,
       onCompanyNameChange: setCompanyName,
       onVehicleNumberChange: setVehicleNumber,

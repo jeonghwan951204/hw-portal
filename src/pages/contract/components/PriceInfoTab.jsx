@@ -24,7 +24,52 @@ export default function PriceInfoTab({
   onEditCancel,
   onUnitPriceClick,
   krwConverter,
+  createForm,
+  priceTypeOptions,
+  creatingPrice,
+  onCreateOpen,
+  onCreateChange,
+  onCreateItemChange,
+  onCreateSubmit,
+  onCreateCancel,
 }) {
+  // 단가 추가 버튼 + 폼 — 단가가 없을 때도 추가할 수 있도록 빈 상태와 함께 노출
+  const createSection = (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="px-5 py-3 flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-700">계약 단가</h3>
+        <button
+          type="button"
+          onClick={onCreateOpen}
+          disabled={creatingPrice}
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+            creatingPrice
+              ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+              : createForm
+                ? "text-slate-600 bg-white border-slate-200 hover:bg-slate-50 active:scale-95"
+                : "text-white bg-blue-600 border-blue-600 hover:bg-blue-700 active:scale-95"
+          }`}
+        >
+          {createForm ? "추가 닫기" : "+ 단가 추가"}
+        </button>
+      </div>
+      {createForm && (
+        <PriceEditForm
+          form={createForm}
+          priceTypeOptions={priceTypeOptions}
+          sourceOptions={sourceOptions}
+          calcMethodOptions={calcMethodOptions}
+          submitLabel="추가 및 계산"
+          submitting={creatingPrice}
+          onChange={onCreateChange}
+          onItemChange={onCreateItemChange}
+          onSubmit={onCreateSubmit}
+          onCancel={onCreateCancel}
+        />
+      )}
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center text-sm text-slate-400">
@@ -43,14 +88,19 @@ export default function PriceInfoTab({
 
   if (columns.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center text-sm text-slate-400">
-        등록된 단가가 없습니다.
+      <div className="space-y-6">
+        {createSection}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-16 text-center text-sm text-slate-400">
+          등록된 단가가 없습니다.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {createSection}
+
       {/* 단가별 기간 줄 */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100">
         {priceLines.map((line) => {

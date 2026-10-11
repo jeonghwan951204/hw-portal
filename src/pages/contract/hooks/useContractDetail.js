@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   calculateSettlement,
   confirmPrice,
+  createContractPrice,
   createTransaction,
   deleteContract,
   deleteTransaction,
@@ -71,6 +72,8 @@ export function useContractDetail() {
   const [recalculatingId, setRecalculatingId] = useState(null);
   const [updatingPriceId, setUpdatingPriceId] = useState(null);
   const [priceEditForm, setPriceEditForm] = useState(null);
+  const [priceCreateForm, setPriceCreateForm] = useState(null);
+  const [creatingPrice, setCreatingPrice] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   // 원화 환산 계산기 — 사용자가 바꾼 값만 보관 (null 이면 확정가 기본값 사용)
   const [krwOverride, setKrwOverride] = useState({ unitPrice: null, exchange: null });
@@ -564,6 +567,7 @@ export function useContractDetail() {
     }
     const price = contractPrices.find((item) => item.priceId === priceId);
     if (!price || price.confirmedAt) return;
+    setPriceCreateForm(null);
     setPriceEditForm({
       priceId,
       priceSource: price.priceSource,
@@ -597,48 +601,50 @@ export function useContractDetail() {
     );
   };
 
+  // 단가 수정·추가 폼 공통 검증 — 오류 메시지 반환 (없으면 "")
+  const validatePriceForm = (form) => {
+    const isCalculated = form.priceSource === "CALCULATED";
+    if (!form.calcMethod) return "계산식을 선택해 주세요";
+    if (isCalculated && !form.periodStart) return "계산 단가는 산정 시작일을 입력해 주세요";
+    if (isCalculated && form.periodEnd && form.periodEnd < form.periodStart)
+      return "산정 종료일은 시작일보다 빠를 수 없습니다";
+    if (!isCalculated && form.fixedUnitPrice === "") return "고정 단가를 입력해 주세요";
+    if (form.items.some((item) => item.rate === "")) return "모든 품목의 요율을 입력해 주세요";
+    return "";
+  };
+
+  // 단가 수정·추가 폼 공통 요청 본문 (priceType 제외)
+  const toPriceBody = (form) => {
+    const isCalculated = form.priceSource === "CALCULATED";
+    return {
+      priceSource: form.priceSource,
+      calcMethod: form.calcMethod,
+      periodStart: isCalculated ? form.periodStart : null,
+      periodEnd: isCalculated && form.periodEnd ? form.periodEnd : null,
+      fixedUnitPrice: isCalculated ? null : Number(form.fixedUnitPrice),
+      items: form.items.map((item) => ({
+        itemId: item.itemId,
+        rate: Number(item.rate),
+        premium: item.premium === "" ? 0 : Number(item.premium),
+      })),
+    };
+  };
+
   const handleUpdatePrice = async () => {
     if (!priceEditForm || updatingPriceId) return;
-    const isCalculated = priceEditForm.priceSource === "CALCULATED";
-    if (!priceEditForm.calcMethod) {
-      showToast("error", "계산식을 선택해 주세요");
-      return;
-    }
-    if (isCalculated && !priceEditForm.periodStart) {
-      showToast("error", "계산 단가는 산정 시작일을 입력해 주세요");
-      return;
-    }
-    if (
-      isCalculated &&
-      priceEditForm.periodEnd &&
-      priceEditForm.periodEnd < priceEditForm.periodStart
-    ) {
-      showToast("error", "산정 종료일은 시작일보다 빠를 수 없습니다");
-      return;
-    }
-    if (!isCalculated && priceEditForm.fixedUnitPrice === "") {
-      showToast("error", "고정 단가를 입력해 주세요");
-      return;
-    }
-    if (priceEditForm.items.some((item) => item.rate === "")) {
-      showToast("error", "모든 품목의 요율을 입력해 주세요");
+    const validationError = validatePriceForm(priceEditForm);
+    if (validationError) {
+      showToast("error", validationError);
       return;
     }
 
     setUpdatingPriceId(priceEditForm.priceId);
     try {
-      const response = await updateContractPrice(id, priceEditForm.priceId, {
-        priceSource: priceEditForm.priceSource,
-        calcMethod: priceEditForm.calcMethod,
-        periodStart: isCalculated ? priceEditForm.periodStart : null,
-        periodEnd: isCalculated && priceEditForm.periodEnd ? priceEditForm.periodEnd : null,
-        fixedUnitPrice: isCalculated ? null : Number(priceEditForm.fixedUnitPrice),
-        items: priceEditForm.items.map((item) => ({
-          itemId: item.itemId,
-          rate: Number(item.rate),
-          premium: item.premium === "" ? 0 : Number(item.premium),
-        })),
-      });
+      const response = await updateContractPrice(
+        id,
+        priceEditForm.priceId,
+        toPriceBody(priceEditForm)
+      );
       await loadPrices();
       setPriceEditForm(null);
       showToast("success", response?.message || "단가가 수정되고 재계산되었습니다");
@@ -646,6 +652,76 @@ export function useContractDetail() {
       showToast("error", e.message || "단가 수정에 실패했습니다");
     } finally {
       setUpdatingPriceId(null);
+    }
+  };
+
+  // ── 단가 추가 ──
+  const handleOpenPriceCreate = () => {
+    if (creatingPrice) return;
+    if (priceCreateForm) {
+      setPriceCreateForm(null);
+      return;
+    }
+    setPriceEditForm(null);
+    // 생략한 품목도 서버에서 요율 1·프리미엄 0 으로 등록되므로 같은 기본값으로 채운다
+    setPriceCreateForm({
+      priceType: "",
+      priceSource: "CALCULATED",
+      calcMethod: isExport ? "EXPORT_STANDARD" : "",
+      periodStart: "",
+      periodEnd: "",
+      fixedUnitPrice: "",
+      items: (detail?.items ?? []).map((item) => ({
+        itemId: item.itemId,
+        itemName: item.itemName,
+        rate: "1",
+        premium: "0",
+      })),
+    });
+  };
+
+  const handlePriceCreateChange = (field, value) => {
+    setPriceCreateForm((current) => (current ? { ...current, [field]: value } : current));
+  };
+
+  const handlePriceCreateItemChange = (itemId, field, value) => {
+    setPriceCreateForm((current) =>
+      current
+        ? {
+            ...current,
+            items: current.items.map((item) =>
+              item.itemId === itemId ? { ...item, [field]: value } : item
+            ),
+          }
+        : current
+    );
+  };
+
+  const handleCreatePrice = async () => {
+    if (!priceCreateForm || creatingPrice) return;
+    if (!priceCreateForm.priceType) {
+      showToast("error", "단가 종류를 선택해 주세요");
+      return;
+    }
+    const validationError = validatePriceForm(priceCreateForm);
+    if (validationError) {
+      showToast("error", validationError);
+      return;
+    }
+
+    setCreatingPrice(true);
+    try {
+      const response = await createContractPrice(id, {
+        priceType: priceCreateForm.priceType,
+        ...toPriceBody(priceCreateForm),
+      });
+      await loadPrices();
+      setPriceCreateForm(null);
+      showToast("success", response?.message || "단가가 추가되고 계산되었습니다");
+    } catch (e) {
+      showToast("error", e.message || "단가 추가에 실패했습니다");
+    } finally {
+      setCreatingPrice(false);
     }
   };
 
@@ -713,6 +789,14 @@ export function useContractDetail() {
       onItemChange: handlePriceItemChange,
       onEditSubmit: handleUpdatePrice,
       onEditCancel: () => setPriceEditForm(null),
+      createForm: priceCreateForm,
+      priceTypeOptions: enums[ENUM_GROUPS.PRICE_TYPE] ?? [],
+      creatingPrice,
+      onCreateOpen: handleOpenPriceCreate,
+      onCreateChange: handlePriceCreateChange,
+      onCreateItemChange: handlePriceCreateItemChange,
+      onCreateSubmit: handleCreatePrice,
+      onCreateCancel: () => setPriceCreateForm(null),
       // 수출 계약만 원화 환산 계산기 노출 + 품목 단가 클릭 시 계산기 단가로 입력
       onUnitPriceClick: isExport
         ? (unitPrice) => handleKrwChange("unitPrice", toRoundedInput(unitPrice))
