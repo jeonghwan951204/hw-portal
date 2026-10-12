@@ -1,6 +1,12 @@
 import { Fragment } from "react";
 import WeighingDetail from "./WeighingDetail";
-import { formatAmount, formatDate, formatUnitPrice, formatWeight } from "../constants";
+import {
+  formatAmount,
+  formatDate,
+  formatUnitPrice,
+  formatWeight,
+  ownerCompanyLabelOf,
+} from "../constants";
 
 const rowToggleProps = (weighing, expanded, onToggleDetail) => ({
   onClick: () => onToggleDetail(weighing.id),
@@ -20,9 +26,7 @@ export default function WeighingList({
   loading,
   error,
   expandedId,
-  paidIds,
   onToggleDetail,
-  onPaymentComplete,
   onRetry,
 }) {
   if (loading) {
@@ -69,7 +73,7 @@ export default function WeighingList({
               <th className="w-[12%] px-2 py-2 text-right font-semibold">인수량</th>
               <th className="w-[11%] px-2 py-2 text-right font-semibold">단가</th>
               <th className="w-[14%] px-2 py-2 text-right font-semibold">금액</th>
-              <th className="w-[7%] px-2 py-2 text-center font-semibold">결제</th>
+              <th className="w-[7%] px-2 py-2 text-center font-semibold">회사구분</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -82,7 +86,6 @@ export default function WeighingList({
             )}
             {weighings.map((weighing) => {
               const expanded = expandedId === weighing.id;
-              const paid = paidIds.has(weighing.id);
               return (
                 <Fragment key={weighing.id}>
                   <tr
@@ -107,23 +110,10 @@ export default function WeighingList({
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-700">{formatWeight(weighing.receivedWeight)}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-600">{formatUnitPrice(weighing.unitPrice, weighing.currency, weighing.priceUnit)}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono font-semibold text-slate-800">{formatAmount(weighing.amount, weighing.currency)}</td>
-                    <td className="whitespace-nowrap px-2 py-1 text-center">
-                      <button
-                        type="button"
-                        disabled={paid}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onPaymentComplete(weighing.id);
-                        }}
-                        onKeyDown={(event) => event.stopPropagation()}
-                        className={`rounded-md border px-2 py-1 text-[11px] font-bold transition-colors ${
-                          paid
-                            ? "cursor-default border-emerald-100 bg-emerald-50 text-emerald-600"
-                            : "border-blue-200 bg-white text-blue-600 hover:bg-blue-50"
-                        }`}
-                      >
-                        {paid ? "완료" : "결제완료"}
-                      </button>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-center">
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                        {ownerCompanyLabelOf(weighing.ownerCompany)}
+                      </span>
                     </td>
                   </tr>
                   {expanded && (
@@ -148,7 +138,6 @@ export default function WeighingList({
         )}
         {weighings.map((weighing) => {
           const expanded = expandedId === weighing.id;
-          const paid = paidIds.has(weighing.id);
           return (
             <article
               key={weighing.id}
@@ -174,23 +163,8 @@ export default function WeighingList({
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">인수량</dt><dd className="font-medium text-slate-700">{formatWeight(weighing.receivedWeight)}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">단가</dt><dd className="font-medium text-slate-600">{formatUnitPrice(weighing.unitPrice, weighing.currency, weighing.priceUnit)}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">금액</dt><dd className="font-bold text-slate-800">{formatAmount(weighing.amount, weighing.currency)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">회사구분</dt><dd className="font-bold text-slate-600">{ownerCompanyLabelOf(weighing.ownerCompany)}</dd></div>
               </dl>
-              <button
-                type="button"
-                disabled={paid}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onPaymentComplete(weighing.id);
-                }}
-                onKeyDown={(event) => event.stopPropagation()}
-                className={`mt-2 w-full rounded-md border py-1.5 text-xs font-bold transition-colors ${
-                  paid
-                    ? "cursor-default border-emerald-100 bg-emerald-50 text-emerald-600"
-                    : "border-blue-200 bg-white text-blue-600 hover:bg-blue-50"
-                }`}
-              >
-                {paid ? "완료" : "결제완료"}
-              </button>
               {expanded && (
                 <div className="mt-3" onClick={(event) => event.stopPropagation()}>
                   <WeighingDetail weighing={weighing} />

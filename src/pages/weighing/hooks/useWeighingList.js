@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { fetchWeighings } from "../api/weighingApi";
-import { getLocalDateString, WEIGHING_PAGE_SIZE } from "../constants";
+import {
+  getLocalDateString,
+  OWNER_COMPANY_OPTIONS,
+  TRADE_DIRECTION_OPTIONS,
+  WEIGHING_PAGE_SIZE,
+} from "../constants";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -12,11 +17,12 @@ export function useWeighingList() {
   const [endDate, setEndDate] = useState(today);
   const [companyName, setCompanyName] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
+  const [tradeDirection, setTradeDirection] = useState("");
+  const [ownerCompany, setOwnerCompany] = useState("HOJAE");
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [expandedId, setExpandedId] = useState(null);
-  const [paidIds, setPaidIds] = useState(() => new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
@@ -32,6 +38,8 @@ export function useWeighingList() {
         dateTo: endDate,
         counterpartyName: companyName,
         vehicleNumber,
+        tradeDirection,
+        ownerCompany,
         page,
         size: WEIGHING_PAGE_SIZE,
       })
@@ -57,7 +65,7 @@ export function useWeighingList() {
       alive = false;
       clearTimeout(timer);
     };
-  }, [companyName, endDate, page, retryCount, startDate, vehicleNumber]);
+  }, [companyName, endDate, ownerCompany, page, retryCount, startDate, tradeDirection, vehicleNumber]);
 
   const handleDateRangeChange = (field, value) => {
     const nextRange = normalizeDateRangeChange({ startDate, endDate, field, value });
@@ -72,6 +80,8 @@ export function useWeighingList() {
     setEndDate(today);
     setCompanyName("");
     setVehicleNumber("");
+    setTradeDirection("");
+    setOwnerCompany("HOJAE");
     setPage(1);
     setExpandedId(null);
   };
@@ -82,9 +92,18 @@ export function useWeighingList() {
       endDate,
       companyName,
       vehicleNumber,
+      tradeDirection,
+      ownerCompany,
+      tradeDirectionOptions: TRADE_DIRECTION_OPTIONS,
+      ownerCompanyOptions: OWNER_COMPANY_OPTIONS,
       dateLimits: getDateRangeLimits(startDate, endDate),
       hasFilters: Boolean(
-        startDate !== today || endDate !== today || companyName || vehicleNumber
+        startDate !== today ||
+        endDate !== today ||
+        companyName ||
+        vehicleNumber ||
+        tradeDirection ||
+        ownerCompany !== "HOJAE"
       ),
       onDateRangeChange: handleDateRangeChange,
       onCompanyNameChange: (value) => {
@@ -97,6 +116,16 @@ export function useWeighingList() {
         setPage(1);
         setExpandedId(null);
       },
+      onTradeDirectionChange: (value) => {
+        setTradeDirection(value);
+        setPage(1);
+        setExpandedId(null);
+      },
+      onOwnerCompanyChange: (value) => {
+        setOwnerCompany(value);
+        setPage(1);
+        setExpandedId(null);
+      },
       onReset: resetFilters,
     },
     list: {
@@ -105,15 +134,7 @@ export function useWeighingList() {
       loading,
       error,
       expandedId,
-      paidIds,
       onToggleDetail: (id) => setExpandedId((current) => (current === id ? null : id)),
-      onPaymentComplete: (id) => {
-        setPaidIds((current) => {
-          const next = new Set(current);
-          next.add(id);
-          return next;
-        });
-      },
       onRetry: () => setRetryCount((current) => current + 1),
     },
     pagination: {

@@ -27,7 +27,21 @@ export const formatAmount = (value, currency) =>
 
 export const formatDateTime = (value) => {
   if (!value) return "-";
-  return value.replace("T", " ").slice(0, 16).replaceAll("-", ".");
+  return value.replace(":00", "");
 };
 
 export const WEIGHING_PAGE_SIZE = 20;
+
+export const TRADE_DIRECTION_OPTIONS = [
+  { value: "", label: "전체" },
+  { value: "PURCHASE", label: "매입" },
+  { value: "SALE", label: "매출" },
+];
+
+export const OWNER_COMPANY_OPTIONS = [
+  { value: "HOJAE", label: "호재" },
+  { value: "WOONAM", label: "우남" },
+];
+
+export const ownerCompanyLabelOf = (value) =>
+  OWNER_COMPANY_OPTIONS.find((option) => option.value === value)?.label ?? value ?? "-";

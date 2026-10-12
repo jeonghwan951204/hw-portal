@@ -25,21 +25,51 @@ function SearchField({ label, value, placeholder, onChange }) {
   );
 }
 
+function SegmentedFilter({ label, value, options, onChange }) {
+  return (
+    <fieldset>
+      <legend className="mb-1.5 text-xs font-semibold text-slate-500">{label}</legend>
+      <div className="inline-flex h-[38px] rounded-lg border border-slate-200 bg-slate-50 p-1">
+        {options.map((option) => (
+          <button
+            key={option.value || "ALL"}
+            type="button"
+            onClick={() => onChange(option.value)}
+            className={`rounded-md px-3 text-xs font-bold transition-all ${
+              value === option.value
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 export default function WeighingToolbar({
   startDate,
   endDate,
   companyName,
   vehicleNumber,
+  tradeDirection,
+  ownerCompany,
+  tradeDirectionOptions,
+  ownerCompanyOptions,
   dateLimits,
   hasFilters,
   onDateRangeChange,
   onCompanyNameChange,
   onVehicleNumberChange,
+  onTradeDirectionChange,
+  onOwnerCompanyChange,
   onReset,
 }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="grid gap-3 lg:grid-cols-[minmax(19rem,1.35fr)_minmax(10rem,1fr)_minmax(10rem,1fr)_auto] lg:items-end">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(19rem,1.4fr)_minmax(13rem,1fr)_minmax(10rem,0.8fr)] xl:items-end">
         <fieldset>
           <legend className="mb-1.5 text-xs font-semibold text-slate-500">계량일자</legend>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
@@ -63,6 +93,21 @@ export default function WeighingToolbar({
           </div>
         </fieldset>
 
+        <SegmentedFilter
+          label="입출고구분"
+          value={tradeDirection}
+          options={tradeDirectionOptions}
+          onChange={onTradeDirectionChange}
+        />
+        <SegmentedFilter
+          label="회사구분"
+          value={ownerCompany}
+          options={ownerCompanyOptions}
+          onChange={onOwnerCompanyChange}
+        />
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)_auto] sm:items-end">
         <SearchField
           label="거래처명"
           value={companyName}

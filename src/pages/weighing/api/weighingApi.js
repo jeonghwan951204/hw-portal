@@ -6,6 +6,7 @@ const WEIGHINGS = [
   {
     id: 1,
     type: "매입",
+    ownerCompany: "HOJAE",
     weighedAt: "2026-10-12",
     weighedTime: "09:42",
     companyName: "한국전선(주)",
@@ -22,6 +23,7 @@ const WEIGHINGS = [
   {
     id: 2,
     type: "매입",
+    ownerCompany: "HOJAE",
     weighedAt: "2026-10-12",
     weighedTime: "08:17",
     companyName: "대성금속",
@@ -38,6 +40,7 @@ const WEIGHINGS = [
   {
     id: 3,
     type: "매입",
+    ownerCompany: "WOONAM",
     weighedAt: "2026-10-11",
     weighedTime: "15:31",
     companyName: "우진자원",
@@ -54,6 +57,7 @@ const WEIGHINGS = [
   {
     id: 4,
     type: "매출",
+    ownerCompany: "HOJAE",
     weighedAt: "2026-10-11",
     weighedTime: "11:05",
     companyName: "삼성전기(주)",
@@ -70,6 +74,7 @@ const WEIGHINGS = [
   {
     id: 5,
     type: "매입",
+    ownerCompany: "WOONAM",
     weighedAt: "2026-10-10",
     weighedTime: "16:22",
     companyName: "동아비철",
@@ -86,6 +91,7 @@ const WEIGHINGS = [
   {
     id: 6,
     type: "매입",
+    ownerCompany: "HOJAE",
     weighedAt: "2026-10-09",
     weighedTime: "10:48",
     companyName: "한국전선(주)",
@@ -102,6 +108,7 @@ const WEIGHINGS = [
   {
     id: 7,
     type: "매출",
+    ownerCompany: "WOONAM",
     weighedAt: "2026-10-08",
     weighedTime: "13:09",
     companyName: "미래산업",
@@ -134,12 +141,7 @@ const asJson = async (response) => {
 
 const TRADE_TYPE_LABELS = {
   PURCHASE: "매입",
-  BUY: "매입",
-  INBOUND: "매입",
-  SALES: "매출",
   SALE: "매출",
-  SELL: "매출",
-  OUTBOUND: "매출",
 };
 
 const tradeTypeLabelOf = (value) => TRADE_TYPE_LABELS[value] ?? value ?? "-";
@@ -175,12 +177,23 @@ const mapWeighingRecord = (record) => ({
   deductionWeight: record.deductionWeightKg,
 });
 
-const fetchMockWeighings = ({ dateFrom, dateTo, counterpartyName, vehicleNumber, page, size }) => {
+const fetchMockWeighings = ({
+  dateFrom,
+  dateTo,
+  counterpartyName,
+  vehicleNumber,
+  tradeDirection,
+  ownerCompany,
+  page,
+  size,
+}) => {
   const normalizedCompany = counterpartyName.trim().toLocaleLowerCase("ko-KR");
   const normalizedVehicle = vehicleNumber.replaceAll(" ", "").toLocaleLowerCase("ko-KR");
   const filtered = WEIGHINGS.filter((weighing) =>
     (!dateFrom || weighing.weighedAt >= dateFrom) &&
     (!dateTo || weighing.weighedAt <= dateTo) &&
+    (!tradeDirection || weighing.type === tradeTypeLabelOf(tradeDirection)) &&
+    (!ownerCompany || weighing.ownerCompany === ownerCompany) &&
     (!normalizedCompany || weighing.companyName.toLocaleLowerCase("ko-KR").includes(normalizedCompany)) &&
     (!normalizedVehicle || weighing.vehicleNumber.replaceAll(" ", "").toLocaleLowerCase("ko-KR").includes(normalizedVehicle))
   );
@@ -199,11 +212,22 @@ export const fetchWeighings = async ({
   dateTo = "",
   counterpartyName = "",
   vehicleNumber = "",
+  tradeDirection = "",
+  ownerCompany = "HOJAE",
   page = 1,
   size = 20,
 }) => {
   if (USE_MOCK) {
-    return fetchMockWeighings({ dateFrom, dateTo, counterpartyName, vehicleNumber, page, size });
+    return fetchMockWeighings({
+      dateFrom,
+      dateTo,
+      counterpartyName,
+      vehicleNumber,
+      tradeDirection,
+      ownerCompany,
+      page,
+      size,
+    });
   }
 
   const params = new URLSearchParams({ page: String(page), size: String(size) });
@@ -211,6 +235,8 @@ export const fetchWeighings = async ({
   if (dateTo) params.set("dateTo", dateTo);
   if (counterpartyName.trim()) params.set("counterpartyName", counterpartyName.trim());
   if (vehicleNumber.trim()) params.set("vehicleNumber", vehicleNumber.trim());
+  if (tradeDirection) params.set("tradeDirection", tradeDirection);
+  if (ownerCompany) params.set("ownerCompany", ownerCompany);
 
   const response = await asJson(await apiFetch(`/api/admin/weighing-records?${params}`));
   return {
