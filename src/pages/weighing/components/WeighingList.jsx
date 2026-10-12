@@ -66,6 +66,7 @@ export default function WeighingList({
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
               <th className="w-[7%] px-2 py-2 text-center font-semibold">구분</th>
+              <th className="w-[7%] px-2 py-2 text-center font-semibold">회사구분</th>
               <th className="w-[11%] px-2 py-2 text-left font-semibold">계량일자</th>
               <th className="w-[17%] px-2 py-2 text-left font-semibold">거래처</th>
               <th className="w-[9%] px-2 py-2 text-left font-semibold">품목</th>
@@ -73,7 +74,6 @@ export default function WeighingList({
               <th className="w-[12%] px-2 py-2 text-right font-semibold">인수량</th>
               <th className="w-[11%] px-2 py-2 text-right font-semibold">단가</th>
               <th className="w-[14%] px-2 py-2 text-right font-semibold">금액</th>
-              <th className="w-[7%] px-2 py-2 text-center font-semibold">회사구분</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -103,6 +103,11 @@ export default function WeighingList({
                         {weighing.type}
                       </span>
                     </td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-center">
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                        {ownerCompanyLabelOf(weighing.ownerCompany)}
+                      </span>
+                    </td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">{formatDate(weighing.weighedAt)}</td>
                     <td className="truncate px-2 py-1.5 font-semibold text-slate-800" title={weighing.companyName}>{weighing.companyName}</td>
                     <td className="truncate px-2 py-1.5 text-slate-600" title={weighing.itemName}>{weighing.itemName}</td>
@@ -110,11 +115,6 @@ export default function WeighingList({
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-700">{formatWeight(weighing.receivedWeight)}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-600">{formatUnitPrice(weighing.unitPrice, weighing.currency, weighing.priceUnit)}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono font-semibold text-slate-800">{formatAmount(weighing.amount, weighing.currency)}</td>
-                    <td className="whitespace-nowrap px-2 py-1.5 text-center">
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
-                        {ownerCompanyLabelOf(weighing.ownerCompany)}
-                      </span>
-                    </td>
                   </tr>
                   {expanded && (
                     <tr>
