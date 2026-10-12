@@ -18,7 +18,7 @@ export function useWeighingList() {
   const [companyName, setCompanyName] = useState("");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [tradeDirection, setTradeDirection] = useState("");
-  const [ownerCompany, setOwnerCompany] = useState("HOJAE");
+  const [ownerCompany, setOwnerCompany] = useState("");
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -81,7 +81,7 @@ export function useWeighingList() {
     setCompanyName("");
     setVehicleNumber("");
     setTradeDirection("");
-    setOwnerCompany("HOJAE");
+    setOwnerCompany("");
     setPage(1);
     setExpandedId(null);
   };
@@ -103,7 +103,7 @@ export function useWeighingList() {
         companyName ||
         vehicleNumber ||
         tradeDirection ||
-        ownerCompany !== "HOJAE"
+        ownerCompany
       ),
       onDateRangeChange: handleDateRangeChange,
       onCompanyNameChange: (value) => {

@@ -39,6 +39,7 @@ export const TRADE_DIRECTION_OPTIONS = [
 ];
 
 export const OWNER_COMPANY_OPTIONS = [
+  { value: "", label: "전체" },
   { value: "HOJAE", label: "호재" },
   { value: "WOONAM", label: "우남" },
 ];
