@@ -22,8 +22,7 @@ const NAV_ITEMS = [
   {
     label: "계근관리",
     children: [
-      // 계근조회 API(/api/admin/weighing-records)는 관리자 전용이라 ADMIN 에게만 노출한다.
-      { label: "계근조회", to: "/weighing", roles: ["ADMIN"] },
+      { label: "계근조회", to: "/weighing" },
       { label: "거래관리", to: "/transactions" },
     ],
   },

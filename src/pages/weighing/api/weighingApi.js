@@ -238,7 +238,7 @@ export const fetchWeighings = async ({
   if (tradeDirection) params.set("tradeDirection", tradeDirection);
   if (ownerCompany) params.set("ownerCompany", ownerCompany);
 
-  const response = await asJson(await apiFetch(`/api/admin/weighing-records?${params}`));
+  const response = await asJson(await apiFetch(`/api/weighing-records?${params}`));
   return {
     ...response,
     content: (response.content ?? []).map(mapWeighingRecord),
