@@ -4,7 +4,6 @@ import { getRole } from "../utils/auth";
 
 const NAV_ITEMS = [
   { label: "사이트 관리", to: "/" },
-  { label: "공지사항", to: "/notice" },
   {
     label: "단가조회",
     children: [
@@ -21,12 +20,23 @@ const NAV_ITEMS = [
     ],
   },
   {
-    label: "문서",
+    label: "계근관리",
     children: [
-      { label: "문서관리", to: "/documents" },
+      { label: "계근조회", to: "/weighing" },
+      { label: "거래관리", to: "/transactions" },
     ],
   },
 ];
+
+// 권한이 없는 하위 메뉴를 거르고, 남은 하위 메뉴가 없는 카테고리는 숨긴다.
+const filterNavItemsByRole = (items, role) =>
+  items
+    .map((item) =>
+      item.children
+        ? { ...item, children: item.children.filter((child) => !child.roles || child.roles.includes(role)) }
+        : item
+    )
+    .filter((item) => !item.children || item.children.length > 0);
 
 function DropdownMenu({ item }) {
   const [open, setOpen] = useState(false);
@@ -98,23 +108,19 @@ function DropdownMenu({ item }) {
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState({});
-  const navItems = getRole() === "ADMIN"
+  const role = getRole();
+  const roleNavItems = filterNavItemsByRole(NAV_ITEMS, role);
+  const navItems = role === "ADMIN"
     ? [
-        ...NAV_ITEMS,
+        ...roleNavItems,
         {
           label: "관리자",
           children: [
             { label: "관리자 페이지", to: "/admin" },
-            { label: "계근 조회", to: "/weighing" },
           ],
         },
       ]
-    : NAV_ITEMS;
-
-  const handleLogout = async () => {
-    await fetch("/logout", { method: "POST" });
-    window.location.href = "/login";
-  };
+    : roleNavItems;
 
   const toggleCategory = (label) => {
     setOpenCategories((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -153,21 +159,6 @@ export default function Header() {
               </NavLink>
             )
           )}
-
-          {/* 구분선 */}
-          <span className="w-px h-5 bg-slate-200 mx-2" />
-
-          {/* 로그아웃 */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 h-full px-4 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors border-b-2 border-transparent"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            로그아웃
-          </button>
         </nav>
 
         {/* 모바일 햄버거 버튼 */}
@@ -250,21 +241,6 @@ export default function Header() {
               </NavLink>
             )
           )}
-
-          {/* 모바일 구분선 */}
-          <div className="border-t border-slate-200 mx-4 my-1" />
-
-          {/* 모바일 로그아웃 */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            로그아웃
-          </button>
         </div>
       )}
     </header>
