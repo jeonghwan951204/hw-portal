@@ -5,6 +5,7 @@ import { useToast } from "../../contract/hooks/useToast";
 import { fetchTransactions, mergeTransactions } from "../api/transactionApi";
 import {
   CONFIRMED_OPTIONS,
+  getLocalDateString,
   ORIGIN_OPTIONS,
   OWNER_COMPANY_OPTIONS,
   PAYMENT_STATUS_OPTIONS,
@@ -15,10 +16,10 @@ import {
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-// 매핑상태로 숨기지 않도록 모든 필터의 기본값은 '전체'
-const INITIAL_FILTERS = {
-  startDate: "",
-  endDate: "",
+// 거래일은 오늘 하루, 나머지 필터는 매핑상태로 숨기지 않도록 기본값 '전체'
+const createInitialFilters = (today) => ({
+  startDate: today,
+  endDate: today,
   ownerCompany: "",
   transactionOrigin: "",
   tradeDirection: "",
@@ -26,7 +27,7 @@ const INITIAL_FILTERS = {
   paymentStatus: "",
   transactionStatus: "",
   keyword: "",
-};
+});
 
 // 합칠 수 있는 거래 — 확인 대기 + 진행 중
 export const isMergeable = (transaction) => !transaction.confirmed && transaction.transactionStatus === "OPEN";
@@ -65,7 +66,9 @@ const getMergeIssues = (transactions, targetId) => {
 export function useTransactionList() {
   const navigate = useNavigate();
   const { toast, showToast } = useToast();
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  // 초기화 시에도 같은 기준일을 쓰도록 첫 렌더링 시점의 오늘 날짜를 고정한다
+  const [initialFilters] = useState(() => createInitialFilters(getLocalDateString()));
+  const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
   const [transactions, setTransactions] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -172,11 +175,11 @@ export function useTransactionList() {
       paymentStatusOptions: PAYMENT_STATUS_OPTIONS,
       transactionStatusOptions: TRANSACTION_STATUS_OPTIONS,
       dateLimits: getDateRangeLimits(filters.startDate, filters.endDate),
-      hasFilters: Object.entries(filters).some(([key, value]) => value !== INITIAL_FILTERS[key]),
+      hasFilters: Object.entries(filters).some(([key, value]) => value !== initialFilters[key]),
       onDateRangeChange: (field, value) =>
         changeFilters(normalizeDateRangeChange({ startDate: filters.startDate, endDate: filters.endDate, field, value })),
       onFilterChange: (field, value) => changeFilters({ [field]: value }),
-      onReset: () => changeFilters(INITIAL_FILTERS),
+      onReset: () => changeFilters(initialFilters),
     },
     actions: {
       selectedCount: selectedList.length,
