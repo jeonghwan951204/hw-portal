@@ -100,6 +100,11 @@ function TransactionRows({ contractId, tradeType, transactions }) {
         <td className="px-4 py-3 text-right font-mono font-bold text-slate-700 whitespace-nowrap">
           {formatValueWithUnit(transaction.paidAmount, "원")}
         </td>
+        {isExport && (
+          <td className="px-4 py-3 text-right font-mono font-bold text-slate-700 whitespace-nowrap">
+            {formatValueWithUnit(transaction.foreignAmount, "USD", 2)}
+          </td>
+        )}
       </tr>
     );
   });
@@ -144,6 +149,14 @@ function MobileTransactionCard({ transaction, tradeType }) {
             {formatValueWithUnit(transaction.paidAmount, "원")}
           </dd>
         </div>
+        {isExport && (
+          <div className="flex justify-between gap-2">
+            <dt className="text-slate-400">외화금액</dt>
+            <dd className="font-mono font-bold text-slate-700">
+              {formatValueWithUnit(transaction.foreignAmount, "USD", 2)}
+            </dd>
+          </div>
+        )}
       </dl>
     </div>
   );
@@ -184,7 +197,11 @@ function ContractTransactionGroup({ group }) {
         <span className="text-xs text-slate-400">거래 {formatNumber(transactions.length)}건</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b border-slate-100 bg-white px-5 py-3 sm:grid-cols-4">
+      <div
+        className={`grid grid-cols-2 gap-x-4 gap-y-3 border-b border-slate-100 bg-white px-5 py-3 ${
+          isExport ? "sm:grid-cols-5" : "sm:grid-cols-4"
+        }`}
+      >
         <ContractMetric
           label="총 수량"
           value={formatValueWithUnit(group.totalQuantity, "kg")}
@@ -205,6 +222,12 @@ function ContractTransactionGroup({ group }) {
           label="총 입금액"
           value={formatValueWithUnit(group.totalPaidAmount, "원")}
         />
+        {isExport && (
+          <ContractMetric
+            label="총 외화금액"
+            value={formatValueWithUnit(group.totalForeignAmount, "USD", 2)}
+          />
+        )}
       </div>
 
       {transactions.length === 0 ? (
@@ -223,6 +246,11 @@ function ContractTransactionGroup({ group }) {
                   <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">단가</th>
                   <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">실단가</th>
                   <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">실제 입금액</th>
+                  {isExport && (
+                    <th className="px-4 py-2.5 text-right font-semibold whitespace-nowrap">
+                      외화금액
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
