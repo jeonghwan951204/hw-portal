@@ -57,43 +57,97 @@ function PaymentSection({ detail, payment }) {
   );
 }
 
-function ItemTable({ rows, isSale, currency }) {
+const cellInputClass =
+  "w-24 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-[13px] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
+
+// 포함 항목 — 결제 완료 전에는 단가(kg당)와 출고 실제출고량을 입력할 수 있다
+function ItemTable({ rows, isSale, currency, editable, dirtyCount, saving, error, onDraftChange, onReset, onSave }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
-      <table className="w-full min-w-[34rem] text-[13px]">
-        <thead className="bg-slate-50 text-xs text-slate-400">
-          <tr>
-            <th className="px-3 py-2 text-left font-semibold">차량번호</th>
-            <th className="px-3 py-2 text-left font-semibold">품목</th>
-            <th className="px-3 py-2 text-right font-semibold">{isSale ? "실중량 (실제출고량)" : "실중량"}</th>
-            <th className="px-3 py-2 text-right font-semibold">단가</th>
-            <th className="px-3 py-2 text-right font-semibold">총 금액</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.length === 0 && (
+    <div className="space-y-2">
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="w-full min-w-[34rem] text-[13px]">
+          <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
-              <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-400">포함된 항목이 없습니다.</td>
+              <th className="px-3 py-2 text-left font-semibold">차량번호</th>
+              <th className="px-3 py-2 text-left font-semibold">품목</th>
+              <th className="px-3 py-2 text-right font-semibold">{isSale ? "실중량 (실제출고량)" : "실중량"}</th>
+              <th className="px-3 py-2 text-right font-semibold">단가(/kg)</th>
+              <th className="px-3 py-2 text-right font-semibold">총 금액</th>
             </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-400">포함된 항목이 없습니다.</td>
+              </tr>
+            )}
+            {rows.map((row) => (
+              <tr key={row.key} className={row.draft ? "bg-blue-50/40" : isSale && row.unitPrice == null ? "bg-red-50/60" : ""}>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.vehicleNumber || "-"}</td>
+                <td className="px-3 py-2 text-slate-700">
+                  <MappedName name={row.itemName} mapped={row.mapped} emptyLabel="품목 미입력" />
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-700">
+                  {formatWeight(row.netWeightKg)}
+                  {isSale && (
+                    editable ? (
+                      <span className="mt-1 flex items-center justify-end gap-1 text-[11px] text-slate-500">
+                        (
+                        <NumericInput
+                          value={row.draft ? row.draft.actualDeliveryWeightKg : row.actualDeliveryWeightKg ?? ""}
+                          onChange={(value) => onDraftChange(row, { actualDeliveryWeightKg: value })}
+                          placeholder="실제출고량"
+                          aria-label="실제출고량(kg)"
+                          className={cellInputClass}
+                        />
+                        kg)
+                      </span>
+                    ) : (
+                      <span className="block text-[11px] text-slate-500">({formatWeight(row.actualDeliveryWeightKg)})</span>
+                    )
+                  )}
+                </td>
+                <td className={`whitespace-nowrap px-3 py-2 text-right font-mono ${row.unitPrice == null ? "text-amber-600" : "text-slate-600"}`}>
+                  {editable ? (
+                    <NumericInput
+                      value={row.draft ? row.draft.unitPrice : row.unitPrice ?? ""}
+                      onChange={(value) => onDraftChange(row, { unitPrice: value })}
+                      placeholder="미입력"
+                      aria-label="kg당 단가"
+                      className={`${cellInputClass} ${isSale && row.unitPrice == null && !row.draft ? "border-red-300" : ""}`}
+                    />
+                  ) : (
+                    formatKgPrice(row.unitPrice, currency)
+                  )}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-semibold text-slate-800">
+                  {formatMoney(row.amount, currency)}
+                  {row.draft && <span className="block text-[10px] font-normal text-blue-500">저장 후 반영</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {editable && (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {error && <p className="mr-auto text-sm text-red-600">{error}</p>}
+          {!error && <p className="mr-auto text-xs text-slate-400">무상 출고는 빈 값 대신 단가 0을 입력하세요.</p>}
+          {dirtyCount > 0 && (
+            <button type="button" onClick={onReset} disabled={saving} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40">
+              되돌리기
+            </button>
           )}
-          {rows.map((row) => (
-            <tr key={row.key} className={isSale && row.unitPrice == null ? "bg-red-50/60" : ""}>
-              <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.vehicleNumber || "-"}</td>
-              <td className="px-3 py-2 text-slate-700">
-                <MappedName name={row.itemName} mapped={row.mapped} emptyLabel="품목 미입력" />
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-700">
-                {formatWeight(row.netWeightKg)}
-                {isSale && <span className="block text-[11px] text-slate-500">({formatWeight(row.actualDeliveryWeightKg)})</span>}
-              </td>
-              <td className={`whitespace-nowrap px-3 py-2 text-right font-mono ${row.unitPrice == null ? "text-amber-600" : "text-slate-600"}`}>
-                {formatKgPrice(row.unitPrice, currency)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-semibold text-slate-800">{formatMoney(row.amount, currency)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={dirtyCount === 0 || saving}
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {saving ? "저장 중..." : `항목 저장${dirtyCount > 0 ? ` (${dirtyCount})` : ""}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -105,7 +159,7 @@ export default function TransactionDetailModal({
   error,
   detail,
   isSale,
-  rows,
+  items,
   acceptedWeightKg,
   acceptedMissing,
   actualDeliveryWeightKg,
@@ -170,8 +224,8 @@ export default function TransactionDetailModal({
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-700">포함 항목 ({rows.length})</h3>
-        <ItemTable rows={rows} isSale={isSale} currency={detail.currency} />
+        <h3 className="text-sm font-bold text-slate-700">포함 항목 ({items.rows.length})</h3>
+        <ItemTable {...items} />
       </section>
     </ModalShell>
   );

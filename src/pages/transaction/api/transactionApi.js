@@ -68,6 +68,14 @@ export const fetchTransactionDetail = async (transactionId) =>
 // 수기 거래 생성 { ownerCompany, companyId, counterpartyName, tradeDirection, transactionDate, currency, memo, items[] }
 export const createManualTransaction = (body) => send(`${BASE}/manual`, "POST", body);
 
+// 계근 행 적용 단가·실제출고량 수정 { appliedUnitPrice, actualDeliveryWeightKg, version } — 두 값 모두 그대로 저장(null=지움)
+export const updateWeighingRecord = (transactionId, mappingId, body) =>
+  send(`${BASE}/${transactionId}/weighing-records/${mappingId}`, "PATCH", body);
+
+// 수기 품목 수정 { vehicleNumber, itemId, itemName, netWeightKg, acceptedWeightKg, deductionWeightKg, appliedUnitPrice, actualDeliveryWeightKg, memo, version }
+export const updateManualItem = (transactionId, manualItemId, body) =>
+  send(`${BASE}/${transactionId}/manual-items/${manualItemId}`, "PATCH", body);
+
 // 결제정보 수정 { paymentStatus, paymentAmount, version } — PAID 저장 시 서버에서 마감 처리
 export const updateTransactionPayment = (transactionId, body) => send(`${BASE}/${transactionId}/payment`, "PATCH", body);
 
