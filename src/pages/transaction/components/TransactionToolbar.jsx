@@ -1,3 +1,5 @@
+import CompanySelect from "../../contract/components/CompanySelect";
+
 const inputClass =
   "w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
 
@@ -19,23 +21,22 @@ function SelectField({ label, value, options, onChange }) {
 export default function TransactionToolbar({
   startDate,
   endDate,
+  companyId,
+  companyName,
   ownerCompany,
-  transactionOrigin,
   tradeDirection,
-  confirmed,
   paymentStatus,
-  transactionStatus,
-  keyword,
+  hasWarning,
+  companySearch,
   ownerCompanyOptions,
-  originOptions,
   tradeDirectionOptions,
-  confirmedOptions,
   paymentStatusOptions,
-  transactionStatusOptions,
+  warningOptions,
   dateLimits,
   hasFilters,
   onDateRangeChange,
   onFilterChange,
+  onCompanyChange,
   onReset,
 }) {
   return (
@@ -64,25 +65,23 @@ export default function TransactionToolbar({
           </div>
         </fieldset>
 
-        <label className="min-w-0">
-          <span className="mb-1.5 block text-xs font-semibold text-slate-500">거래처명</span>
-          <input
-            type="search"
-            value={keyword}
-            onChange={(event) => onFilterChange("keyword", event.target.value)}
-            placeholder="거래처명 검색"
+        <div className="min-w-0">
+          <span className="mb-1.5 block text-xs font-semibold text-slate-500">거래처</span>
+          <CompanySelect
+            value={companyId}
+            selectedName={companyName}
+            onSelect={onCompanyChange}
             className={`${inputClass} placeholder:text-slate-400`}
+            {...companySearch}
           />
-        </label>
+        </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto] lg:items-end">
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end">
         <SelectField label="자사" value={ownerCompany} options={ownerCompanyOptions} onChange={(value) => onFilterChange("ownerCompany", value)} />
-        <SelectField label="생성 유형" value={transactionOrigin} options={originOptions} onChange={(value) => onFilterChange("transactionOrigin", value)} />
         <SelectField label="거래구분" value={tradeDirection} options={tradeDirectionOptions} onChange={(value) => onFilterChange("tradeDirection", value)} />
-        <SelectField label="확인상태" value={confirmed} options={confirmedOptions} onChange={(value) => onFilterChange("confirmed", value)} />
         <SelectField label="결제상태" value={paymentStatus} options={paymentStatusOptions} onChange={(value) => onFilterChange("paymentStatus", value)} />
-        <SelectField label="거래상태" value={transactionStatus} options={transactionStatusOptions} onChange={(value) => onFilterChange("transactionStatus", value)} />
+        <SelectField label="경고" value={hasWarning} options={warningOptions} onChange={(value) => onFilterChange("hasWarning", value)} />
         <button
           type="button"
           onClick={onReset}

@@ -62,14 +62,13 @@ const withAll = (labels) => [
 ];
 
 // ─── 검색 필터 옵션 ───────────────────────────────────────────────────────
-export const ORIGIN_OPTIONS = withAll(ORIGIN_LABELS);
 export const TRADE_DIRECTION_OPTIONS = withAll(TRADE_DIRECTION_LABELS);
 export const PAYMENT_STATUS_OPTIONS = withAll(PAYMENT_STATUS_LABELS);
-export const TRANSACTION_STATUS_OPTIONS = withAll(TRANSACTION_STATUS_LABELS);
-export const CONFIRMED_OPTIONS = [
+// 경고 = 거래처·품목 미매핑, 적용 단가 누락, 묶음 경고, 거래구분 UNKNOWN, 포함 계근 원본 삭제 중 하나 이상
+export const WARNING_OPTIONS = [
   { value: "", label: "전체" },
-  { value: "false", label: "확인 대기" },
-  { value: "true", label: "확인 완료" },
+  { value: "true", label: "경고 있음" },
+  { value: "false", label: "경고 없음" },
 ];
 
 // 수기 거래는 입고·출고만 허용한다(서버도 UNKNOWN 거절).

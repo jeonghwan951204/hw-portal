@@ -40,26 +40,23 @@ const send = async (path, method, body) =>
 export const fetchTransactions = async ({
   dateFrom = "",
   dateTo = "",
+  companyId = "",
   ownerCompany = "",
-  transactionOrigin = "",
   tradeDirection = "",
-  confirmed = "",
   paymentStatus = "",
-  transactionStatus = "",
-  keyword = "",
+  hasWarning = "",
   page = 1,
   size = 20,
 }) => {
+  // MERGED 거래는 서버에서 항상 제외된다. hasWarning: 생략=전체, "true"=경고 있음, "false"=경고 없음
   const params = new URLSearchParams({ page: String(page), size: String(size) });
   if (dateFrom) params.set("dateFrom", dateFrom);
   if (dateTo) params.set("dateTo", dateTo);
+  if (companyId) params.set("companyId", String(companyId));
   if (ownerCompany) params.set("ownerCompany", ownerCompany);
-  if (transactionOrigin) params.set("transactionOrigin", transactionOrigin);
   if (tradeDirection) params.set("tradeDirection", tradeDirection);
-  if (confirmed) params.set("confirmed", confirmed);
   if (paymentStatus) params.set("paymentStatus", paymentStatus);
-  if (transactionStatus) params.set("transactionStatus", transactionStatus);
-  if (keyword.trim()) params.set("keyword", keyword.trim());
+  if (hasWarning) params.set("hasWarning", hasWarning);
   return asJson(await apiFetch(`${BASE}?${params}`));
 };
 

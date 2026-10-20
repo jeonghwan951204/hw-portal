@@ -9,7 +9,6 @@ import {
 } from "../constants";
 import {
   Badge,
-  ConfirmBadge,
   DirectionBadge,
   MappedName,
   OriginBadge,
@@ -18,19 +17,27 @@ import {
 } from "./Badges";
 
 const rowOpenProps = (transaction, onOpenDetail) => ({
-  onClick: () => onOpenDetail(transaction.transactionId),
+  onClick: () => onOpenDetail(transaction),
   onKeyDown: (event) => {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    onOpenDetail(transaction.transactionId);
+    onOpenDetail(transaction);
   },
   tabIndex: 0,
-  title: "누르면 거래 상세로 이동합니다",
+  title: "누르면 거래 상세를 엽니다",
 });
 
 function WarningBadges({ transaction }) {
+  // 서버 hasWarning 기준 중 개별 배지로 드러나지 않는 항목(거래처 미매핑·원본 삭제 등)은 '경고'로 묶어 표시
+  const hasOtherWarning =
+    transaction.hasWarning &&
+    !transaction.hasUnmappedItem &&
+    !transaction.hasMissingUnitPrice &&
+    !transaction.hasGroupingWarning &&
+    transaction.tradeDirection !== "UNKNOWN";
   return (
     <div className="flex flex-wrap gap-1">
+      {hasOtherWarning && <Badge tone="amber">경고</Badge>}
       {transaction.hasUnmappedItem && <Badge tone="amber">품목 미매핑</Badge>}
       {transaction.hasMissingUnitPrice && <Badge tone={transaction.tradeDirection === "SALE" ? "red" : "amber"}>단가 미입력</Badge>}
       {transaction.hasGroupingWarning && <Badge tone="red">묶음 경고</Badge>}
@@ -116,7 +123,7 @@ export default function TransactionList({
               <th className="w-[8%] px-2 py-2 text-left font-semibold">거래일</th>
               <th className="w-[9%] px-2 py-2 text-left font-semibold">유형·자사</th>
               <th className="w-[15%] px-2 py-2 text-left font-semibold">거래처</th>
-              <th className="w-[9%] px-2 py-2 text-left font-semibold">구분·확인</th>
+              <th className="w-[9%] px-2 py-2 text-left font-semibold">거래구분</th>
               <th className="w-[13%] px-2 py-2 text-left font-semibold">차량</th>
               <th className="w-[8%] px-2 py-2 text-right font-semibold">품목·건수</th>
               <th className="w-[9%] px-2 py-2 text-right font-semibold">총 실중량</th>
@@ -162,7 +169,6 @@ export default function TransactionList({
                 <td className="px-2 py-2">
                   <div className="flex flex-wrap gap-1">
                     <DirectionBadge direction={transaction.tradeDirection} />
-                    <ConfirmBadge confirmed={transaction.confirmed} />
                   </div>
                 </td>
                 <td className="truncate px-2 py-2 text-slate-600" title={(transaction.vehicleNumbers ?? []).join(", ")}>
@@ -216,7 +222,6 @@ export default function TransactionList({
               <OriginBadge origin={transaction.transactionOrigin} />
               <Badge>{ownerCompanyLabelOf(transaction.ownerCompany)}</Badge>
               <DirectionBadge direction={transaction.tradeDirection} />
-              <ConfirmBadge confirmed={transaction.confirmed} />
               <PaymentBadge status={transaction.paymentStatus} />
               <TransactionStatusBadge status={transaction.transactionStatus} />
             </div>
