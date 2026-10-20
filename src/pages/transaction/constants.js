@@ -35,12 +35,6 @@ export const TRANSACTION_STATUS_LABELS = {
   MERGED: "합쳐짐",
 };
 
-export const AMOUNT_STATUS_LABELS = {
-  ESTIMATED: "예상",
-  PARTIALLY_CONFIRMED: "일부 확정",
-  CONFIRMED: "확정",
-};
-
 export const labelOf = (labels, value) => labels[value] ?? value ?? "-";
 
 const withAll = (labels) => [
@@ -114,12 +108,6 @@ export const sortWeighingRecords = (records) =>
       a.record.weighingRecordId - b.record.weighingRecordId
     )
     .map(({ record }) => record);
-
-export const summarizeList = (values, max = 2) => {
-  const unique = [...new Set(values.filter(Boolean))];
-  if (unique.length === 0) return "-";
-  return unique.length > max ? `${unique.slice(0, max).join(", ")} 외 ${unique.length - max}` : unique.join(", ");
-};
 
 // ─── 수기 품목 폼 ─────────────────────────────────────────────────────────
 export const createEmptyManualItem = () => ({
