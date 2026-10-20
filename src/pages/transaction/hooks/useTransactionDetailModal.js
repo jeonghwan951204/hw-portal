@@ -92,6 +92,13 @@ export function useTransactionDetailModal(transactionId, onChanged) {
     ? []
     : (isWeighing ? sortWeighingRecords(current.weighingRecords ?? []) : current.manualItems ?? []).map((row) => {
         const key = String(row.mappingId ?? row.manualItemId);
+        const actualDeliveryDefault = toInputValue(row.actualDeliveryWeightKg ?? row.netWeightKg);
+        // 출고 행의 실제출고량이 비어 있으면 실중량 기본값을 저장 대상으로 잡아 둔다
+        // (항목 저장 전에는 결제정보를 저장할 수 없으므로 기본값이 서버에 반드시 반영된다)
+        const autoDraft =
+          editable && isSale && row.actualDeliveryWeightKg == null
+            ? { unitPrice: toInputValue(row.unitPrice), actualDeliveryWeightKg: actualDeliveryDefault }
+            : null;
         return {
           key,
           isWeighing,
@@ -102,9 +109,11 @@ export function useTransactionDetailModal(transactionId, onChanged) {
           netWeightKg: row.netWeightKg,
           acceptedWeightKg: row.acceptedWeightKg,
           actualDeliveryWeightKg: row.actualDeliveryWeightKg,
+          // 실제출고량 입력란 기본값 — 저장된 값이 없으면 실중량
+          actualDeliveryDefault,
           unitPrice: row.unitPrice,
           amount: displayAmountOf(row),
-          draft: rowDrafts[key] ?? null,
+          draft: rowDrafts[key] ?? autoDraft,
         };
       });
   const dirtyRows = rows.filter((row) => row.draft);
@@ -114,9 +123,9 @@ export function useTransactionDetailModal(transactionId, onChanged) {
 
   const changeRowDraft = (row, patch) =>
     setRowDrafts((drafts) => {
-      const base = drafts[row.key] ?? {
+      const base = drafts[row.key] ?? row.draft ?? {
         unitPrice: toInputValue(row.unitPrice),
-        actualDeliveryWeightKg: toInputValue(row.actualDeliveryWeightKg),
+        actualDeliveryWeightKg: row.actualDeliveryDefault,
       };
       return { ...drafts, [row.key]: { ...base, ...patch } };
     });
@@ -216,6 +225,8 @@ export function useTransactionDetailModal(transactionId, onChanged) {
       currency: current?.currency,
       editable,
       dirtyCount: dirtyRows.length,
+      // 되돌리기는 직접 입력한 값만 지운다(실제출고량 자동 기본값은 남는다)
+      resettable: Object.keys(rowDrafts).length > 0,
       saving: rowsSaving,
       error: rowsError,
       onDraftChange: changeRowDraft,

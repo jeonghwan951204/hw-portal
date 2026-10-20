@@ -61,7 +61,7 @@ const cellInputClass =
   "w-24 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-[13px] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
 
 // 포함 항목 — 결제 완료 전에는 단가(kg당)와 출고 실제출고량을 입력할 수 있다
-function ItemTable({ rows, isSale, currency, editable, dirtyCount, saving, error, onDraftChange, onReset, onSave }) {
+function ItemTable({ rows, isSale, currency, editable, dirtyCount, resettable, saving, error, onDraftChange, onReset, onSave }) {
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -94,7 +94,7 @@ function ItemTable({ rows, isSale, currency, editable, dirtyCount, saving, error
                       <span className="mt-1 flex items-center justify-end gap-1 text-[11px] text-slate-500">
                         (
                         <NumericInput
-                          value={row.draft ? row.draft.actualDeliveryWeightKg : row.actualDeliveryWeightKg ?? ""}
+                          value={row.draft ? row.draft.actualDeliveryWeightKg : row.actualDeliveryDefault}
                           onChange={(value) => onDraftChange(row, { actualDeliveryWeightKg: value })}
                           placeholder="실제출고량"
                           aria-label="실제출고량(kg)"
@@ -133,7 +133,7 @@ function ItemTable({ rows, isSale, currency, editable, dirtyCount, saving, error
         <div className="flex flex-wrap items-center justify-end gap-2">
           {error && <p className="mr-auto text-sm text-red-600">{error}</p>}
           {!error && <p className="mr-auto text-xs text-slate-400">무상 출고는 빈 값 대신 단가 0을 입력하세요.</p>}
-          {dirtyCount > 0 && (
+          {resettable && (
             <button type="button" onClick={onReset} disabled={saving} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-40">
               되돌리기
             </button>
