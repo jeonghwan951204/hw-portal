@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PAGE_SIZE } from "../constants";
-import { fetchCompanies, fetchContracts, recalcPrices } from "../api/contractApi";
+import { fetchContracts, recalcPrices } from "../api/contractApi";
 import { fetchMarketSummary } from "../api/marketApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
 import { useEnums } from "./useEnums";
@@ -50,7 +50,6 @@ export function useContractList() {
   }, [ownerFilter, statusFilter, search, page]);
 
   const [contracts, setContracts] = useState([]);
-  const [companyMap, setCompanyMap] = useState({}); // customerId → 회사명
   const [market, setMarket] = useState({
     lme: { value: null, date: null },
     exchangeRate: { value: null, date: null },
@@ -76,17 +75,6 @@ export function useContractList() {
     return () => {
       alive = false;
     };
-  }, []);
-
-  // 거래처 id→이름 매핑 (목록 응답은 customerId 만 주므로 회사명 표시에 필요)
-  useEffect(() => {
-    fetchCompanies()
-      .then((list) => {
-        const map = {};
-        (list ?? []).forEach((c) => (map[c.id] = c.name));
-        setCompanyMap(map);
-      })
-      .catch(() => {});
   }, []);
 
   const loadContracts = useCallback(async ({ owner, status, keyword, page: p }) => {
@@ -153,7 +141,7 @@ export function useContractList() {
   const cards = contracts.map((c) => ({
     id: c.contractId,
     name: c.contractName,
-    company: companyMap[c.customerId] ?? "",
+    company: c.customerName ?? "",
     ownerLabel: labelOf(ENUM_GROUPS.OWNER_COMPANY, c.ownerCompany),
     statusLabel: labelOf(ENUM_GROUPS.CONTRACT_STATUS, c.status),
     avgLmePrice: c.avgLmePrice,
