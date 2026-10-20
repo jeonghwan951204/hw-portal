@@ -56,16 +56,18 @@ const counterpartyOf = (transaction) => (
   />
 );
 
-// 첫 차량번호만 보여주고, 여러 대면 '외 {나머지 대수}'
-const vehicleOf = (transaction) => {
-  const vehicles = (transaction.vehicleNumbers ?? []).filter(Boolean);
-  if (vehicles.length === 0) return "-";
-  const others = Math.max(transaction.vehicleCount ?? vehicles.length, vehicles.length) - 1;
-  return others > 0 ? `${vehicles[0]} 외 ${others}` : vehicles[0];
+// 첫 값만 보여주고, 여러 개면 '외 {나머지 개수}' — 개수는 서버 count 와 목록 길이 중 큰 값
+const firstWithOthers = (values, count) => {
+  const list = (values ?? []).filter(Boolean);
+  if (list.length === 0) return "-";
+  const others = Math.max(count ?? list.length, list.length) - 1;
+  return others > 0 ? `${list[0]} 외 ${others}` : list[0];
 };
 
-// 목록 응답에는 품목명이 없어 품목 수만 표시한다
-const itemOf = (transaction) => (transaction.itemCount > 0 ? `${transaction.itemCount}종` : "-");
+const vehicleOf = (transaction) => firstWithOthers(transaction.vehicleNumbers, transaction.vehicleCount);
+
+// itemNames 는 같은 내부 품목을 합친 표시용 이름 목록(이름 없는 항목은 서버가 '품목 미입력'으로 보낸다)
+const itemOf = (transaction) => firstWithOthers(transaction.itemNames, transaction.itemCount);
 
 const amountOf = (transaction) => formatMoney(transaction.displayAmount, transaction.currency);
 
@@ -118,10 +120,10 @@ export default function TransactionList({
               <th className="w-[4%] px-2 py-2" aria-label="선택" />
               <th className="w-[9%] px-2 py-2 text-left font-semibold">거래일</th>
               <th className="w-[10%] px-2 py-2 text-left font-semibold">자사-거래구분</th>
-              <th className="w-[17%] px-2 py-2 text-left font-semibold">거래처</th>
-              <th className="w-[13%] px-2 py-2 text-left font-semibold">차량번호</th>
-              <th className="w-[7%] px-2 py-2 text-right font-semibold">품목</th>
-              <th className="w-[11%] px-2 py-2 text-right font-semibold">총 중량</th>
+              <th className="w-[14%] px-2 py-2 text-left font-semibold">거래처</th>
+              <th className="w-[12%] px-2 py-2 text-left font-semibold">차량번호</th>
+              <th className="w-[12%] px-2 py-2 text-left font-semibold">품목</th>
+              <th className="w-[10%] px-2 py-2 text-right font-semibold">총 중량</th>
               <th className="w-[12%] px-2 py-2 text-right font-semibold">금액</th>
               <th className="w-[8%] px-2 py-2 text-center font-semibold">결제상태</th>
               <th className="w-[9%] px-2 py-2 text-left font-semibold">경고</th>
@@ -156,7 +158,7 @@ export default function TransactionList({
                 <td className="truncate px-2 py-2 text-slate-600" title={(transaction.vehicleNumbers ?? []).join(", ")}>
                   {vehicleOf(transaction)}
                 </td>
-                <td className="whitespace-nowrap px-2 py-2 text-right text-slate-600">{itemOf(transaction)}</td>
+                <td className="truncate px-2 py-2 text-slate-600" title={(transaction.itemNames ?? []).join(", ")}>{itemOf(transaction)}</td>
                 <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatWeight(transaction.totalWeightKg)}</td>
                 <td
                   className="whitespace-nowrap px-2 py-2 text-right font-mono font-semibold text-slate-800"
@@ -196,7 +198,7 @@ export default function TransactionList({
             </div>
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
               <div className="flex justify-between gap-2"><dt className="text-slate-400">차량번호</dt><dd className="truncate font-medium text-slate-600">{vehicleOf(transaction)}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-slate-400">품목</dt><dd className="font-medium text-slate-600">{itemOf(transaction)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-slate-400">품목</dt><dd className="truncate font-medium text-slate-600">{itemOf(transaction)}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-slate-400">총 중량</dt><dd className="font-medium text-slate-700">{formatWeight(transaction.totalWeightKg)}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-slate-400">금액</dt><dd className="font-bold text-slate-800">{amountOf(transaction)}</dd></div>
             </dl>
