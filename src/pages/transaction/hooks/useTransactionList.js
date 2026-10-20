@@ -2,35 +2,35 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { useToast } from "../../contract/hooks/useToast";
+import { useCompanySearch } from "../../contract/hooks/useCompanySearch";
 import { fetchTransactions, mergeTransactions } from "../api/transactionApi";
+import { useTransactionDetailModal } from "./useTransactionDetailModal";
 import {
-  CONFIRMED_OPTIONS,
   getLocalDateString,
-  ORIGIN_OPTIONS,
   OWNER_COMPANY_OPTIONS,
   PAYMENT_STATUS_OPTIONS,
   TRADE_DIRECTION_OPTIONS,
   TRANSACTION_PAGE_SIZE,
-  TRANSACTION_STATUS_OPTIONS,
+  WARNING_OPTIONS,
 } from "../constants";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 // 거래일은 오늘 하루, 나머지 필터는 매핑상태로 숨기지 않도록 기본값 '전체'
+// (companyName 은 거래처 셀렉트 표시용이며 검색에는 companyId 만 보낸다)
 const createInitialFilters = (today) => ({
   startDate: today,
   endDate: today,
+  companyId: "",
+  companyName: "",
   ownerCompany: "",
-  transactionOrigin: "",
   tradeDirection: "",
-  confirmed: "",
   paymentStatus: "",
-  transactionStatus: "",
-  keyword: "",
+  hasWarning: "",
 });
 
-// 합칠 수 있는 거래 — 확인 대기 + 진행 중
-export const isMergeable = (transaction) => !transaction.confirmed && transaction.transactionStatus === "OPEN";
+// 합칠 수 있는 거래 — 결제 완료(마감) 전 진행 중 거래
+export const isMergeable = (transaction) => transaction.transactionStatus === "OPEN";
 
 const normalizeName = (value) => (value ?? "").trim().toLocaleLowerCase("ko-KR");
 
@@ -45,7 +45,7 @@ const getMergeIssues = (transactions, targetId) => {
   if (!target) return { blocking: "", counterpartyMismatch: false };
   const others = transactions.filter((transaction) => transaction !== target);
   if (transactions.some((transaction) => !isMergeable(transaction))) {
-    return { blocking: "확인 대기 중인 진행 중 거래만 합칠 수 있습니다.", counterpartyMismatch: false };
+    return { blocking: "결제 완료 전 진행 중 거래만 합칠 수 있습니다.", counterpartyMismatch: false };
   }
   if (others.some((transaction) => transaction.transactionOrigin !== target.transactionOrigin)) {
     return { blocking: "계근 거래와 수기 거래는 서로 합칠 수 없습니다.", counterpartyMismatch: false };
@@ -79,6 +79,10 @@ export function useTransactionList() {
   // 페이지를 넘겨도 선택이 유지되도록 id → 목록 행 으로 보관 (합치기에 version 이 필요)
   const [selected, setSelected] = useState({});
   const [merge, setMerge] = useState({ open: false, targetId: null, reason: "", allowMismatch: false, submitting: false });
+  // 상세 모달에 띄울 거래 ID — 결제정보가 저장되면 목록을 새로 받는다
+  const [detailId, setDetailId] = useState(null);
+  const detailModal = useTransactionDetailModal(detailId, () => setRetryCount((current) => current + 1));
+  const companySearch = useCompanySearch();
 
   useEffect(() => {
     let alive = true;
@@ -89,13 +93,11 @@ export function useTransactionList() {
       fetchTransactions({
         dateFrom: filters.startDate,
         dateTo: filters.endDate,
+        companyId: filters.companyId,
         ownerCompany: filters.ownerCompany,
-        transactionOrigin: filters.transactionOrigin,
         tradeDirection: filters.tradeDirection,
-        confirmed: filters.confirmed,
         paymentStatus: filters.paymentStatus,
-        transactionStatus: filters.transactionStatus,
-        keyword: filters.keyword,
+        hasWarning: filters.hasWarning,
         page,
         size: TRANSACTION_PAGE_SIZE,
       })
@@ -155,7 +157,12 @@ export function useTransactionList() {
         allowCounterpartyMismatch: mergeIssues.counterpartyMismatch && merge.allowMismatch,
         reason: merge.reason.trim() || null,
       });
-      navigate(`/transactions/${result.transactionId}`);
+      // 성공 후 목록을 새로 받고 대상 거래 상세 모달을 연다
+      setMerge((current) => ({ ...current, open: false, submitting: false }));
+      setSelected({});
+      setRetryCount((current) => current + 1);
+      setDetailId(result.transactionId);
+      showToast("success", "거래를 합쳤습니다.");
     } catch (mergeError) {
       showToast("error", mergeError.message || "거래를 합치지 못했습니다.");
       setMerge((current) => ({ ...current, submitting: false }));
@@ -168,17 +175,17 @@ export function useTransactionList() {
   return {
     toolbar: {
       ...filters,
+      companySearch,
       ownerCompanyOptions: OWNER_COMPANY_OPTIONS,
-      originOptions: ORIGIN_OPTIONS,
       tradeDirectionOptions: TRADE_DIRECTION_OPTIONS,
-      confirmedOptions: CONFIRMED_OPTIONS,
       paymentStatusOptions: PAYMENT_STATUS_OPTIONS,
-      transactionStatusOptions: TRANSACTION_STATUS_OPTIONS,
+      warningOptions: WARNING_OPTIONS,
       dateLimits: getDateRangeLimits(filters.startDate, filters.endDate),
       hasFilters: Object.entries(filters).some(([key, value]) => value !== initialFilters[key]),
       onDateRangeChange: (field, value) =>
         changeFilters(normalizeDateRangeChange({ startDate: filters.startDate, endDate: filters.endDate, field, value })),
       onFilterChange: (field, value) => changeFilters({ [field]: value }),
+      onCompanyChange: (company) => changeFilters({ companyId: company.id ?? "", companyName: company.name ?? "" }),
       onReset: () => changeFilters(initialFilters),
     },
     actions: {
@@ -196,7 +203,7 @@ export function useTransactionList() {
       error,
       selectedIds: selected,
       onToggleSelect: toggleSelect,
-      onOpenDetail: (transactionId) => navigate(`/transactions/${transactionId}`),
+      onOpenDetail: (transaction) => setDetailId(transaction.transactionId),
       onRetry: () => setRetryCount((current) => current + 1),
     },
     pagination: {
@@ -214,6 +221,10 @@ export function useTransactionList() {
       onAllowMismatchChange: (allowMismatch) => setMerge((current) => ({ ...current, allowMismatch })),
       onSubmit: submitMerge,
       onClose: () => setMerge((current) => ({ ...current, open: false })),
+    },
+    detailModal: {
+      ...detailModal,
+      onClose: () => setDetailId(null),
     },
     toast,
   };

@@ -1,54 +1,50 @@
 import {
-  AMOUNT_STATUS_LABELS,
   formatDate,
   formatMoney,
   formatWeight,
   labelOf,
   ownerCompanyLabelOf,
-  summarizeList,
+  TRADE_DIRECTION_LABELS,
 } from "../constants";
-import {
-  Badge,
-  ConfirmBadge,
-  DirectionBadge,
-  MappedName,
-  OriginBadge,
-  PaymentBadge,
-  TransactionStatusBadge,
-} from "./Badges";
+import { Badge, MappedName, PaymentBadge } from "./Badges";
 
 const rowOpenProps = (transaction, onOpenDetail) => ({
-  onClick: () => onOpenDetail(transaction.transactionId),
+  onClick: () => onOpenDetail(transaction),
   onKeyDown: (event) => {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    onOpenDetail(transaction.transactionId);
+    onOpenDetail(transaction);
   },
   tabIndex: 0,
-  title: "누르면 거래 상세로 이동합니다",
+  title: "누르면 거래 상세를 엽니다",
 });
 
 function WarningBadges({ transaction }) {
+  // 서버 hasWarning 기준 중 개별 배지로 드러나지 않는 항목(거래처 미매핑·원본 삭제 등)은 '경고'로 묶어 표시
+  const hasOtherWarning =
+    transaction.hasWarning &&
+    !transaction.hasUnmappedItem &&
+    !transaction.hasMissingUnitPrice &&
+    !transaction.hasGroupingWarning &&
+    transaction.tradeDirection !== "UNKNOWN";
   return (
     <div className="flex flex-wrap gap-1">
+      {transaction.tradeDirection === "UNKNOWN" && <Badge tone="amber">구분 확인 필요</Badge>}
+      {hasOtherWarning && <Badge tone="amber">경고</Badge>}
       {transaction.hasUnmappedItem && <Badge tone="amber">품목 미매핑</Badge>}
       {transaction.hasMissingUnitPrice && <Badge tone={transaction.tradeDirection === "SALE" ? "red" : "amber"}>단가 미입력</Badge>}
       {transaction.hasGroupingWarning && <Badge tone="red">묶음 경고</Badge>}
-      {transaction.memo && <Badge title={transaction.memo}>비고</Badge>}
     </div>
   );
 }
 
-function AmountCell({ transaction }) {
+// 자사-거래구분 — 회사명과 거래구분을 붙여 작은 배지 하나로 표시
+function OwnerDirectionBadge({ transaction }) {
+  const tone = { PURCHASE: "blue", SALE: "violet", UNKNOWN: "amber" }[transaction.tradeDirection];
   return (
-    <div className="text-right">
-      <p className="font-mono font-semibold text-slate-800">
-        {transaction.displayAmount == null ? "-" : formatMoney(transaction.displayAmount, transaction.currency)}
-      </p>
-      <p className="text-[10px] text-slate-400">
-        {transaction.displayAmount == null ? "미계산 금액 포함" : labelOf(AMOUNT_STATUS_LABELS, transaction.amountStatus)}
-      </p>
-    </div>
+    <Badge tone={tone}>
+      {ownerCompanyLabelOf(transaction.ownerCompany)}-{labelOf(TRADE_DIRECTION_LABELS, transaction.tradeDirection)}
+    </Badge>
   );
 }
 
@@ -60,11 +56,20 @@ const counterpartyOf = (transaction) => (
   />
 );
 
-const vehicleSummaryOf = (transaction) =>
-  transaction.vehicleCount > 0 ? `${transaction.vehicleCount}대 · ${summarizeList(transaction.vehicleNumbers)}` : "-";
+// 첫 값만 보여주고, 여러 개면 '외 {나머지 개수}' — 개수는 서버 count 와 목록 길이 중 큰 값
+const firstWithOthers = (values, count) => {
+  const list = (values ?? []).filter(Boolean);
+  if (list.length === 0) return "-";
+  const others = Math.max(count ?? list.length, list.length) - 1;
+  return others > 0 ? `${list[0]} 외 ${others}` : list[0];
+};
 
-const recordCountOf = (transaction) =>
-  transaction.transactionOrigin === "MANUAL" ? `수기 ${transaction.manualItemCount}건` : `계근 ${transaction.weighingRecordCount}건`;
+const vehicleOf = (transaction) => firstWithOthers(transaction.vehicleNumbers, transaction.vehicleCount);
+
+// itemNames 는 같은 내부 품목을 합친 표시용 이름 목록(이름 없는 항목은 서버가 '품목 미입력'으로 보낸다)
+const itemOf = (transaction) => firstWithOthers(transaction.itemNames, transaction.itemCount);
+
+const amountOf = (transaction) => formatMoney(transaction.displayAmount, transaction.currency);
 
 export default function TransactionList({
   transactions,
@@ -109,35 +114,34 @@ export default function TransactionList({
       </div>
 
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[72rem] table-fixed text-[13px]">
+        <table className="w-full min-w-[62rem] table-fixed text-[13px]">
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
-              <th className="w-[3%] px-2 py-2" aria-label="선택" />
-              <th className="w-[8%] px-2 py-2 text-left font-semibold">거래일</th>
-              <th className="w-[9%] px-2 py-2 text-left font-semibold">유형·자사</th>
-              <th className="w-[15%] px-2 py-2 text-left font-semibold">거래처</th>
-              <th className="w-[9%] px-2 py-2 text-left font-semibold">구분·확인</th>
-              <th className="w-[13%] px-2 py-2 text-left font-semibold">차량</th>
-              <th className="w-[8%] px-2 py-2 text-right font-semibold">품목·건수</th>
-              <th className="w-[9%] px-2 py-2 text-right font-semibold">총 실중량</th>
-              <th className="w-[10%] px-2 py-2 text-right font-semibold">표시금액</th>
-              <th className="w-[10%] px-2 py-2 text-left font-semibold">결제·상태</th>
-              <th className="w-[10%] px-2 py-2 text-left font-semibold">경고</th>
+              <th className="w-[4%] px-2 py-2" aria-label="선택" />
+              <th className="w-[9%] px-2 py-2 text-left font-semibold">거래일</th>
+              <th className="w-[10%] px-2 py-2 text-left font-semibold">자사-거래구분</th>
+              <th className="w-[14%] px-2 py-2 text-left font-semibold">거래처</th>
+              <th className="w-[12%] px-2 py-2 text-left font-semibold">차량번호</th>
+              <th className="w-[12%] px-2 py-2 text-left font-semibold">품목</th>
+              <th className="w-[10%] px-2 py-2 text-right font-semibold">총 중량</th>
+              <th className="w-[12%] px-2 py-2 text-right font-semibold">금액</th>
+              <th className="w-[8%] px-2 py-2 text-center font-semibold">결제상태</th>
+              <th className="w-[9%] px-2 py-2 text-left font-semibold">경고</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
+                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
               </tr>
             )}
             {transactions.map((transaction) => (
               <tr
                 key={transaction.transactionId}
                 {...rowOpenProps(transaction, onOpenDetail)}
-                className={`cursor-pointer align-top transition-colors hover:bg-blue-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
-                  transaction.transactionStatus === "MERGED" ? "opacity-60" : ""
-                } ${selectedIds[transaction.transactionId] ? "bg-blue-50/40" : ""}`}
+                className={`cursor-pointer transition-colors hover:bg-blue-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
+                  selectedIds[transaction.transactionId] ? "bg-blue-50/40" : ""
+                }`}
               >
                 <td className="px-2 py-2 text-center" onClick={(event) => event.stopPropagation()}>
                   <input
@@ -148,41 +152,21 @@ export default function TransactionList({
                     className="h-4 w-4 accent-blue-600"
                   />
                 </td>
-                <td className="whitespace-nowrap px-2 py-2 text-slate-600">
-                  {formatDate(transaction.transactionDate)}
-                  <p className="text-[10px] text-slate-400">#{transaction.transactionId}</p>
-                </td>
-                <td className="px-2 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    <OriginBadge origin={transaction.transactionOrigin} />
-                    <Badge>{ownerCompanyLabelOf(transaction.ownerCompany)}</Badge>
-                  </div>
-                </td>
+                <td className="whitespace-nowrap px-2 py-2 text-slate-600">{formatDate(transaction.transactionDate)}</td>
+                <td className="px-2 py-2"><OwnerDirectionBadge transaction={transaction} /></td>
                 <td className="px-2 py-2 font-semibold text-slate-800">{counterpartyOf(transaction)}</td>
-                <td className="px-2 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    <DirectionBadge direction={transaction.tradeDirection} />
-                    <ConfirmBadge confirmed={transaction.confirmed} />
-                  </div>
-                </td>
                 <td className="truncate px-2 py-2 text-slate-600" title={(transaction.vehicleNumbers ?? []).join(", ")}>
-                  {vehicleSummaryOf(transaction)}
+                  {vehicleOf(transaction)}
                 </td>
-                <td className="whitespace-nowrap px-2 py-2 text-right text-slate-600">
-                  품목 {transaction.itemCount}
-                  <p className="text-[10px] text-slate-400">{recordCountOf(transaction)}</p>
-                </td>
+                <td className="truncate px-2 py-2 text-slate-600" title={(transaction.itemNames ?? []).join(", ")}>{itemOf(transaction)}</td>
                 <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatWeight(transaction.totalWeightKg)}</td>
-                <td className="px-2 py-2"><AmountCell transaction={transaction} /></td>
-                <td className="px-2 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    <PaymentBadge status={transaction.paymentStatus} />
-                    <TransactionStatusBadge status={transaction.transactionStatus} />
-                  </div>
-                  {transaction.paymentAmount != null && (
-                    <p className="mt-0.5 font-mono text-[11px] text-slate-500">{formatMoney(transaction.paymentAmount, transaction.currency)}</p>
-                  )}
+                <td
+                  className="whitespace-nowrap px-2 py-2 text-right font-mono font-semibold text-slate-800"
+                  title={transaction.displayAmount == null ? "단가 미입력 항목이 있어 계산되지 않았습니다" : undefined}
+                >
+                  {amountOf(transaction)}
                 </td>
+                <td className="px-2 py-2 text-center"><PaymentBadge status={transaction.paymentStatus} /></td>
                 <td className="px-2 py-2"><WarningBadges transaction={transaction} /></td>
               </tr>
             ))}
@@ -193,11 +177,7 @@ export default function TransactionList({
       <div className="divide-y divide-slate-100 md:hidden">
         {transactions.length === 0 && <p className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</p>}
         {transactions.map((transaction) => (
-          <article
-            key={transaction.transactionId}
-            {...rowOpenProps(transaction, onOpenDetail)}
-            className={`cursor-pointer px-4 py-3 ${transaction.transactionStatus === "MERGED" ? "opacity-60" : ""}`}
-          >
+          <article key={transaction.transactionId} {...rowOpenProps(transaction, onOpenDetail)} className="cursor-pointer px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <input
@@ -213,18 +193,14 @@ export default function TransactionList({
               <p className="shrink-0 text-xs text-slate-400">{formatDate(transaction.transactionDate)}</p>
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
-              <OriginBadge origin={transaction.transactionOrigin} />
-              <Badge>{ownerCompanyLabelOf(transaction.ownerCompany)}</Badge>
-              <DirectionBadge direction={transaction.tradeDirection} />
-              <ConfirmBadge confirmed={transaction.confirmed} />
+              <OwnerDirectionBadge transaction={transaction} />
               <PaymentBadge status={transaction.paymentStatus} />
-              <TransactionStatusBadge status={transaction.transactionStatus} />
             </div>
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-              <div className="flex justify-between gap-2"><dt className="text-slate-400">차량</dt><dd className="truncate font-medium text-slate-600">{vehicleSummaryOf(transaction)}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-slate-400">건수</dt><dd className="font-medium text-slate-600">{recordCountOf(transaction)}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-slate-400">총 실중량</dt><dd className="font-medium text-slate-700">{formatWeight(transaction.totalWeightKg)}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-slate-400">표시금액</dt><dd className="font-bold text-slate-800">{formatMoney(transaction.displayAmount, transaction.currency)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-slate-400">차량번호</dt><dd className="truncate font-medium text-slate-600">{vehicleOf(transaction)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-slate-400">품목</dt><dd className="truncate font-medium text-slate-600">{itemOf(transaction)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-slate-400">총 중량</dt><dd className="font-medium text-slate-700">{formatWeight(transaction.totalWeightKg)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-slate-400">금액</dt><dd className="font-bold text-slate-800">{amountOf(transaction)}</dd></div>
             </dl>
             <div className="mt-2"><WarningBadges transaction={transaction} /></div>
           </article>

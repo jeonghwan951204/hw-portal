@@ -53,7 +53,7 @@ export function useManualTransactionForm() {
 
     setSubmitting(true);
     try {
-      const result = await createManualTransaction({
+      await createManualTransaction({
         ownerCompany: header.ownerCompany,
         companyId: header.companyId,
         counterpartyName: header.counterpartyName.trim() || null,
@@ -63,7 +63,8 @@ export function useManualTransactionForm() {
         memo: header.memo.trim() || null,
         items: rows.map((row) => manualItemToRequest(row.value, header.tradeDirection)),
       });
-      navigate(`/transactions/${result.transactionId}`, { replace: true });
+      // 상세는 목록의 모달로 확인하므로 등록 후 목록으로 돌아간다
+      navigate("/transactions", { replace: true });
     } catch (submitError) {
       showToast("error", submitError.message || "수기 거래를 등록하지 못했습니다.");
       setSubmitting(false);

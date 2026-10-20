@@ -35,25 +35,6 @@ export const TRANSACTION_STATUS_LABELS = {
   MERGED: "합쳐짐",
 };
 
-export const AMOUNT_STATUS_LABELS = {
-  ESTIMATED: "예상",
-  PARTIALLY_CONFIRMED: "일부 확정",
-  CONFIRMED: "확정",
-};
-
-export const GROUPING_TYPE_LABELS = { AUTO: "자동", MANUAL: "수동" };
-
-export const HISTORY_ACTION_LABELS = {
-  AUTO_GROUPED: "자동 묶음",
-  MANUAL_TRANSACTION_CREATED: "수기 거래 생성",
-  MANUAL_ITEM_UPDATED: "수기 품목 변경",
-  TRANSACTION_CONFIRMED: "거래 확인",
-  TRANSACTION_CONFIRMATION_CANCELED: "확인 취소",
-  MANUAL_RECORD_MOVED: "계근 이동",
-  MANUAL_TRANSACTION_SPLIT: "거래 분리",
-  MANUAL_TRANSACTION_MERGED: "거래 합치기",
-};
-
 export const labelOf = (labels, value) => labels[value] ?? value ?? "-";
 
 const withAll = (labels) => [
@@ -62,14 +43,13 @@ const withAll = (labels) => [
 ];
 
 // ─── 검색 필터 옵션 ───────────────────────────────────────────────────────
-export const ORIGIN_OPTIONS = withAll(ORIGIN_LABELS);
 export const TRADE_DIRECTION_OPTIONS = withAll(TRADE_DIRECTION_LABELS);
 export const PAYMENT_STATUS_OPTIONS = withAll(PAYMENT_STATUS_LABELS);
-export const TRANSACTION_STATUS_OPTIONS = withAll(TRANSACTION_STATUS_LABELS);
-export const CONFIRMED_OPTIONS = [
+// 경고 = 거래처·품목 미매핑, 적용 단가 누락, 묶음 경고, 거래구분 UNKNOWN, 포함 계근 원본 삭제 중 하나 이상
+export const WARNING_OPTIONS = [
   { value: "", label: "전체" },
-  { value: "false", label: "확인 대기" },
-  { value: "true", label: "확인 완료" },
+  { value: "true", label: "경고 있음" },
+  { value: "false", label: "경고 없음" },
 ];
 
 // 수기 거래는 입고·출고만 허용한다(서버도 UNKNOWN 거절).
@@ -92,15 +72,6 @@ export const formatMoney = (value, currency) =>
 export const formatKgPrice = (value, currency) =>
   value == null ? "미입력" : `${formatNumber(value, 2)}${currencySuffixOf(currency)}/kg`;
 
-// LocalTime("HH:mm:ss") → "HH:mm"
-export const formatTime = (value) => (value ? String(value).slice(0, 5) : "-");
-
-// LocalDateTime("yyyy-MM-ddTHH:mm:ss") → "yyyy.MM.dd HH:mm"
-export const formatDateTimeValue = (value) =>
-  value ? String(value).slice(0, 16).replace("T", " ").replaceAll("-", ".") : "-";
-
-export const shortId = (value) => (value ? String(value).slice(0, 8) : "-");
-
 // ─── 숫자 입력 ────────────────────────────────────────────────────────────
 // 입력 문자열 → 숫자 또는 null. 빈 값은 null(=값 지움)로 본다.
 export const toNumberOrNull = (value) => {
@@ -112,23 +83,6 @@ export const toNumberOrNull = (value) => {
 // 서버 숫자 → 입력 문자열
 export const toInputValue = (value) => (value == null ? "" : String(value));
 
-const multiply = (quantity, price) => (quantity == null || price == null ? null : quantity * price);
-
-// 입력 중 금액 미리보기 — 백엔드 계산식과 같다. 저장 후에는 서버 응답으로 교체된다.
-//   출고 예상금액 = 실중량 × 적용 단가, 출고 실제금액 = 실제출고량 × 적용 단가, 입고금액 = 인수량 × 적용 단가
-export const previewAmounts = (tradeDirection, { netWeightKg, acceptedWeightKg, unitPrice, actualDeliveryWeightKg }) => {
-  if (tradeDirection === "SALE") {
-    return {
-      estimatedAmount: multiply(netWeightKg, unitPrice),
-      actualAmount: multiply(actualDeliveryWeightKg, unitPrice),
-    };
-  }
-  if (tradeDirection === "PURCHASE") {
-    return { estimatedAmount: multiply(acceptedWeightKg, unitPrice), actualAmount: null };
-  }
-  return { estimatedAmount: null, actualAmount: null };
-};
-
 // 행 최종 표시금액 — 실제금액이 있으면 실제금액, 없으면 예상금액
 export const displayAmountOf = ({ estimatedAmount, actualAmount }) => actualAmount ?? estimatedAmount ?? null;
 
@@ -138,7 +92,7 @@ export const sumWithMissing = (values) => ({
   missing: values.some((value) => value == null),
 });
 
-// ─── 계근 정렬·그룹 ───────────────────────────────────────────────────────
+// ─── 계근 정렬 ────────────────────────────────────────────────────────────
 const compareText = (a, b) => String(a ?? "").localeCompare(String(b ?? ""));
 
 // 계량일자 → 이차시간 → 일차시간 → 계근 ID 순으로 안정 정렬
@@ -155,24 +109,6 @@ export const sortWeighingRecords = (records) =>
     )
     .map(({ record }) => record);
 
-// 같은 차량번호의 연속 계근을 한 그룹으로 묶는다. 개별 계근은 생략하지 않는다.
-export const groupConsecutiveByVehicle = (records) =>
-  records.reduce((groups, record) => {
-    const last = groups[groups.length - 1];
-    if (last && last.vehicleNumber === record.vehicleNumber) {
-      last.records.push(record);
-    } else {
-      groups.push({ key: `${record.vehicleNumber}-${record.mappingId}`, vehicleNumber: record.vehicleNumber, records: [record] });
-    }
-    return groups;
-  }, []);
-
-export const summarizeList = (values, max = 2) => {
-  const unique = [...new Set(values.filter(Boolean))];
-  if (unique.length === 0) return "-";
-  return unique.length > max ? `${unique.slice(0, max).join(", ")} 외 ${unique.length - max}` : unique.join(", ");
-};
-
 // ─── 수기 품목 폼 ─────────────────────────────────────────────────────────
 export const createEmptyManualItem = () => ({
   vehicleNumber: "",
@@ -184,19 +120,6 @@ export const createEmptyManualItem = () => ({
   appliedUnitPrice: "",
   actualDeliveryWeightKg: "",
   memo: "",
-});
-
-// 서버 응답 품목 → 폼 값
-export const manualItemToForm = (item) => ({
-  vehicleNumber: item.vehicleNumber ?? "",
-  itemId: item.itemId ?? null,
-  itemName: item.itemName ?? "",
-  netWeightKg: toInputValue(item.netWeightKg),
-  acceptedWeightKg: toInputValue(item.acceptedWeightKg),
-  deductionWeightKg: toInputValue(item.deductionWeightKg),
-  appliedUnitPrice: toInputValue(item.unitPrice),
-  actualDeliveryWeightKg: toInputValue(item.actualDeliveryWeightKg),
-  memo: item.memo ?? "",
 });
 
 // 폼 값 → ManualTransactionItemRequest
