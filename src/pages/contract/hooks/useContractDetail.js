@@ -88,6 +88,11 @@ export function useContractDetail() {
   const [submittingPaymentId, setSubmittingPaymentId] = useState(null);
   const [expandedEditId, setExpandedEditId] = useState(null);
   const [submittingEditId, setSubmittingEditId] = useState(null);
+  // 마지막 정산 거래 수정 시 수량 기준 정산가 재계산 미리보기
+  const [editSettlementQuantity, setEditSettlementQuantity] = useState("");
+  const [editSettlementPreview, setEditSettlementPreview] = useState(null);
+  const [editSettlementCalculating, setEditSettlementCalculating] = useState(false);
+  const [editSettlementError, setEditSettlementError] = useState("");
   const [deleteTransactionId, setDeleteTransactionId] = useState(null);
   const [deletingTransactionId, setDeletingTransactionId] = useState(null);
 
@@ -357,6 +362,47 @@ export function useContractDetail() {
     };
   }, [id, txForm.finalSettlement, txForm.itemId, txForm.quantity]);
 
+  // 마지막 정산 거래 수정 시 — 해당 거래를 제외(transactionId)하고 수정 수량으로 정산가 재계산
+  const editingSettlementTx = transactions.find(
+    (t) => t.transactionId === expandedEditId && t.finalSettlement
+  );
+  useEffect(() => {
+    const quantity = Number(editSettlementQuantity);
+    if (!editingSettlementTx || !Number.isFinite(quantity) || quantity <= 0) {
+      setEditSettlementPreview(null);
+      setEditSettlementCalculating(false);
+      setEditSettlementError("");
+      return undefined;
+    }
+
+    setEditSettlementPreview(null);
+    setEditSettlementCalculating(true);
+    setEditSettlementError("");
+    let alive = true;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await calculateSettlement(id, {
+          itemId: editingSettlementTx.itemId,
+          quantity,
+          transactionId: editingSettlementTx.transactionId,
+        });
+        if (alive) setEditSettlementPreview(result);
+      } catch (e) {
+        if (!alive) return;
+        setEditSettlementPreview(null);
+        setEditSettlementError(e.message || "정산가를 계산하지 못했습니다");
+      } finally {
+        if (alive) setEditSettlementCalculating(false);
+      }
+    }, 300);
+
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, editingSettlementTx?.transactionId, editingSettlementTx?.itemId, editSettlementQuantity]);
+
   const itemNameById = useMemo(() => {
     const map = {};
     (detail?.items ?? []).forEach((it) => (map[it.itemId] = it.itemName));
@@ -373,6 +419,8 @@ export function useContractDetail() {
         const paid = t.paidForeign != null || t.paidAmount != null || t.paidDate != null;
         const settlement = t.finalSettlement || t.priceType === "SETTLEMENT";
         const generalTransactionLocked = !settlement && hasFinalSettlement;
+        // 결제가 등록된 마지막 정산 거래는 서버에서 수정 불가(400) — 결제 정보 수정만 가능
+        const paidSettlementLocked = t.finalSettlement && paid;
         return {
           ...t,
           itemName: itemNameById[t.itemId] ?? "-",
@@ -384,6 +432,10 @@ export function useContractDetail() {
             : generalTransactionLocked
               ? "마지막 정산 거래가 있어 일반 거래는 삭제할 수 없습니다"
               : "",
+          editable: !paidSettlementLocked,
+          editBlockedReason: paidSettlementLocked
+            ? "결제 정보가 등록된 마지막 정산 거래는 수정할 수 없습니다."
+            : "",
         };
       });
     },
@@ -848,13 +900,26 @@ export function useContractDetail() {
       edit: {
         expandedId: expandedEditId,
         onToggle: (transactionId) => {
+          const transaction = txVM.find((tx) => tx.transactionId === transactionId);
+          if (expandedEditId !== transactionId && transaction && !transaction.editable) {
+            showToast("error", transaction.editBlockedReason || "수정할 수 없는 거래입니다");
+            return;
+          }
           setExpandedPaymentId(null);
+          setEditSettlementQuantity(
+            expandedEditId === transactionId ? "" : String(transaction?.quantity ?? "")
+          );
           setExpandedEditId((current) => (current === transactionId ? null : transactionId));
         },
         submittingId: submittingEditId,
         onSave: handleUpdateTransaction,
         itemOptions: detail?.items ?? [],
         priceTypeOptions: txPriceTypeOptions,
+        // 마지막 정산 거래 수량 변경 → 정산가 재계산 미리보기
+        onQuantityChange: setEditSettlementQuantity,
+        settlementPreview: editSettlementPreview,
+        settlementCalculating: editSettlementCalculating,
+        settlementError: editSettlementError,
       },
       remove: {
         deletingId: deletingTransactionId,

@@ -283,7 +283,11 @@ export default function TransactionTab({
                     <button
                       type="button"
                       onClick={() => edit.onToggle(tx.transactionId)}
-                      className="text-[11px] font-bold text-slate-500 hover:text-slate-700"
+                      disabled={!tx.editable}
+                      title={tx.editBlockedReason || undefined}
+                      className={`text-[11px] font-bold ${
+                        tx.editable ? "text-slate-500 hover:text-slate-700" : "text-slate-300 cursor-not-allowed"
+                      }`}
                     >
                       거래 수정
                     </button>
@@ -323,6 +327,12 @@ export default function TransactionTab({
                         tx={tx}
                         itemOptions={edit.itemOptions}
                         priceTypeOptions={edit.priceTypeOptions}
+                        isExport={isExport}
+                        unitHint={unitHint}
+                        onQuantityChange={edit.onQuantityChange}
+                        settlementPreview={edit.settlementPreview}
+                        settlementCalculating={edit.settlementCalculating}
+                        settlementError={edit.settlementError}
                         submitting={edit.submittingId === tx.transactionId}
                         onSave={edit.onSave}
                         onCancel={() => edit.onToggle(tx.transactionId)}
@@ -370,7 +380,11 @@ export default function TransactionTab({
                 <button
                   type="button"
                   onClick={() => edit.onToggle(tx.transactionId)}
-                  className="text-[11px] font-bold text-slate-500"
+                  disabled={!tx.editable}
+                  title={tx.editBlockedReason || undefined}
+                  className={`text-[11px] font-bold ${
+                    tx.editable ? "text-slate-500" : "text-slate-300 cursor-not-allowed"
+                  }`}
                 >
                   거래 수정
                 </button>
@@ -417,6 +431,12 @@ export default function TransactionTab({
                   tx={tx}
                   itemOptions={edit.itemOptions}
                   priceTypeOptions={edit.priceTypeOptions}
+                  isExport={isExport}
+                  unitHint={unitHint}
+                  onQuantityChange={edit.onQuantityChange}
+                  settlementPreview={edit.settlementPreview}
+                  settlementCalculating={edit.settlementCalculating}
+                  settlementError={edit.settlementError}
                   submitting={edit.submittingId === tx.transactionId}
                   onSave={edit.onSave}
                   onCancel={() => edit.onToggle(tx.transactionId)}
