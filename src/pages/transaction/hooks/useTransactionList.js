@@ -4,6 +4,7 @@ import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/val
 import { useToast } from "../../contract/hooks/useToast";
 import { useCompanySearch } from "../../contract/hooks/useCompanySearch";
 import { fetchTransactions, mergeTransactions } from "../api/transactionApi";
+import { useTransactionDetailModal } from "./useTransactionDetailModal";
 import {
   getLocalDateString,
   OWNER_COMPANY_OPTIONS,
@@ -78,8 +79,9 @@ export function useTransactionList() {
   // 페이지를 넘겨도 선택이 유지되도록 id → 목록 행 으로 보관 (합치기에 version 이 필요)
   const [selected, setSelected] = useState({});
   const [merge, setMerge] = useState({ open: false, targetId: null, reason: "", allowMismatch: false, submitting: false });
-  // 상세 모달에 띄울 거래 (목록 행 요약값)
-  const [detailTarget, setDetailTarget] = useState(null);
+  // 상세 모달에 띄울 거래 ID — 결제정보가 저장되면 목록을 새로 받는다
+  const [detailId, setDetailId] = useState(null);
+  const detailModal = useTransactionDetailModal(detailId, () => setRetryCount((current) => current + 1));
   const companySearch = useCompanySearch();
 
   useEffect(() => {
@@ -159,7 +161,7 @@ export function useTransactionList() {
       setMerge((current) => ({ ...current, open: false, submitting: false }));
       setSelected({});
       setRetryCount((current) => current + 1);
-      setDetailTarget(result);
+      setDetailId(result.transactionId);
       showToast("success", "거래를 합쳤습니다.");
     } catch (mergeError) {
       showToast("error", mergeError.message || "거래를 합치지 못했습니다.");
@@ -201,7 +203,7 @@ export function useTransactionList() {
       error,
       selectedIds: selected,
       onToggleSelect: toggleSelect,
-      onOpenDetail: setDetailTarget,
+      onOpenDetail: (transaction) => setDetailId(transaction.transactionId),
       onRetry: () => setRetryCount((current) => current + 1),
     },
     pagination: {
@@ -221,8 +223,8 @@ export function useTransactionList() {
       onClose: () => setMerge((current) => ({ ...current, open: false })),
     },
     detailModal: {
-      transaction: detailTarget,
-      onClose: () => setDetailTarget(null),
+      ...detailModal,
+      onClose: () => setDetailId(null),
     },
     toast,
   };

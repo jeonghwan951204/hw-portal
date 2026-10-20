@@ -64,47 +64,12 @@ export const fetchTransactions = async ({
 export const fetchTransactionDetail = async (transactionId) =>
   asJson(await apiFetch(`${BASE}/${transactionId}`));
 
-// 거래 변경 이력 (최신순)
-export const fetchTransactionHistory = async (transactionId) =>
-  asJson(await apiFetch(`${BASE}/${transactionId}/history`));
-
 // ─── 변경 — 모든 응답은 변경 후 WeighingTransactionDetailResponse ─────────
 // 수기 거래 생성 { ownerCompany, companyId, counterpartyName, tradeDirection, transactionDate, currency, memo, items[] }
 export const createManualTransaction = (body) => send(`${BASE}/manual`, "POST", body);
 
-// 확인 전 거래 헤더 수정 { companyId, counterpartyName, tradeDirection, transactionDate, memo, version }
-export const updateTransactionHeader = (transactionId, body) => send(`${BASE}/${transactionId}`, "PATCH", body);
-
-// 계근 행 적용 단가·실제출고량 수정 { appliedUnitPrice, actualDeliveryWeightKg, version }
-export const updateWeighingRecord = (transactionId, mappingId, body) =>
-  send(`${BASE}/${transactionId}/weighing-records/${mappingId}`, "PATCH", body);
-
-// 수기 품목 추가 { item, version }
-export const addManualItem = (transactionId, body) => send(`${BASE}/${transactionId}/manual-items`, "POST", body);
-
-// 수기 품목 수정 { ...item, version }
-export const updateManualItem = (transactionId, manualItemId, body) =>
-  send(`${BASE}/${transactionId}/manual-items/${manualItemId}`, "PATCH", body);
-
-// 수기 품목 삭제 { version } — DELETE 지만 본문으로 version 을 보낸다
-export const deleteManualItem = (transactionId, manualItemId, body) =>
-  send(`${BASE}/${transactionId}/manual-items/${manualItemId}`, "DELETE", body);
-
-// 거래 확인 { version, reason }
-export const confirmTransaction = (transactionId, body) => send(`${BASE}/${transactionId}/confirmation`, "POST", body);
-
-// 확인 취소 { version, reason } — 결제 완료 전만 가능
-export const cancelTransactionConfirmation = (transactionId, body) =>
-  send(`${BASE}/${transactionId}/confirmation/cancel`, "POST", body);
-
 // 결제정보 수정 { paymentStatus, paymentAmount, version } — PAID 저장 시 서버에서 마감 처리
 export const updateTransactionPayment = (transactionId, body) => send(`${BASE}/${transactionId}/payment`, "PATCH", body);
 
-// 선택 계근을 다른 거래로 이동 { targetTransactionId, weighingRecordIds, sourceVersion, targetVersion, allowCounterpartyMismatch, reason }
-export const moveWeighingRecords = (transactionId, body) => send(`${BASE}/${transactionId}/move-records`, "POST", body);
-
-// 선택 계근으로 새 거래 분리 { weighingRecordIds, sourceVersion, reason } → 새 거래 상세
-export const splitTransaction = (transactionId, body) => send(`${BASE}/${transactionId}/split`, "POST", body);
-
-// 여러 확인 대기 거래 합치기 { targetTransactionId, targetVersion, sources[], allowCounterpartyMismatch, reason } → 대상 거래 상세
+// 여러 진행 중 거래 합치기 { targetTransactionId, targetVersion, sources[], allowCounterpartyMismatch, reason } → 대상 거래 상세
 export const mergeTransactions = (body) => send(`${BASE}/merge`, "POST", body);
