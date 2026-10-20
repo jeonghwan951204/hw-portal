@@ -36,10 +36,10 @@ export default function TransactionEditForm({
       return;
     }
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (field === "quantity" && tx.finalSettlement) onQuantityChange?.(value);
+    if (field === "quantity" && tx.isFinalSettlement) onQuantityChange?.(value);
   };
 
-  const availablePriceTypes = tx.finalSettlement
+  const availablePriceTypes = tx.isFinalSettlement
     ? priceTypeOptions.filter((option) => option.value === tx.priceType)
     : priceTypeOptions.filter((option) => option.value !== "SETTLEMENT");
   const editablePriceTypes = availablePriceTypes.some(
@@ -56,7 +56,7 @@ export default function TransactionEditForm({
   const quantityValid = form.quantity !== "" && Number(form.quantity) > 0;
   const moneyDigits = isExport ? 2 : 0;
   // 마지막 정산 거래는 재계산된 정산가가 있어야 저장 (단가는 서버가 다시 계산)
-  const unitPriceValid = tx.finalSettlement
+  const unitPriceValid = tx.isFinalSettlement
     ? !settlementCalculating && !!settlementPreview
     : form.unitPrice !== "";
   const canSave =
@@ -72,7 +72,7 @@ export default function TransactionEditForm({
       itemId: Number(form.itemId),
       transactionDate: form.transactionDate,
       quantity: Number(form.quantity),
-      unitPrice: tx.finalSettlement ? undefined : Number(form.unitPrice),
+      unitPrice: tx.isFinalSettlement ? undefined : Number(form.unitPrice),
       priceType: form.priceType,
       memo: form.memo,
     });
@@ -82,7 +82,7 @@ export default function TransactionEditForm({
     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 animate-fadeIn">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-bold text-slate-600">거래 내역 수정</p>
-        {tx.finalSettlement && (
+        {tx.isFinalSettlement && (
           <p className="text-xs text-violet-500">
             마지막 정산 거래는 품목이 고정되며, 정산가는 수량에 따라 다시 계산됩니다.
           </p>
@@ -104,7 +104,7 @@ export default function TransactionEditForm({
           <select
             value={form.itemId}
             onChange={(e) => handleChange("itemId", e.target.value)}
-            disabled={tx.finalSettlement}
+            disabled={tx.isFinalSettlement}
             className={INPUT_CLASS}
           >
             <option value="">선택</option>
@@ -120,7 +120,7 @@ export default function TransactionEditForm({
           <select
             value={form.priceType}
             onChange={(e) => handleChange("priceType", e.target.value)}
-            disabled={tx.finalSettlement}
+            disabled={tx.isFinalSettlement}
             className={INPUT_CLASS}
           >
             <option value="">선택</option>
@@ -143,21 +143,21 @@ export default function TransactionEditForm({
           <label className={LABEL_CLASS}>단가</label>
           <NumericInput
             value={
-              tx.finalSettlement
+              tx.isFinalSettlement
                 ? settlementPreview
                   ? String(settlementPreview.settlementUnitPrice)
                   : ""
                 : form.unitPrice
             }
             placeholder={
-              tx.finalSettlement ? (settlementCalculating ? "계산 중..." : "자동 계산") : "단가"
+              tx.isFinalSettlement ? (settlementCalculating ? "계산 중..." : "자동 계산") : "단가"
             }
             onChange={(value) => handleChange("unitPrice", value)}
-            disabled={tx.finalSettlement}
+            disabled={tx.isFinalSettlement}
             className={INPUT_CLASS}
           />
         </div>
-        {tx.finalSettlement && (
+        {tx.isFinalSettlement && (
           <div className="sm:col-span-2 lg:col-span-5 rounded-lg border border-violet-100 bg-violet-50 px-3 py-2 text-xs">
             {settlementCalculating ? (
               <p className="font-semibold text-violet-500">정산가 계산 중...</p>

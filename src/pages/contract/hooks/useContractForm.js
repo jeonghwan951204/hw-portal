@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { createContract, fetchCompanies, fetchContractDetail, updateContract } from "../api/contractApi";
+import { createContract, fetchContractDetail, updateContract } from "../api/contractApi";
 import { ENUM_GROUPS } from "../api/enumsApi";
 import { useCompanySearch } from "./useCompanySearch";
 import { useEnums } from "./useEnums";
@@ -90,15 +90,7 @@ export function useContractForm() {
           endDate: d.endDate ?? "",
           memo: d.memo ?? "",
         });
-        // 상세 응답엔 customerId 만 있으므로 거래처명은 셀렉트용 목록에서 찾는다
-        if (d.customerId != null) {
-          fetchCompanies()
-            .then((list) => {
-              const found = (list ?? []).find((c) => String(c.id) === String(d.customerId));
-              setCustomerName(found?.name ?? "");
-            })
-            .catch(() => {});
-        }
+        setCustomerName(d.customerName ?? "");
       })
       .catch((e) => showToast("error", e.message || "계약을 불러오지 못했습니다"));
     // eslint-disable-next-line react-hooks/exhaustive-deps

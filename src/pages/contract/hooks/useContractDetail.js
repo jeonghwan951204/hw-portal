@@ -7,7 +7,6 @@ import {
   createTransaction,
   deleteContract,
   deleteTransaction,
-  fetchCompanies,
   fetchContractDetail,
   fetchContractPrices,
   fetchTransactionStatistics,
@@ -62,7 +61,6 @@ export function useContractDetail() {
   const [transactionStatistics, setTransactionStatistics] = useState(null);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
   const [statisticsError, setStatisticsError] = useState("");
-  const [companyName, setCompanyName] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("price");
 
@@ -149,15 +147,6 @@ export function useContractDetail() {
         if (!alive) return;
         setDetail(d);
         await loadPrices();
-        if (d.customerId != null) {
-          fetchCompanies()
-            .then((list) => {
-              if (!alive) return;
-              const found = (list ?? []).find((c) => String(c.id) === String(d.customerId));
-              setCompanyName(found?.name ?? "");
-            })
-            .catch(() => {});
-        }
       } catch {
         if (alive) setDetail(null);
       } finally {
@@ -194,7 +183,7 @@ export function useContractDetail() {
         ownerLabel: labelOf(ENUM_GROUPS.OWNER_COMPANY, detail.ownerCompany),
         status: labelOf(ENUM_GROUPS.CONTRACT_STATUS, detail.status),
         statusValue: detail.status,
-        company: companyName,
+        company: detail.customerName ?? "",
         startDate: detail.startDate,
         endDate: detail.endDate,
         contractQuantity: detail.contractQuantity,
@@ -362,9 +351,50 @@ export function useContractDetail() {
     };
   }, [id, txForm.finalSettlement, txForm.itemId, txForm.quantity]);
 
+  const itemNameById = useMemo(() => {
+    const map = {};
+    (detail?.items ?? []).forEach((it) => (map[it.itemId] = it.itemName));
+    return map;
+  }, [detail]);
+
+  const txVM = useMemo(
+    () => {
+      const hasFinalSettlement =
+        transactionStatistics?.hasFinalSettlement ??
+        transactions.some((transaction) => transaction.isFinalSettlement);
+
+      return transactions.map((t) => {
+        const paid = t.paidForeign != null || t.paidAmount != null || t.paidDate != null;
+        const settlement = !!(t.isFinalSettlement || t.priceType === "SETTLEMENT");
+        const generalTransactionLocked = !settlement && hasFinalSettlement;
+        // 결제가 등록된 마지막 정산 거래는 서버에서 수정 불가(400) — 결제 정보 수정만 가능
+        const paidSettlementLocked = settlement && paid;
+        return {
+          ...t,
+          isFinalSettlement: settlement,
+          itemName: itemNameById[t.itemId] ?? "-",
+          priceTypeLabel: labelOf(ENUM_GROUPS.PRICE_TYPE, t.priceType),
+          paid,
+          deletable: !paid && !generalTransactionLocked,
+          deleteBlockedReason: paid
+            ? "결제가 완료된 거래는 삭제할 수 없습니다"
+            : generalTransactionLocked
+              ? "마지막 정산 거래가 있어 일반 거래는 삭제할 수 없습니다"
+              : "",
+          editable: !paidSettlementLocked,
+          editBlockedReason: paidSettlementLocked
+            ? "결제 정보가 등록된 마지막 정산 거래는 수정할 수 없습니다."
+            : "",
+        };
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transactions, itemNameById, transactionStatistics]
+  );
+
   // 마지막 정산 거래 수정 시 — 해당 거래를 제외(transactionId)하고 수정 수량으로 정산가 재계산
-  const editingSettlementTx = transactions.find(
-    (t) => t.transactionId === expandedEditId && t.finalSettlement
+  const editingSettlementTx = txVM.find(
+    (t) => t.transactionId === expandedEditId && t.isFinalSettlement
   );
   useEffect(() => {
     const quantity = Number(editSettlementQuantity);
@@ -402,46 +432,6 @@ export function useContractDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, editingSettlementTx?.transactionId, editingSettlementTx?.itemId, editSettlementQuantity]);
-
-  const itemNameById = useMemo(() => {
-    const map = {};
-    (detail?.items ?? []).forEach((it) => (map[it.itemId] = it.itemName));
-    return map;
-  }, [detail]);
-
-  const txVM = useMemo(
-    () => {
-      const hasFinalSettlement =
-        transactionStatistics?.hasFinalSettlement ??
-        transactions.some((transaction) => transaction.finalSettlement);
-
-      return transactions.map((t) => {
-        const paid = t.paidForeign != null || t.paidAmount != null || t.paidDate != null;
-        const settlement = t.finalSettlement || t.priceType === "SETTLEMENT";
-        const generalTransactionLocked = !settlement && hasFinalSettlement;
-        // 결제가 등록된 마지막 정산 거래는 서버에서 수정 불가(400) — 결제 정보 수정만 가능
-        const paidSettlementLocked = t.finalSettlement && paid;
-        return {
-          ...t,
-          itemName: itemNameById[t.itemId] ?? "-",
-          priceTypeLabel: labelOf(ENUM_GROUPS.PRICE_TYPE, t.priceType),
-          paid,
-          deletable: !paid && !generalTransactionLocked,
-          deleteBlockedReason: paid
-            ? "결제가 완료된 거래는 삭제할 수 없습니다"
-            : generalTransactionLocked
-              ? "마지막 정산 거래가 있어 일반 거래는 삭제할 수 없습니다"
-              : "",
-          editable: !paidSettlementLocked,
-          editBlockedReason: paidSettlementLocked
-            ? "결제 정보가 등록된 마지막 정산 거래는 수정할 수 없습니다."
-            : "",
-        };
-      });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [transactions, itemNameById, transactionStatistics]
-  );
 
   // ── 거래 등록 ──
   const handleTxFormChange = (field, value) => {
