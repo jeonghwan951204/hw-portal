@@ -175,6 +175,7 @@ const mapWeighingRecord = (record) => ({
   secondWeighedAt: record.secondWeighedAt,
   deductionRate: record.deductionRatePercent,
   deductionWeight: record.deductionWeightKg,
+  tickets: (record.tickets ?? []).filter((ticket) => ticket.downloadUrl),
 });
 
 const fetchMockWeighings = ({

@@ -34,6 +34,28 @@ export default function WeighingDetail({ weighing }) {
         <DetailItem label="금액">{formatAmount(weighing.amount, weighing.currency)}</DetailItem>
         <DetailItem label="비고">{weighing.memo}</DetailItem>
       </dl>
+      <dl className="mt-3 border-t border-blue-100 pt-3">
+        <DetailItem label="계근표">
+          {weighing.tickets?.length > 0 && (
+            <span className="flex flex-wrap gap-x-4 gap-y-1">
+              {weighing.tickets.map((ticket, index) => (
+                <a
+                  key={ticket.documentId ?? ticket.fileId ?? index}
+                  href={ticket.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={ticket.fileName || undefined}
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                  className="font-bold text-blue-600 underline-offset-2 hover:underline"
+                >
+                  {ticket.fileName || `계근표 ${index + 1}`} 다운로드
+                </a>
+              ))}
+            </span>
+          )}
+        </DetailItem>
+      </dl>
     </div>
   );
 }
