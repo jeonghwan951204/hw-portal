@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
+import { useCompanySearch } from "../../contract/hooks/useCompanySearch";
 import { useToast } from "../../contract/hooks/useToast";
 import {
   createTransaction,
@@ -15,6 +15,8 @@ import {
   sumWithMissing,
   UNASSIGNED_PAGE_SIZE,
 } from "../constants";
+import { useTransactionDetailModal } from "./useTransactionDetailModal";
+import { useWeighingMapping } from "./useWeighingMapping";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const MAX_SELECTION = 1000;
@@ -24,11 +26,27 @@ const createInitialFilters = (today) => ({
   endDate: today,
   ownerCompany: "",
   tradeDirection: "",
-  counterpartyName: "",
+  companyId: "",
+  companyName: "",
   vehicleNumber: "",
 });
 
 const normalizeName = (value) => (value ?? "").trim().toLocaleLowerCase("ko-KR");
+
+// 등록 응답(거래 상세) → 연속 등록 결과 요약
+const toRegisteredSummary = (detail) => {
+  const records = detail.weighingRecords ?? [];
+  return {
+    transactionId: detail.transactionId,
+    ownerCompany: detail.ownerCompany,
+    tradeDirection: detail.tradeDirection,
+    counterpartyName: detail.counterpartyName,
+    companyId: detail.companyId,
+    recordCount: records.length,
+    vehicleCount: new Set(records.map((record) => record.vehicleNumber).filter(Boolean)).size,
+    acceptedWeightKg: sumWithMissing(records.map((record) => record.acceptedWeightKg)).total,
+  };
+};
 
 // 선택 계근 묶음 검증 — 서버와 같은 조건(자사·거래구분·통화 동일)
 const getSelectionBlocker = (records) => {
@@ -46,8 +64,9 @@ const getSelectionBlocker = (records) => {
 
 // 거래 등록 — 미배정 계근을 골라 하나의 거래로 묶는다
 export function useWeighingRegister() {
-  const navigate = useNavigate();
   const { toast, showToast } = useToast();
+  // 거래처 셀렉트 옵션 — /api/companies/options
+  const companySearch = useCompanySearch();
   const [initialFilters] = useState(() => createInitialFilters(getLocalDateString()));
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
@@ -60,6 +79,12 @@ export function useWeighingRegister() {
   // 검색 조건·페이지를 바꿔도 선택이 유지되도록 id → 계근 으로 보관
   const [selected, setSelected] = useState({});
   const [confirm, setConfirm] = useState({ open: false, memo: "", allowMismatch: false, forceMismatch: false, submitting: false });
+  // 이 화면에서 이번에 등록한 거래 요약(최신순) — 누르면 상세 모달을 연다
+  const [registered, setRegistered] = useState([]);
+  const [detailId, setDetailId] = useState(null);
+  const detailModal = useTransactionDetailModal(detailId);
+  // 미배정 계근 수동 매핑 — 응답에 매핑 결과가 없어 목록 갱신은 하지 않는다
+  const { openMapping, mappingModal } = useWeighingMapping(() => showToast("success", "매핑을 저장했습니다."));
 
   useEffect(() => {
     let alive = true;
@@ -72,7 +97,8 @@ export function useWeighingRegister() {
         dateTo: filters.endDate,
         ownerCompany: filters.ownerCompany,
         tradeDirection: filters.tradeDirection,
-        counterpartyName: filters.counterpartyName,
+        // 미배정 계근 API 는 원본 거래처명 부분검색만 지원하므로 선택한 거래처의 이름으로 검색한다
+        counterpartyName: filters.companyName,
         vehicleNumber: filters.vehicleNumber,
         page,
         size: UNASSIGNED_PAGE_SIZE,
@@ -137,8 +163,12 @@ export function useWeighingRegister() {
         allowCounterpartyMismatch: counterpartyMismatch && confirm.allowMismatch,
         memo: confirm.memo.trim() || null,
       });
-      // 목록으로 돌아가 새 거래 상세 모달을 연다
-      navigate("/transactions", { state: { openTransactionId: result.transactionId } });
+      // 연속 등록 — 화면에 남아 선택을 비우고, 등록한 계근이 빠지도록 미배정 목록을 다시 받는다
+      setRegistered((current) => [toRegisteredSummary(result), ...current]);
+      setSelected({});
+      setConfirm((current) => ({ ...current, open: false, submitting: false }));
+      setRetryCount((current) => current + 1);
+      showToast("success", `거래 #${result.transactionId}을(를) 등록했습니다.`);
     } catch (submitError) {
       if (submitError.code === STATE_CONFLICT_CODE && !confirm.allowMismatch) {
         // 원본명은 같아도 내부 매핑 거래처가 다른 경우 — 확인 체크를 받도록 전환
@@ -159,6 +189,7 @@ export function useWeighingRegister() {
   return {
     toolbar: {
       ...filters,
+      companySearch,
       ownerCompanyOptions: OWNER_COMPANY_OPTIONS,
       tradeDirectionOptions: RECORD_TRADE_DIRECTION_OPTIONS,
       dateLimits: getDateRangeLimits(filters.startDate, filters.endDate),
@@ -166,6 +197,7 @@ export function useWeighingRegister() {
       onDateRangeChange: (field, value) =>
         changeFilters(normalizeDateRangeChange({ startDate: filters.startDate, endDate: filters.endDate, field, value })),
       onFilterChange: (field, value) => changeFilters({ [field]: value }),
+      onCompanyChange: (company) => changeFilters({ companyId: company.id ?? "", companyName: company.name ?? "" }),
       onReset: () => changeFilters(initialFilters),
     },
     list: {
@@ -177,6 +209,14 @@ export function useWeighingRegister() {
       onToggleRecords: toggleRecords,
       // 현재 페이지에서 같은 차량번호의 계근을 한 번에 선택
       onToggleVehicle: (vehicleNumber) => toggleRecords(records.filter((record) => record.vehicleNumber === vehicleNumber)),
+      onMap: (record) =>
+        openMapping({
+          weighingRecordId: record.weighingRecordId,
+          sourceCounterpartyName: record.sourceCounterpartyName,
+          sourceItemName: record.sourceItemName,
+          itemId: null,
+          itemName: null,
+        }),
       onRetry: () => setRetryCount((current) => current + 1),
     },
     pagination: {
@@ -206,6 +246,16 @@ export function useWeighingRegister() {
       onSubmit: submit,
       onClose: () => setConfirm((current) => ({ ...current, open: false })),
     },
+    registeredList: {
+      items: registered,
+      onOpen: setDetailId,
+      onClear: () => setRegistered([]),
+    },
+    detailModal: {
+      ...detailModal,
+      onClose: () => setDetailId(null),
+    },
+    mappingModal,
     toast,
   };
 }

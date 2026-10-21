@@ -4,8 +4,11 @@ import Pagination from "../../components/Pagination";
 import Toast from "../contract/components/Toast";
 import ManualRegisterForm from "./components/ManualRegisterForm";
 import RegisterConfirmModal from "./components/RegisterConfirmModal";
+import RegisteredTransactionList from "./components/RegisteredTransactionList";
+import TransactionDetailModal from "./components/TransactionDetailModal";
 import UnassignedRecordList from "./components/UnassignedRecordList";
 import UnassignedRecordToolbar from "./components/UnassignedRecordToolbar";
+import WeighingMappingModal from "./components/WeighingMappingModal";
 import { useManualTransactionForm } from "./hooks/useManualTransactionForm";
 import { useWeighingRegister } from "./hooks/useWeighingRegister";
 import { FADE_IN_STYLE } from "./styles";
@@ -41,14 +44,18 @@ function SelectionBar({ count, blocker, onClear, onOpenConfirm }) {
 
 // 계근 선택 등록 탭 — 미배정 계근을 조회·선택해 하나의 거래로 묶는다
 function WeighingRegisterTab() {
-  const { toolbar, list, pagination, selectionBar, confirmModal, toast } = useWeighingRegister();
+  const { toolbar, list, pagination, selectionBar, confirmModal, registeredList, detailModal, mappingModal, toast } =
+    useWeighingRegister();
   return (
     <>
+      <RegisteredTransactionList {...registeredList} />
       <UnassignedRecordToolbar {...toolbar} />
       <UnassignedRecordList {...list} />
       <Pagination {...pagination} />
       <SelectionBar {...selectionBar} />
       <RegisterConfirmModal {...confirmModal} />
+      <TransactionDetailModal {...detailModal} />
+      <WeighingMappingModal {...mappingModal} />
       <Toast toast={toast} />
     </>
   );

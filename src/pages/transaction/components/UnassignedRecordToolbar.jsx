@@ -1,3 +1,5 @@
+import CompanySelect from "../../contract/components/CompanySelect";
+
 const inputClass =
   "w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
 
@@ -29,20 +31,23 @@ function SearchField({ label, value, placeholder, onChange }) {
   );
 }
 
-// 미배정 계근 검색 — 계량일자·자사·입출고·거래처명·차량번호
+// 미배정 계근 검색 — 계량일자·자사·입출고·거래처 선택·차량번호
 export default function UnassignedRecordToolbar({
   startDate,
   endDate,
   ownerCompany,
   tradeDirection,
-  counterpartyName,
+  companyId,
+  companyName,
   vehicleNumber,
+  companySearch,
   ownerCompanyOptions,
   tradeDirectionOptions,
   dateLimits,
   hasFilters,
   onDateRangeChange,
   onFilterChange,
+  onCompanyChange,
   onReset,
 }) {
   return (
@@ -74,7 +79,16 @@ export default function UnassignedRecordToolbar({
         <SelectField label="입출고" value={tradeDirection} options={tradeDirectionOptions} onChange={(value) => onFilterChange("tradeDirection", value)} />
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-        <SearchField label="거래처명" value={counterpartyName} placeholder="원본 거래처명 검색" onChange={(value) => onFilterChange("counterpartyName", value)} />
+        <div className="min-w-0">
+          <span className="mb-1.5 block text-xs font-semibold text-slate-500">거래처</span>
+          <CompanySelect
+            value={companyId}
+            selectedName={companyName}
+            onSelect={onCompanyChange}
+            className={`${inputClass} placeholder:text-slate-400`}
+            {...companySearch}
+          />
+        </div>
         <SearchField label="차량번호" value={vehicleNumber} placeholder="차량번호 검색" onChange={(value) => onFilterChange("vehicleNumber", value)} />
         <button
           type="button"

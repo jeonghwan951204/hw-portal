@@ -43,6 +43,23 @@ function VehicleButton({ vehicleNumber, onToggleVehicle }) {
   );
 }
 
+// 이 계근의 거래처·품목을 수동 매핑 — 행 선택과 겹치지 않도록 클릭 전파를 막는다
+function MapButton({ record, onMap }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onMap(record);
+      }}
+      title="거래처·품목 매핑"
+      className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+    >
+      매핑
+    </button>
+  );
+}
+
 export default function UnassignedRecordList({
   records,
   totalCount,
@@ -51,6 +68,7 @@ export default function UnassignedRecordList({
   selectedIds,
   onToggleRecords,
   onToggleVehicle,
+  onMap,
   onRetry,
 }) {
   if (loading) {
@@ -98,19 +116,20 @@ export default function UnassignedRecordList({
               </th>
               <th className="w-[11%] px-2 py-2 text-left font-semibold">계량일자</th>
               <th className="w-[10%] px-2 py-2 text-left font-semibold">자사-입출고</th>
-              <th className="w-[17%] px-2 py-2 text-left font-semibold">거래처(원본)</th>
+              <th className="w-[15%] px-2 py-2 text-left font-semibold">거래처(원본)</th>
               <th className="w-[11%] px-2 py-2 text-left font-semibold">차량번호</th>
-              <th className="w-[12%] px-2 py-2 text-left font-semibold">품목(원본)</th>
+              <th className="w-[11%] px-2 py-2 text-left font-semibold">품목(원본)</th>
               <th className="w-[10%] px-2 py-2 text-right font-semibold">실중량</th>
-              <th className="w-[10%] px-2 py-2 text-right font-semibold">인수량</th>
+              <th className="w-[9%] px-2 py-2 text-right font-semibold">인수량</th>
               <th className="w-[7%] px-2 py-2 text-right font-semibold">단가</th>
               <th className="w-[8%] px-2 py-2 text-right font-semibold">금액</th>
+              <th className="w-[4%] px-2 py-2" aria-label="매핑" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {records.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
               </tr>
             )}
             {records.map((record) => {
@@ -151,6 +170,7 @@ export default function UnassignedRecordList({
                     {record.unitPrice == null ? "-" : formatKgPrice(record.unitPrice, record.currency)}
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatMoney(record.amount, record.currency)}</td>
+                  <td className="px-1 py-2 text-center"><MapButton record={record} onMap={onMap} /></td>
                 </tr>
               );
             })}
@@ -188,6 +208,7 @@ export default function UnassignedRecordList({
                 <OwnerDirectionBadge record={record} />
                 <VehicleButton vehicleNumber={record.vehicleNumber} onToggleVehicle={onToggleVehicle} />
                 <span className="text-slate-500"><SourceName name={record.sourceItemName} emptyLabel="품목 미입력" /></span>
+                <span className="ml-auto"><MapButton record={record} onMap={onMap} /></span>
               </div>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">실중량</dt><dd className="font-medium text-slate-700">{formatWeight(record.netWeightKg)}</dd></div>

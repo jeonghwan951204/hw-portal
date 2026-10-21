@@ -104,6 +104,12 @@ export const updateWeighingRecord = (transactionId, mappingId, body) =>
 export const updateManualItem = (transactionId, manualItemId, body) =>
   send(`${BASE}/${transactionId}/manual-items/${manualItemId}`, "PATCH", body);
 
+// 계근 거래처·품목 수동 매핑 (PATCH /api/weighing-mappings/{weighingRecordId}) { companyId, itemId }
+// 경로 ID 는 계근 원본 weighingRecordId(mappingId 아님). 생략·null 항목은 기존 값 유지, 최소 하나 필요.
+// 응답 transactionId/transactionVersion — 진행 중 거래의 계근이면 거래 버전이 오르므로 상세를 다시 받아야 한다.
+export const mapWeighingRecord = (weighingRecordId, body) =>
+  send(`/api/weighing-mappings/${weighingRecordId}`, "PATCH", body);
+
 // 결제정보 수정 { paymentStatus, paymentAmount, version } — PAID 저장 시 서버에서 마감 처리
 export const updateTransactionPayment = (transactionId, body) => send(`${BASE}/${transactionId}/payment`, "PATCH", body);
 

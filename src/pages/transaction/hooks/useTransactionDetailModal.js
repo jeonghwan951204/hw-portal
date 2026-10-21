@@ -14,6 +14,7 @@ import {
   toInputValue,
   toNumberOrNull,
 } from "../constants";
+import { useWeighingMapping } from "./useWeighingMapping";
 
 const PAYMENT_STATUS_OPTIONS = Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -53,6 +54,11 @@ export function useTransactionDetailModal(transactionId, onChanged) {
   const [rowDrafts, setRowDrafts] = useState({}); // 행 key → { unitPrice, actualDeliveryWeightKg } (입력 문자열)
   const [rowsSaving, setRowsSaving] = useState(false);
   const [rowsError, setRowsError] = useState("");
+  // 계근 수동 매핑 — 거래 버전이 오르므로 저장 후 상세를 다시 받고 목록도 갱신한다
+  const { openMapping, mappingModal } = useWeighingMapping(() => {
+    setReloadKey((key) => key + 1);
+    onChanged?.();
+  });
 
   useEffect(() => {
     if (transactionId == null) return undefined;
@@ -235,6 +241,17 @@ export function useTransactionDetailModal(transactionId, onChanged) {
         setRowsError("");
       },
       onSave: saveRows,
+      // 진행 중인 계근 거래만 매핑 가능. 매핑 후 상세를 다시 받으므로 직접 입력한 값이 있으면 먼저 저장하게 한다
+      mappable: isWeighing && editable,
+      mappingBlocked: Object.keys(rowDrafts).length > 0,
+      onMap: (row) =>
+        openMapping({
+          weighingRecordId: row.source.weighingRecordId,
+          sourceCounterpartyName: row.source.counterpartyName,
+          sourceItemName: row.source.itemName,
+          itemId: row.source.itemId,
+          itemName: row.source.itemName,
+        }),
     },
     payment: {
       ...payment,
@@ -251,6 +268,7 @@ export function useTransactionDetailModal(transactionId, onChanged) {
         }),
       onSave: savePayment,
     },
+    mappingModal,
     onRetry: () => setReloadKey((key) => key + 1),
   };
 }
