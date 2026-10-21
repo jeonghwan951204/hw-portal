@@ -18,7 +18,7 @@ import AdminPage from "./pages/admin";
 import DiscordMessagePage from "./pages/discordMessage";
 import DiscordMessageFormPage from "./pages/discordMessage/form";
 import TransactionListPage from "./pages/transaction";
-import ManualTransactionFormPage from "./pages/transaction/form";
+import TransactionRegisterPage from "./pages/transaction/form";
 
 export default function App() {
   return (
@@ -36,7 +36,7 @@ export default function App() {
           <Route path="/inventory" element={<RequireAuth roles={["USER", "ADMIN"]}><InventoryPage /></RequireAuth>} />
           <Route path="/weighing" element={<RequireAuth roles={["USER", "ADMIN"]}><WeighingPage /></RequireAuth>} />
           <Route path="/transactions" element={<RequireAuth roles={["USER", "ADMIN"]}><TransactionListPage /></RequireAuth>} />
-          <Route path="/transactions/new" element={<RequireAuth roles={["USER", "ADMIN"]}><ManualTransactionFormPage /></RequireAuth>} />
+          <Route path="/transactions/new" element={<RequireAuth roles={["USER", "ADMIN"]}><TransactionRegisterPage /></RequireAuth>} />
           <Route path="/companies" element={<RequireAuth roles={["USER", "ADMIN"]}><CompaniesPage /></RequireAuth>} />
           <Route path="/companies/new" element={<RequireAuth roles={["USER", "ADMIN"]}><CompanyFormPage /></RequireAuth>} />
           <Route path="/companies/:id/edit" element={<RequireAuth roles={["USER", "ADMIN"]}><CompanyFormPage /></RequireAuth>} />
