@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { useToast } from "../../contract/hooks/useToast";
 import { useCompanySearch } from "../../contract/hooks/useCompanySearch";
@@ -65,6 +65,7 @@ const getMergeIssues = (transactions, targetId) => {
 
 export function useTransactionList() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast, showToast } = useToast();
   // 초기화 시에도 같은 기준일을 쓰도록 첫 렌더링 시점의 오늘 날짜를 고정한다
   const [initialFilters] = useState(() => createInitialFilters(getLocalDateString()));
@@ -80,7 +81,8 @@ export function useTransactionList() {
   const [selected, setSelected] = useState({});
   const [merge, setMerge] = useState({ open: false, targetId: null, reason: "", allowMismatch: false, submitting: false });
   // 상세 모달에 띄울 거래 ID — 결제정보가 저장되면 목록을 새로 받는다
-  const [detailId, setDetailId] = useState(null);
+  // 거래 등록 화면에서 넘어오면(location.state.openTransactionId) 새 거래의 상세를 바로 연다
+  const [detailId, setDetailId] = useState(() => location.state?.openTransactionId ?? null);
   const detailModal = useTransactionDetailModal(detailId, () => setRetryCount((current) => current + 1));
   const companySearch = useCompanySearch();
 
@@ -191,7 +193,7 @@ export function useTransactionList() {
     actions: {
       selectedCount: selectedList.length,
       canMerge: selectedList.length >= 2 && selectedList.every(isMergeable),
-      onCreateManual: () => navigate("/transactions/new"),
+      onCreate: () => navigate("/transactions/new"),
       onOpenMerge: () =>
         setMerge({ open: true, targetId: selectedList[0]?.transactionId ?? null, reason: "", allowMismatch: false, submitting: false }),
       onClearSelection: () => setSelected({}),

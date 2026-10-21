@@ -1,127 +1,110 @@
+import { useSearchParams } from "react-router-dom";
 import Header from "../../components/Header";
+import Pagination from "../../components/Pagination";
 import Toast from "../contract/components/Toast";
-import CounterpartyField from "./components/CounterpartyField";
-import ManualItemFields, { ItemDatalist } from "./components/ManualItemFields";
+import ManualRegisterForm from "./components/ManualRegisterForm";
+import RegisterConfirmModal from "./components/RegisterConfirmModal";
+import RegisteredTransactionList from "./components/RegisteredTransactionList";
+import TransactionDetailModal from "./components/TransactionDetailModal";
+import UnassignedRecordList from "./components/UnassignedRecordList";
+import UnassignedRecordToolbar from "./components/UnassignedRecordToolbar";
+import WeighingMappingModal from "./components/WeighingMappingModal";
 import { useManualTransactionForm } from "./hooks/useManualTransactionForm";
+import { useWeighingRegister } from "./hooks/useWeighingRegister";
 import { FADE_IN_STYLE } from "./styles";
 
-const inputClass =
-  "w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
+const TABS = [
+  { key: "weighing", label: "계근 선택 등록" },
+  { key: "manual", label: "수기 등록" },
+];
 
-function Field({ label, required, className = "", children }) {
+function SelectionBar({ count, blocker, onClear, onOpenConfirm }) {
   return (
-    <div className={`min-w-0 ${className}`}>
-      <span className="mb-1.5 block text-xs font-semibold text-slate-500">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
+    <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
+      <span className="mr-auto text-sm text-slate-600">
+        선택 <b className="text-blue-600">{count}</b>건
+        {blocker && <span className="ml-2 text-xs text-red-500">{blocker}</span>}
       </span>
-      {children}
+      {count > 0 && (
+        <button type="button" onClick={onClear} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50">
+          선택 해제
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onOpenConfirm}
+        disabled={count === 0 || Boolean(blocker)}
+        className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        선택 계근으로 거래 등록
+      </button>
     </div>
   );
 }
 
-function Select({ value, options, placeholder, onChange }) {
+// 계근 선택 등록 탭 — 미배정 계근을 조회·선택해 하나의 거래로 묶는다
+function WeighingRegisterTab() {
+  const { toolbar, list, pagination, selectionBar, confirmModal, registeredList, detailModal, mappingModal, toast } =
+    useWeighingRegister();
   return (
-    <select value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>{option.label}</option>
-      ))}
-    </select>
+    <>
+      <RegisteredTransactionList {...registeredList} />
+      <UnassignedRecordToolbar {...toolbar} />
+      <UnassignedRecordList {...list} />
+      <Pagination {...pagination} />
+      <SelectionBar {...selectionBar} />
+      <RegisterConfirmModal {...confirmModal} />
+      <TransactionDetailModal {...detailModal} />
+      <WeighingMappingModal {...mappingModal} />
+      <Toast toast={toast} />
+    </>
   );
 }
 
-// 수기 거래 등록 화면 — 헤더와 한 개 이상의 품목을 함께 생성한다.
-export default function ManualTransactionFormPage() {
+// 수기 등록 탭 — 계근 없이 직접 입력
+function ManualRegisterTab() {
   const { header, itemRows, submitBar, toast } = useManualTransactionForm();
+  return (
+    <>
+      <ManualRegisterForm header={header} itemRows={itemRows} submitBar={submitBar} />
+      <Toast toast={toast} />
+    </>
+  );
+}
+
+// 거래 등록 화면 — 탭은 ?tab=manual 로 구분해 새로고침해도 유지한다
+export default function TransactionRegisterPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "manual" ? "manual" : "weighing";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Header />
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">수기 거래 등록</h1>
-          <p className="mt-1 text-sm text-slate-500">계근 원본 없이 거래 정보와 품목을 직접 입력합니다. 수기 거래에는 나중에 계근을 추가할 수 없습니다.</p>
+          <h1 className="text-xl font-bold text-slate-800">거래 등록</h1>
+          <p className="mt-1 text-sm text-slate-500">거래에 묶이지 않은 계근을 골라 거래로 등록하거나, 계근 없이 수기로 등록합니다.</p>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-bold text-slate-700">거래 정보</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="거래일" required>
-              <input type="date" value={header.transactionDate} onChange={(event) => header.onChange({ transactionDate: event.target.value })} className={inputClass} />
-            </Field>
-            <Field label="자사" required>
-              <Select value={header.ownerCompany} options={header.ownerCompanyOptions} placeholder="선택" onChange={(ownerCompany) => header.onChange({ ownerCompany })} />
-            </Field>
-            <Field label="입출고 구분" required>
-              <Select value={header.tradeDirection} options={header.tradeDirectionOptions} placeholder="선택" onChange={(tradeDirection) => header.onChange({ tradeDirection })} />
-            </Field>
-            <Field label="통화" required>
-              <Select value={header.currency} options={header.currencyOptions} onChange={(currency) => header.onChange({ currency })} />
-            </Field>
-            <Field label="거래처" className="sm:col-span-2 lg:col-span-4">
-              <CounterpartyField
-                companyId={header.companyId}
-                counterpartyName={header.counterpartyName}
-                companySearch={header.companySearch}
-                onChange={header.onChange}
-              />
-            </Field>
-            <Field label="비고" className="sm:col-span-2 lg:col-span-4">
-              <textarea value={header.memo} onChange={(event) => header.onChange({ memo: event.target.value })} rows={2} className={inputClass} />
-            </Field>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-700">품목 ({itemRows.rows.length})</h2>
-            <button type="button" onClick={itemRows.onAddRow} className="rounded-lg border border-blue-200 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50">
-              + 품목 추가
+        <div className="flex items-center gap-1.5">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setSearchParams(tab.key === "weighing" ? {} : { tab: tab.key }, { replace: true })}
+              className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
+                activeTab === tab.key
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
+              }`}
+            >
+              {tab.label}
             </button>
-          </div>
-          <ItemDatalist items={itemRows.items} />
-          <div className="space-y-3">
-            {itemRows.rows.map((row, index) => (
-              <div key={row.key} className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500">품목 {index + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => itemRows.onRemoveRow(row.key)}
-                    disabled={itemRows.rows.length <= 1}
-                    className="text-xs font-semibold text-slate-400 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    삭제
-                  </button>
-                </div>
-                <ManualItemFields
-                  value={row.value}
-                  tradeDirection={itemRows.tradeDirection}
-                  items={itemRows.items}
-                  onChange={(patch) => itemRows.onRowChange(row.key, patch)}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          {submitBar.error && <p className="mr-auto text-sm text-red-600">{submitBar.error}</p>}
-          <button type="button" onClick={submitBar.onCancel} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-            취소
-          </button>
-          <button
-            type="button"
-            onClick={submitBar.onSubmit}
-            disabled={submitBar.submitting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-40"
-          >
-            {submitBar.submitting ? "등록 중..." : "등록"}
-          </button>
+          ))}
         </div>
+
+        {activeTab === "weighing" ? <WeighingRegisterTab /> : <ManualRegisterTab />}
       </main>
-      <Toast toast={toast} />
       <style>{FADE_IN_STYLE}</style>
     </div>
   );

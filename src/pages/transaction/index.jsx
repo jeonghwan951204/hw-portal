@@ -43,10 +43,10 @@ export default function TransactionListPage() {
             </button>
             <button
               type="button"
-              onClick={actions.onCreateManual}
+              onClick={actions.onCreate}
               className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700"
             >
-              수기 거래 등록
+              거래 등록
             </button>
           </div>
         </div>

@@ -2,6 +2,7 @@ import NumericInput from "../../contract/components/NumericInput";
 import { formatDate, formatKgPrice, formatMoney, formatWeight, labelOf, ownerCompanyLabelOf, PAYMENT_STATUS_LABELS } from "../constants";
 import { Badge, DirectionBadge, MappedName, OriginBadge, PaymentBadge, TransactionStatusBadge } from "./Badges";
 import ModalShell from "./ModalShell";
+import WeighingMappingModal from "./WeighingMappingModal";
 
 const inputClass =
   "w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
@@ -61,7 +62,22 @@ const cellInputClass =
   "w-24 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-[13px] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
 
 // 포함 항목 — 결제 완료 전에는 단가(kg당)와 출고 실제출고량을 입력할 수 있다
-function ItemTable({ rows, isSale, currency, editable, dirtyCount, resettable, saving, error, onDraftChange, onReset, onSave }) {
+function ItemTable({
+  rows,
+  isSale,
+  currency,
+  editable,
+  dirtyCount,
+  resettable,
+  saving,
+  error,
+  mappable,
+  mappingBlocked,
+  onDraftChange,
+  onReset,
+  onSave,
+  onMap,
+}) {
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -85,7 +101,24 @@ function ItemTable({ rows, isSale, currency, editable, dirtyCount, resettable, s
               <tr key={row.key} className={row.draft ? "bg-blue-50/40" : isSale && row.unitPrice == null ? "bg-red-50/60" : ""}>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.vehicleNumber || "-"}</td>
                 <td className="px-3 py-2 text-slate-700">
-                  <MappedName name={row.itemName} mapped={row.mapped} emptyLabel="품목 미입력" />
+                  <span className="flex items-center gap-1.5">
+                    <MappedName name={row.itemName} mapped={row.mapped} emptyLabel="품목 미입력" />
+                    {mappable && (
+                      <button
+                        type="button"
+                        onClick={() => onMap(row)}
+                        disabled={mappingBlocked}
+                        title={mappingBlocked ? "입력한 단가·실제출고량을 먼저 저장하세요" : "거래처·품목 매핑"}
+                        className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${
+                          row.mapped
+                            ? "border-slate-200 text-slate-400 hover:bg-slate-50"
+                            : "border-amber-300 text-amber-700 hover:bg-amber-50"
+                        }`}
+                      >
+                        매핑
+                      </button>
+                    )}
+                  </span>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-700">
                   {formatWeight(row.netWeightKg)}
@@ -165,6 +198,7 @@ export default function TransactionDetailModal({
   actualDeliveryWeightKg,
   actualDeliveryMissing,
   payment,
+  mappingModal,
   onRetry,
   onClose,
 }) {
@@ -194,39 +228,43 @@ export default function TransactionDetailModal({
   }
 
   return (
-    <ModalShell wide title={`거래 #${detail.transactionId}`} onClose={onClose} footer={footer}>
-      <section className="space-y-4 rounded-xl border border-slate-200 p-4">
-        <div className="flex flex-wrap gap-1.5">
-          <OriginBadge origin={detail.transactionOrigin} />
-          <DirectionBadge direction={detail.tradeDirection} />
-          <PaymentBadge status={detail.paymentStatus} />
-          <TransactionStatusBadge status={detail.transactionStatus} />
-        </div>
-        <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">
-          <InfoItem label="거래처">
-            <MappedName name={detail.counterpartyName} mapped={detail.companyId != null} emptyLabel="거래처 미입력" />
-          </InfoItem>
-          <InfoItem label="거래일">{formatDate(detail.transactionDate)}</InfoItem>
-          <InfoItem label="자사"><Badge>{ownerCompanyLabelOf(detail.ownerCompany)}</Badge></InfoItem>
-          <InfoItem label="총 중량 (인수량)" note={acceptedMissing ? "인수량 미입력 항목 제외" : null}>
-            {formatWeight(acceptedWeightKg)}
-          </InfoItem>
-          {isSale && (
-            <InfoItem label="실제출고량" note={actualDeliveryMissing ? "미입력 항목 제외" : null}>
-              {formatWeight(actualDeliveryWeightKg)}
+    <>
+      <ModalShell wide title={`거래 #${detail.transactionId}`} onClose={onClose} footer={footer}>
+        <section className="space-y-4 rounded-xl border border-slate-200 p-4">
+          <div className="flex flex-wrap gap-1.5">
+            <OriginBadge origin={detail.transactionOrigin} />
+            <DirectionBadge direction={detail.tradeDirection} />
+            <PaymentBadge status={detail.paymentStatus} />
+            <TransactionStatusBadge status={detail.transactionStatus} />
+          </div>
+          <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">
+            <InfoItem label="거래처">
+              <MappedName name={detail.counterpartyName} mapped={detail.companyId != null} emptyLabel="거래처 미입력" />
             </InfoItem>
-          )}
-          <InfoItem label="총 금액" note={detail.displayAmount == null ? "단가 미입력 항목이 있어 계산되지 않았습니다" : null}>
-            {formatMoney(detail.displayAmount, detail.currency)}
-          </InfoItem>
-        </dl>
-        <PaymentSection detail={detail} payment={payment} />
-      </section>
-
-      <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-700">포함 항목 ({items.rows.length})</h3>
-        <ItemTable {...items} />
-      </section>
-    </ModalShell>
+            <InfoItem label="거래일">{formatDate(detail.transactionDate)}</InfoItem>
+            <InfoItem label="자사"><Badge>{ownerCompanyLabelOf(detail.ownerCompany)}</Badge></InfoItem>
+            <InfoItem label="총 중량 (인수량)" note={acceptedMissing ? "인수량 미입력 항목 제외" : null}>
+              {formatWeight(acceptedWeightKg)}
+            </InfoItem>
+            {isSale && (
+              <InfoItem label="실제출고량" note={actualDeliveryMissing ? "미입력 항목 제외" : null}>
+                {formatWeight(actualDeliveryWeightKg)}
+              </InfoItem>
+            )}
+            <InfoItem label="총 금액" note={detail.displayAmount == null ? "단가 미입력 항목이 있어 계산되지 않았습니다" : null}>
+              {formatMoney(detail.displayAmount, detail.currency)}
+            </InfoItem>
+          </dl>
+          <PaymentSection detail={detail} payment={payment} />
+        </section>
+  
+        <section className="space-y-2">
+          <h3 className="text-sm font-bold text-slate-700">포함 항목 ({items.rows.length})</h3>
+          <ItemTable {...items} />
+        </section>
+      </ModalShell>
+      {/* 상세 모달 위에 겹쳐 뜨도록 뒤에 렌더링한다 */}
+      <WeighingMappingModal {...mappingModal} />
+    </>
   );
 }

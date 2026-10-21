@@ -10,6 +10,8 @@ export {
 } from "../weighing/constants";
 
 export const TRANSACTION_PAGE_SIZE = 20;
+// 계근 선택 등록은 한 화면에서 많이 고를 수 있도록 크게 받는다
+export const UNASSIGNED_PAGE_SIZE = 50;
 
 // 수기 거래 등록에서는 자사를 반드시 골라야 하므로 '전체'를 뺀다.
 export const OWNER_COMPANY_CHOICES = OWNER_COMPANY_OPTIONS.filter((option) => option.value);
@@ -45,6 +47,12 @@ const withAll = (labels) => [
 // ─── 검색 필터 옵션 ───────────────────────────────────────────────────────
 export const TRADE_DIRECTION_OPTIONS = withAll(TRADE_DIRECTION_LABELS);
 export const PAYMENT_STATUS_OPTIONS = withAll(PAYMENT_STATUS_LABELS);
+// 미배정 계근 검색은 입고·출고만 지원한다(UNKNOWN 검색 불가)
+export const RECORD_TRADE_DIRECTION_OPTIONS = [
+  { value: "", label: "전체" },
+  { value: "PURCHASE", label: "입고" },
+  { value: "SALE", label: "출고" },
+];
 // 경고 = 거래처·품목 미매핑, 적용 단가 누락, 묶음 경고, 거래구분 UNKNOWN, 포함 계근 원본 삭제 중 하나 이상
 export const WARNING_OPTIONS = [
   { value: "", label: "전체" },
