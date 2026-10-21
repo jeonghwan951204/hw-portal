@@ -15,6 +15,8 @@ import ContractListPage from "./pages/contract";
 import ContractDetailPage from "./pages/contract/detail";
 import ContractFormPage from "./pages/contract/form";
 import AdminPage from "./pages/admin";
+import DiscordMessagePage from "./pages/discordMessage";
+import DiscordMessageFormPage from "./pages/discordMessage/form";
 import TransactionListPage from "./pages/transaction";
 import ManualTransactionFormPage from "./pages/transaction/form";
 
@@ -45,6 +47,9 @@ export default function App() {
           <Route path="/contract/:id" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractDetailPage /></RequireAuth>} />
           <Route path="/contract/:id/edit" element={<RequireAuth roles={["USER", "ADMIN"]}><ContractFormPage /></RequireAuth>} />
           <Route path="/admin" element={<RequireAuth roles={["ADMIN"]}><AdminPage /></RequireAuth>} />
+          <Route path="/admin/discord-messages" element={<RequireAuth roles={["ADMIN"]}><DiscordMessagePage /></RequireAuth>} />
+          <Route path="/admin/discord-messages/new" element={<RequireAuth roles={["ADMIN"]}><DiscordMessageFormPage /></RequireAuth>} />
+          <Route path="/admin/discord-messages/:id/edit" element={<RequireAuth roles={["ADMIN"]}><DiscordMessageFormPage /></RequireAuth>} />
         </Routes>
       </BrowserRouter>
     </KakaoInAppBrowserGuard>

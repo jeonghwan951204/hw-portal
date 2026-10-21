@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { getRole } from "../utils/auth";
+import { USE_MOCK } from "../utils/env";
 
 const NAV_ITEMS = [
   { label: "사이트 관리", to: "/" },
@@ -110,13 +111,15 @@ export default function Header() {
   const [openCategories, setOpenCategories] = useState({});
   const role = getRole();
   const roleNavItems = filterNavItemsByRole(NAV_ITEMS, role);
-  const navItems = role === "ADMIN"
+  // 목업 모드에서는 RequireAuth 와 같이 권한 검사를 건너뛰고 관리자 메뉴도 보여 준다.
+  const navItems = role === "ADMIN" || USE_MOCK
     ? [
         ...roleNavItems,
         {
           label: "관리자",
           children: [
             { label: "관리자 페이지", to: "/admin" },
+            { label: "메시지", to: "/admin/discord-messages" },
           ],
         },
       ]
