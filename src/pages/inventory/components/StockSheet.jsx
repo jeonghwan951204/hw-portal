@@ -9,7 +9,7 @@ import {
   ownerCompanyLabelOf,
 } from "../constants";
 
-const CELL = "border border-slate-200 px-2 py-1.5";
+const CELL = "border border-slate-200 px-3 py-2.5";
 const NUMBER_CELL = `${CELL} text-right tabular-nums whitespace-nowrap`;
 
 const toneOf = (value) => (Number(value) < 0 ? "font-bold text-red-600" : "");
@@ -75,7 +75,7 @@ function TradeSection({ label, section, columns }) {
               {label}
             </th>
           )}
-          <td className={`${CELL} max-w-[12rem]`}>
+          <td className={`${CELL} max-w-[14rem]`}>
             <span className="inline-flex min-w-0 items-center gap-1">
               <MappedName name={row.label} mapped={row.mapped} emptyLabel="거래처 미입력" />
               <span className="shrink-0 text-[10px] text-slate-400">{row.weighingCount}건</span>
@@ -118,7 +118,7 @@ function AdjustmentSection({ section, columns, truncated }) {
               조정
             </th>
           )}
-          <td className={`${CELL} max-w-[12rem]`}>
+          <td className={`${CELL} max-w-[14rem]`}>
             <div className="flex flex-col">
               <span className="text-[11px] font-bold text-slate-500">
                 {movementTypeLabelOf(row.movement.movementType)} #{row.movement.movementId}
@@ -172,15 +172,15 @@ export default function StockSheet({ sheet, asOfDate, ownerCompany, movementsTru
         <p className="px-5 py-12 text-center text-sm text-slate-400">표시할 품목이 없습니다.</p>
       ) : (
         <div className="overflow-x-auto p-3">
-          <table className="w-full min-w-[48rem] border-collapse text-[13px] text-slate-700">
-            <thead className="bg-slate-100 text-xs text-slate-600">
+          <table className="w-full min-w-[64rem] border-collapse text-sm text-slate-700">
+            <thead className="bg-slate-100 text-[13px] text-slate-600">
               <tr>
-                <th className={`${CELL} w-20`}>구분</th>
-                <th className={`${CELL} w-44`}>거래처</th>
+                <th className={`${CELL} w-24`}>구분</th>
+                <th className={`${CELL} w-52`}>거래처</th>
                 {columns.map((column) => (
-                  <th key={column.itemId} className={`${CELL} min-w-[6rem]`}>{column.itemName}</th>
+                  <th key={column.itemId} className={`${CELL} min-w-[7.5rem]`}>{column.itemName}</th>
                 ))}
-                <th className={`${CELL} min-w-[6.5rem] bg-slate-200/60`}>합계</th>
+                <th className={`${CELL} min-w-[8rem] bg-slate-200/60`}>합계</th>
                 <th className={`${CELL} min-w-[10rem]`}>비고</th>
               </tr>
             </thead>

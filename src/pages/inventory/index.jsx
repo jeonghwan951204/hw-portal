@@ -100,7 +100,8 @@ export default function InventoryPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Header />
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+      {/* 재고 현황표는 품목 열이 많아 다른 화면보다 넓게 쓴다 */}
+      <main className="mx-auto max-w-[100rem] space-y-5 px-4 py-6">
         <div>
           <h1 className="text-xl font-bold text-slate-800">재고 관리</h1>
           <p className="mt-1 text-sm text-slate-500">
