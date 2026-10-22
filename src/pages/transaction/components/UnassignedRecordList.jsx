@@ -7,7 +7,11 @@ import {
   ownerCompanyLabelOf,
   TRADE_DIRECTION_LABELS,
 } from "../constants";
+import CompanySelect from "../../contract/components/CompanySelect";
 import { Badge } from "./Badges";
+
+const cellInputClass =
+  "w-full min-w-0 rounded-md border border-blue-300 bg-white px-2 py-1 text-[13px] text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20";
 
 const timeOf = (record) => (record.secondWeighedAt ?? record.firstWeighedAt ?? "").slice(0, 5);
 
@@ -21,8 +25,113 @@ function OwnerDirectionBadge({ record }) {
   );
 }
 
-function SourceName({ name, emptyLabel }) {
-  return name ? <span className="truncate" title={name}>{name}</span> : <Badge tone="amber">{emptyLabel}</Badge>;
+// 미매핑 칸의 '매핑' 시작 버튼 — 매칭 상태가 AMBIGUOUS 면 '확인 필요'
+function UnmappedBadgeButton({ status, disabled, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      disabled={disabled}
+      title="눌러서 바로 매핑"
+      className="shrink-0 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 hover:bg-amber-100 disabled:opacity-40"
+    >
+      {status === "AMBIGUOUS" ? "확인 필요" : "미매핑"} · 매핑
+    </button>
+  );
+}
+
+// 행 선택 토글과 겹치지 않도록 매핑 입력 영역 클릭은 행으로 전파하지 않는다
+const stop = (event) => event.stopPropagation();
+
+// 매핑 칸 공통 — 매핑돼 있으면 내부 정식명(원본명이 다르면 작게 함께), 아니면 원본명 + 매핑 버튼 또는 입력란
+function MappingCell({ mappedName, sourceName, emptyLabel, status, mapped, editing, saving, editor, onStart, onCancel }) {
+  if (mapped) {
+    return (
+      <span className="block min-w-0">
+        <span className="block truncate" title={mappedName}>{mappedName}</span>
+        {sourceName && sourceName !== mappedName && (
+          <span className="block truncate text-[10px] font-normal text-slate-400" title={sourceName}>원본: {sourceName}</span>
+        )}
+      </span>
+    );
+  }
+  if (editing) {
+    return (
+      <span className="flex min-w-0 items-center gap-1" onClick={stop}>
+        <span className="min-w-0 flex-1">{editor}</span>
+        <button type="button" onClick={onCancel} disabled={saving} className="shrink-0 px-1 text-xs text-slate-400 hover:text-slate-600" aria-label="매핑 취소">
+          ✕
+        </button>
+      </span>
+    );
+  }
+  return (
+    <span className="flex min-w-0 flex-wrap items-center gap-1">
+      {sourceName ? <span className="truncate" title={sourceName}>{sourceName}</span> : <Badge tone="amber">{emptyLabel}</Badge>}
+      <UnmappedBadgeButton status={status} disabled={saving} onClick={onStart} />
+    </span>
+  );
+}
+
+function CounterpartyCell({ record, list }) {
+  const editing = list.inlineEdit?.id === record.weighingRecordId && list.inlineEdit.field === "company";
+  return (
+    <MappingCell
+      mappedName={record.companyName}
+      sourceName={record.sourceCounterpartyName}
+      emptyLabel="거래처 미입력"
+      status={record.companyMatchStatus}
+      mapped={record.companyId != null}
+      editing={editing}
+      saving={list.mappingSavingId === record.weighingRecordId}
+      editor={
+        <CompanySelect
+          value=""
+          selectedName=""
+          onSelect={(company) => list.onMapCompany(record, company)}
+          className={cellInputClass}
+          {...list.mappingCompanySearch}
+        />
+      }
+      onStart={() => list.onStartMapping(record, "company")}
+      onCancel={list.onCancelMapping}
+    />
+  );
+}
+
+function ItemCell({ record, list }) {
+  const editing = list.inlineEdit?.id === record.weighingRecordId && list.inlineEdit.field === "item";
+  return (
+    <MappingCell
+      mappedName={record.itemName}
+      sourceName={record.sourceItemName}
+      emptyLabel="품목 미입력"
+      status={record.itemMatchStatus}
+      mapped={record.itemId != null}
+      editing={editing}
+      saving={list.mappingSavingId === record.weighingRecordId}
+      editor={
+        <select
+          value=""
+          autoFocus
+          disabled={list.mappingSavingId === record.weighingRecordId}
+          onChange={(event) => list.onMapItem(record, event.target.value)}
+          className={cellInputClass}
+          aria-label="매핑할 품목"
+        >
+          <option value="">품목 선택</option>
+          {list.items.map((item) => (
+            <option key={item.id} value={item.id}>{item.name}</option>
+          ))}
+        </select>
+      }
+      onStart={() => list.onStartMapping(record, "item")}
+      onCancel={list.onCancelMapping}
+    />
+  );
 }
 
 // 차량번호 — 누르면 현재 페이지의 같은 차량 계근을 한 번에 선택/해제
@@ -43,34 +152,9 @@ function VehicleButton({ vehicleNumber, onToggleVehicle }) {
   );
 }
 
-// 이 계근의 거래처·품목을 수동 매핑 — 행 선택과 겹치지 않도록 클릭 전파를 막는다
-function MapButton({ record, onMap }) {
-  return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        onMap(record);
-      }}
-      title="거래처·품목 매핑"
-      className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
-    >
-      매핑
-    </button>
-  );
-}
+export default function UnassignedRecordList(list) {
+  const { records, totalCount, loading, error, selectedIds, onToggleRecords, onToggleVehicle, onRetry } = list;
 
-export default function UnassignedRecordList({
-  records,
-  totalCount,
-  loading,
-  error,
-  selectedIds,
-  onToggleRecords,
-  onToggleVehicle,
-  onMap,
-  onRetry,
-}) {
   if (loading) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white px-5 py-14 text-center text-sm text-slate-400 shadow-sm">
@@ -116,20 +200,19 @@ export default function UnassignedRecordList({
               </th>
               <th className="w-[11%] px-2 py-2 text-left font-semibold">계량일자</th>
               <th className="w-[10%] px-2 py-2 text-left font-semibold">자사-입출고</th>
-              <th className="w-[15%] px-2 py-2 text-left font-semibold">거래처(원본)</th>
+              <th className="w-[18%] px-2 py-2 text-left font-semibold">거래처</th>
               <th className="w-[11%] px-2 py-2 text-left font-semibold">차량번호</th>
-              <th className="w-[11%] px-2 py-2 text-left font-semibold">품목(원본)</th>
+              <th className="w-[12%] px-2 py-2 text-left font-semibold">품목</th>
               <th className="w-[10%] px-2 py-2 text-right font-semibold">실중량</th>
               <th className="w-[9%] px-2 py-2 text-right font-semibold">인수량</th>
               <th className="w-[7%] px-2 py-2 text-right font-semibold">단가</th>
               <th className="w-[8%] px-2 py-2 text-right font-semibold">금액</th>
-              <th className="w-[4%] px-2 py-2" aria-label="매핑" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {records.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
+                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
               </tr>
             )}
             {records.map((record) => {
@@ -156,13 +239,13 @@ export default function UnassignedRecordList({
                   </td>
                   <td className="px-2 py-2"><OwnerDirectionBadge record={record} /></td>
                   <td className="px-2 py-2 font-semibold text-slate-800">
-                    <SourceName name={record.sourceCounterpartyName} emptyLabel="거래처 미입력" />
+                    <CounterpartyCell record={record} list={list} />
                   </td>
                   <td className="whitespace-nowrap px-2 py-2">
                     <VehicleButton vehicleNumber={record.vehicleNumber} onToggleVehicle={onToggleVehicle} />
                   </td>
                   <td className="px-2 py-2 text-slate-600">
-                    <SourceName name={record.sourceItemName} emptyLabel="품목 미입력" />
+                    <ItemCell record={record} list={list} />
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatWeight(record.netWeightKg)}</td>
                   <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatWeight(record.acceptedWeightKg)}</td>
@@ -170,7 +253,6 @@ export default function UnassignedRecordList({
                     {record.unitPrice == null ? "-" : formatKgPrice(record.unitPrice, record.currency)}
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatMoney(record.amount, record.currency)}</td>
-                  <td className="px-1 py-2 text-center"><MapButton record={record} onMap={onMap} /></td>
                 </tr>
               );
             })}
@@ -198,17 +280,16 @@ export default function UnassignedRecordList({
                     aria-label={`계근 ${record.weighingRecordId} 선택`}
                     className="h-4 w-4 shrink-0 accent-blue-600"
                   />
-                  <p className="min-w-0 text-sm font-bold text-slate-800">
-                    <SourceName name={record.sourceCounterpartyName} emptyLabel="거래처 미입력" />
-                  </p>
+                  <div className="min-w-0 text-sm font-bold text-slate-800">
+                    <CounterpartyCell record={record} list={list} />
+                  </div>
                 </div>
                 <p className="shrink-0 text-xs text-slate-400">{formatDate(record.weighingDate)} {timeOf(record)}</p>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                 <OwnerDirectionBadge record={record} />
                 <VehicleButton vehicleNumber={record.vehicleNumber} onToggleVehicle={onToggleVehicle} />
-                <span className="text-slate-500"><SourceName name={record.sourceItemName} emptyLabel="품목 미입력" /></span>
-                <span className="ml-auto"><MapButton record={record} onMap={onMap} /></span>
+                <span className="min-w-0 flex-1 text-slate-500"><ItemCell record={record} list={list} /></span>
               </div>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">실중량</dt><dd className="font-medium text-slate-700">{formatWeight(record.netWeightKg)}</dd></div>
