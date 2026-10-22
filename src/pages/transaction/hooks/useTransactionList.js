@@ -10,6 +10,7 @@ import {
   getLocalDateString,
   OWNER_COMPANY_OPTIONS,
   PAYMENT_STATUS_OPTIONS,
+  SORT_ORDER_OPTIONS,
   TRADE_DIRECTION_OPTIONS,
   TRANSACTION_PAGE_SIZE,
   WARNING_OPTIONS,
@@ -28,6 +29,7 @@ const createInitialFilters = (today) => ({
   tradeDirection: "",
   paymentStatus: "",
   hasWarning: "",
+  sortOrder: "OLDEST",
 });
 
 // 합칠 수 있는 거래 — 결제 완료(마감) 전 진행 중 거래
@@ -102,6 +104,7 @@ export function useTransactionList() {
         tradeDirection: filters.tradeDirection,
         paymentStatus: filters.paymentStatus,
         hasWarning: filters.hasWarning,
+        sortOrder: filters.sortOrder,
         page,
         size: TRANSACTION_PAGE_SIZE,
       })
@@ -184,6 +187,7 @@ export function useTransactionList() {
       tradeDirectionOptions: TRADE_DIRECTION_OPTIONS,
       paymentStatusOptions: PAYMENT_STATUS_OPTIONS,
       warningOptions: WARNING_OPTIONS,
+      sortOrderOptions: SORT_ORDER_OPTIONS,
       dateLimits: getDateRangeLimits(filters.startDate, filters.endDate),
       hasFilters: Object.entries(filters).some(([key, value]) => value !== initialFilters[key]),
       onDateRangeChange: (field, value) =>
