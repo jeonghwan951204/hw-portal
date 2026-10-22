@@ -35,6 +35,7 @@ function ValueCells({ row, columns, showZero = false, className = "" }) {
           </td>
         );
       })}
+      <td className={`${NUMBER_CELL} bg-slate-50/70 font-semibold ${toneOf(row.total)} ${className}`}>{format(row.total)}</td>
     </>
   );
 }
@@ -55,7 +56,7 @@ function TradeNotes({ notes }) {
 }
 
 function TradeSection({ label, section, columns }) {
-  const columnCount = columns.length + 2;
+  const columnCount = columns.length + 3;
   if (section.rows.length === 0) {
     return (
       <tr>
@@ -111,6 +112,7 @@ export default function StockSheet({ sheet, asOfDate, ownerCompany, movementsTru
   const hasDifference = Object.keys(sheet.differences).length > 0;
   const differenceRow = {
     values: Object.fromEntries(columns.map((column) => [column.itemId, sheet.differences[column.itemId] ?? 0])),
+    total: sheet.differences.total ?? 0,
     breakdown: {},
   };
 
@@ -136,6 +138,7 @@ export default function StockSheet({ sheet, asOfDate, ownerCompany, movementsTru
                 {columns.map((column) => (
                   <th key={column.itemId} className={`${CELL} min-w-[7.5rem]`}>{column.itemName}</th>
                 ))}
+                <th className={`${CELL} min-w-[8rem] bg-slate-200/60`}>합계</th>
                 <th className={`${CELL} min-w-[10rem]`}>비고</th>
               </tr>
             </thead>

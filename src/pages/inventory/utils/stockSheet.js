@@ -1,10 +1,11 @@
 // 재고 현황표(엑셀 '재고 현황' 양식) 계산 — 화면 상태 없이 응답만으로 표 데이터를 만든다.
 //
-//  열: 품목 (품목 미선택이면 최상위 품목, 선택하면 선택한 품목) — 품목과 무관한 전체 합계 열은 두지 않는다
+//  열: 품목 (품목 미선택이면 최상위 품목, 선택하면 선택한 품목) + 합계
 //  행: 전일 재고 / 매입(거래처별) / 매출(거래처별) / 조정(그날 보정 합계 한 행) / 금일 재고
 //
 // 품목 열 값은 재고 응답의 quantityKg 처럼 '하위 품목 포함 합계'로 맞춘다.
 // 그래서 거래·보정 품목은 자기 자신이나 상위 품목이 열로 있으면 그 열에 더한다.
+// 합계 열은 품목을 한 번씩만 더한다(상위·하위를 함께 선택해도 중복 없음). 재고 행 합계는 서버 totalQuantityKg 를 그대로 쓴다.
 
 const round = (value) => Math.round(value * 10000) / 10000;
 
@@ -46,7 +47,7 @@ const stockRow = (key, label, stock, columns) => {
   (stock?.items ?? []).forEach((item) => {
     if (String(item.itemId) in values) values[String(item.itemId)] = Number(item.quantityKg ?? 0);
   });
-  return { key, label, values, breakdown: {}, notes: [] };
+  return { key, label, values, total: Number(stock?.totalQuantityKg ?? 0), breakdown: {}, notes: [] };
 };
 
 // 거래처 한 행 — 열별 값, 셀 툴팁용 품목 내역, 열에 안 잡힌 품목(미매핑 등)은 비고
@@ -54,6 +55,7 @@ const companyRow = (direction, company, index, columns, columnIdSet, parentMap) 
   const values = emptyValues(columns);
   const breakdown = {};
   const notes = [];
+  let total = 0;
 
   company.items.forEach((item) => {
     const quantity = Number(item.quantityKg ?? 0);
@@ -62,6 +64,7 @@ const companyRow = (direction, company, index, columns, columnIdSet, parentMap) 
       notes.push({ itemName: item.itemName, quantityKg: quantity, mapped: item.itemMapped });
       return;
     }
+    total += quantity;
     columnIds.forEach((columnId) => {
       values[columnId] += quantity;
       (breakdown[columnId] ??= []).push({ itemName: item.itemName, quantityKg: quantity });
@@ -74,6 +77,7 @@ const companyRow = (direction, company, index, columns, columnIdSet, parentMap) 
     mapped: company.companyMapped,
     weighingCount: company.weighingCount,
     values: Object.fromEntries(Object.entries(values).map(([id, value]) => [id, round(value)])),
+    total: round(total),
     breakdown,
     notes,
   };
@@ -92,6 +96,7 @@ const movementRow = (movement, columns, columnIdSet, parentMap) => {
     movement,
     touches: toColumns.length > 0 || fromColumns.length > 0,
     values: Object.fromEntries(Object.entries(values).map(([id, value]) => [id, round(value)])),
+    total: round((toColumns.length ? quantity : 0) - (fromColumns.length ? quantity : 0)),
     breakdown: {},
     notes: [],
   };
@@ -99,13 +104,16 @@ const movementRow = (movement, columns, columnIdSet, parentMap) => {
 
 const sumRows = (key, label, rows, columns) => {
   const values = emptyValues(columns);
+  let total = 0;
   rows.forEach((row) => {
     columns.forEach((column) => (values[column.itemId] += row.values[column.itemId]));
+    total += row.total;
   });
   return {
     key,
     label,
     values: Object.fromEntries(Object.entries(values).map(([id, value]) => [id, round(value)])),
+    total: round(total),
     breakdown: {},
     notes: [],
   };
@@ -133,9 +141,10 @@ export const buildStockSheet = ({ stock, prevStock, trades, movements, parentMap
 
   // 전일 + 매입 - 매출 + 조정 과 금일 재고가 다르면 차이를 보여 준다(보정 내역 누락 등 확인용)
   const differences = {};
-  columns.forEach(({ itemId: id }) => {
-    const expected = opening.values[id] + purchaseTotal.values[id] - saleTotal.values[id] + adjustmentTotal.values[id];
-    const difference = round(closing.values[id] - expected);
+  [...columns.map((column) => column.itemId), "total"].forEach((id) => {
+    const pick = (row) => (id === "total" ? row.total : row.values[id]);
+    const expected = pick(opening) + pick(purchaseTotal) - pick(saleTotal) + pick(adjustmentTotal);
+    const difference = round(pick(closing) - expected);
     if (difference !== 0) differences[id] = difference;
   });
 

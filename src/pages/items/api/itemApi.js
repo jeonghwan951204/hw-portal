@@ -67,6 +67,20 @@ export const updateItem = async (itemId, form) => {
   );
 };
 
+// 품목 정렬순서 일괄 변경 (PUT /api/items/sort-order) — 같은 상위 품목 아래 하위 품목 전체를 바뀐 순서대로 보내면
+// 서버가 1부터 다시 매긴다. 최상위 품목은 parentItemId 를 null 로 보낸다. → { message }
+export const updateItemSortOrder = async (parentItemId, itemIds) => {
+  const body = { parentItemId, itemIds };
+  if (USE_MOCK) return itemMock.updateItemSortOrder(body);
+  return asJson(
+    await apiFetch("/api/items/sort-order", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+};
+
 // 품목 삭제(비활성화) (DELETE /api/items/{itemId}) — 활성 하위 품목이 있으면 서버에서 거절한다. → { message }
 export const deleteItem = async (itemId) => {
   if (USE_MOCK) return itemMock.deleteItem(itemId);

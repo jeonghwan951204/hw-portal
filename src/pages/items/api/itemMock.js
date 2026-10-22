@@ -1,6 +1,8 @@
 // 로컬 목업 모드(VITE_USE_MOCK)에서 품목 API 대신 사용하는 데이터와 처리.
 // 변경 사항은 메모리에만 유지되므로 새로고침하면 초기 데이터로 돌아간다.
 
+import { applySiblingOrder } from "../constants";
+
 let items = [
   { id: 1, name: "동", parentId: null, aliases: ["구리", "Cu"] },
   { id: 2, name: "A동", parentId: 1, aliases: ["A급동", "나동선"] },
@@ -51,6 +53,12 @@ export const updateItem = async (itemId, body) => {
   if (index < 0) throw notFound(itemId);
   items = items.map((item, i) => (i === index ? toStoredItem(body, item.id) : item));
   return { message: "품목이 수정되었습니다." };
+};
+
+export const updateItemSortOrder = async ({ itemIds }) => {
+  await delay();
+  items = applySiblingOrder(items, itemIds);
+  return { message: "품목 정렬순서가 변경되었습니다." };
 };
 
 export const deleteItem = async (itemId) => {
