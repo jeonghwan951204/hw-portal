@@ -1,11 +1,10 @@
-import { Badge, MappedName } from "../../transaction/components/Badges";
+import { MappedName } from "../../transaction/components/Badges";
 import {
   addDays,
   formatDate,
   formatKg,
   formatKgOrBlank,
   formatKoreanDate,
-  movementTypeLabelOf,
   ownerCompanyLabelOf,
 } from "../constants";
 
@@ -94,56 +93,15 @@ function TradeSection({ label, section, columns }) {
   );
 }
 
-function movementTarget(movement) {
-  if (movement.movementType === "TRANSFER") return `${movement.fromItemName ?? "-"} → ${movement.toItemName ?? "-"}`;
-  return (movement.movementType === "ADJUSTMENT_INCREASE" ? movement.toItemName : movement.fromItemName) ?? "-";
-}
-
-function AdjustmentSection({ section, columns, truncated }) {
-  const columnCount = columns.length + 3;
-  if (section.rows.length === 0) {
-    return (
-      <tr>
-        <th className={`${CELL} bg-slate-50 font-bold text-slate-600`}>조정</th>
-        <td colSpan={columnCount} className={`${CELL} text-center text-xs text-slate-400`}>보정 없음</td>
-      </tr>
-    );
-  }
+// 조정은 보정 건수와 관계없이 한 행 — 그날 보정분을 품목 열별로 합산해 보여 준다(내역은 보정 내역 탭에서 확인)
+function AdjustmentRow({ section, columns, truncated }) {
   return (
-    <>
-      {section.rows.map((row, index) => (
-        <tr key={row.key} className="hover:bg-slate-50/60">
-          {index === 0 && (
-            <th rowSpan={section.rows.length + 1} className={`${CELL} bg-slate-50 font-bold text-slate-600`}>
-              조정
-            </th>
-          )}
-          <td className={`${CELL} max-w-[14rem]`}>
-            <div className="flex flex-col">
-              <span className="text-[11px] font-bold text-slate-500">
-                {movementTypeLabelOf(row.movement.movementType)} #{row.movement.movementId}
-              </span>
-              <span className="truncate" title={movementTarget(row.movement)}>{movementTarget(row.movement)}</span>
-            </div>
-          </td>
-          <ValueCells row={row} columns={columns} />
-          <td className={`${CELL} text-[11px] text-slate-500`}>
-            <div className="flex flex-wrap items-center gap-1">
-              {row.movement.canceledByMovementId != null && <Badge tone="slate">취소됨</Badge>}
-              {row.movement.reversalOfId != null && <Badge tone="red">취소 #{row.movement.reversalOfId}</Badge>}
-              <span>{row.movement.reason}</span>
-            </div>
-          </td>
-        </tr>
-      ))}
-      <tr className="bg-slate-50 font-semibold">
-        <td className={`${CELL} text-center text-slate-600`}>
-          계{truncated && <span className="ml-1 text-[10px] font-normal text-amber-600">(일부만 표시)</span>}
-        </td>
-        <ValueCells row={section.total} columns={columns} />
-        <td className={CELL} />
-      </tr>
-    </>
+    <tr className="hover:bg-slate-50/60">
+      <th className={`${CELL} bg-slate-50 font-bold text-slate-600`}>조정</th>
+      <td className={CELL} />
+      <ValueCells row={section.total} columns={columns} />
+      <td className={`${CELL} text-[11px] text-amber-600`}>{truncated && "보정 내역이 많아 일부만 합산했습니다."}</td>
+    </tr>
   );
 }
 
@@ -193,7 +151,7 @@ export default function StockSheet({ sheet, asOfDate, ownerCompany, movementsTru
               </tr>
               <TradeSection label="매입" section={sheet.purchase} columns={columns} />
               <TradeSection label="매출" section={sheet.sale} columns={columns} />
-              <AdjustmentSection section={sheet.adjustment} columns={columns} truncated={movementsTruncated} />
+              <AdjustmentRow section={sheet.adjustment} columns={columns} truncated={movementsTruncated} />
               <tr className="bg-blue-50/70 font-bold">
                 <th className={`${CELL} text-blue-700`}>금일 재고</th>
                 <td className={`${CELL} text-xs font-semibold text-blue-600`}>{formatDate(asOfDate)} 기준</td>
