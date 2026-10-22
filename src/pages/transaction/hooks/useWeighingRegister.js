@@ -183,6 +183,12 @@ export function useWeighingRegister() {
   // 행에서 거래처 또는 품목을 고르면 바로 저장
   const mapInline = async (record, field, option) => {
     if (!option?.id) return;
+    // 지금과 같은 대상을 다시 고르면 저장 없이 편집만 닫는다
+    const currentId = field === "company" ? record.companyId : record.itemId;
+    if (currentId != null && String(currentId) === String(option.id)) {
+      setInlineEdit(null);
+      return;
+    }
     setMappingSavingId(record.weighingRecordId);
     try {
       const result = await mapWeighingRecord(record.weighingRecordId, field === "company" ? { companyId: Number(option.id) } : { itemId: Number(option.id) });

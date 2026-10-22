@@ -25,39 +25,13 @@ function OwnerDirectionBadge({ record }) {
   );
 }
 
-// 미매핑 칸의 '매핑' 시작 버튼 — 매칭 상태가 AMBIGUOUS 면 '확인 필요'
-function UnmappedBadgeButton({ status, disabled, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-      disabled={disabled}
-      title="눌러서 바로 매핑"
-      className="shrink-0 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 hover:bg-amber-100 disabled:opacity-40"
-    >
-      {status === "AMBIGUOUS" ? "확인 필요" : "미매핑"} · 매핑
-    </button>
-  );
-}
-
-// 행 선택 토글과 겹치지 않도록 매핑 입력 영역 클릭은 행으로 전파하지 않는다
+// 행 선택 토글과 겹치지 않도록 매핑 영역 클릭은 행으로 전파하지 않는다
 const stop = (event) => event.stopPropagation();
 
-// 매핑 칸 공통 — 매핑돼 있으면 내부 정식명(원본명이 다르면 작게 함께), 아니면 원본명 + 매핑 버튼 또는 입력란
+// 매핑 칸 공통 — 이름을 누르면 매핑 여부와 상관없이 그 자리에서 바로 매핑(재매핑)한다
+//  - 매핑됨: 내부 정식명(원본명이 다르면 아래에 작게)
+//  - 미매핑: 원본명(없으면 미입력 배지) + '미매핑'/'확인 필요' 배지
 function MappingCell({ mappedName, sourceName, emptyLabel, status, mapped, editing, saving, editor, onStart, onCancel }) {
-  if (mapped) {
-    return (
-      <span className="block min-w-0">
-        <span className="block truncate" title={mappedName}>{mappedName}</span>
-        {sourceName && sourceName !== mappedName && (
-          <span className="block truncate text-[10px] font-normal text-slate-400" title={sourceName}>원본: {sourceName}</span>
-        )}
-      </span>
-    );
-  }
   if (editing) {
     return (
       <span className="flex min-w-0 items-center gap-1" onClick={stop}>
@@ -68,11 +42,36 @@ function MappingCell({ mappedName, sourceName, emptyLabel, status, mapped, editi
       </span>
     );
   }
+
   return (
-    <span className="flex min-w-0 flex-wrap items-center gap-1">
-      {sourceName ? <span className="truncate" title={sourceName}>{sourceName}</span> : <Badge tone="amber">{emptyLabel}</Badge>}
-      <UnmappedBadgeButton status={status} disabled={saving} onClick={onStart} />
-    </span>
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onStart();
+      }}
+      disabled={saving}
+      title="눌러서 매핑"
+      className="block w-full min-w-0 rounded px-1 text-left hover:bg-blue-50 disabled:opacity-40"
+    >
+      {mapped ? (
+        <>
+          <span className="block truncate underline decoration-dotted underline-offset-2" title={mappedName}>{mappedName}</span>
+          {sourceName && sourceName !== mappedName && (
+            <span className="block truncate text-[10px] font-normal text-slate-400" title={sourceName}>원본: {sourceName}</span>
+          )}
+        </>
+      ) : (
+        <span className="flex min-w-0 flex-wrap items-center gap-1">
+          {sourceName ? (
+            <span className="truncate underline decoration-dotted underline-offset-2" title={sourceName}>{sourceName}</span>
+          ) : (
+            <Badge tone="amber">{emptyLabel}</Badge>
+          )}
+          <Badge tone="amber">{status === "AMBIGUOUS" ? "확인 필요" : "미매핑"}</Badge>
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -89,8 +88,8 @@ function CounterpartyCell({ record, list }) {
       saving={list.mappingSavingId === record.weighingRecordId}
       editor={
         <CompanySelect
-          value=""
-          selectedName=""
+          value={record.companyId ?? ""}
+          selectedName={record.companyName ?? ""}
           onSelect={(company) => list.onMapCompany(record, company)}
           className={cellInputClass}
           {...list.mappingCompanySearch}
@@ -115,7 +114,7 @@ function ItemCell({ record, list }) {
       saving={list.mappingSavingId === record.weighingRecordId}
       editor={
         <select
-          value=""
+          value={record.itemId ?? ""}
           autoFocus
           disabled={list.mappingSavingId === record.weighingRecordId}
           onChange={(event) => list.onMapItem(record, event.target.value)}
@@ -202,11 +201,11 @@ export default function UnassignedRecordList(list) {
               <th className="w-[10%] px-2 py-2 text-left font-semibold">자사-입출고</th>
               <th className="w-[18%] px-2 py-2 text-left font-semibold">거래처</th>
               <th className="w-[11%] px-2 py-2 text-left font-semibold">차량번호</th>
-              <th className="w-[12%] px-2 py-2 text-left font-semibold">품목</th>
-              <th className="w-[10%] px-2 py-2 text-right font-semibold">실중량</th>
+              <th className="w-[9%] px-2 py-2 text-left font-semibold">품목</th>
+              <th className="w-[8%] px-2 py-2 text-right font-semibold">실중량</th>
               <th className="w-[9%] px-2 py-2 text-right font-semibold">인수량</th>
-              <th className="w-[7%] px-2 py-2 text-right font-semibold">단가</th>
-              <th className="w-[8%] px-2 py-2 text-right font-semibold">금액</th>
+              <th className="w-[10%] px-2 py-2 text-right font-semibold">단가</th>
+              <th className="w-[10%] px-2 py-2 text-right font-semibold">금액</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
