@@ -11,7 +11,7 @@ import {
   parseQuantity,
   REASON_MAX_LENGTH,
 } from "../constants";
-import { orderItemTree, filterCollapsedRows, parentIdsOf } from "../utils/itemTree";
+import { orderItemTree, filterCollapsedRows, parentIdsOf, sortStockItemsByItemOrder } from "../utils/itemTree";
 import { buildParentMap, buildStockSheet } from "../utils/stockSheet";
 import { useMovementForm } from "./useMovementForm";
 
@@ -77,13 +77,17 @@ export function useInventoryStock() {
 
   const reload = () => setReloadKey((current) => current + 1);
 
+  // 재고 현황표 열과 품목별 재고 행은 품목 API(/api/items) 응답 순서를 따른다
+  const stockItems = useMemo(() => sortStockItemsByItemOrder(data?.stock?.items ?? [], items), [data, items]);
   const parentMap = useMemo(() => buildParentMap(items, data?.stock?.items), [data, items]);
   const sheet = useMemo(
-    () => (data ? buildStockSheet({ ...data, parentMap, selectedItemIds }) : null),
-    [data, parentMap, selectedItemIds]
+    () =>
+      data
+        ? buildStockSheet({ ...data, stock: { ...data.stock, items: stockItems }, parentMap, selectedItemIds })
+        : null,
+    [data, parentMap, selectedItemIds, stockItems]
   );
 
-  const stockItems = useMemo(() => data?.stock?.items ?? [], [data]);
   const ownStockMap = useMemo(
     () => new Map(stockItems.map((item) => [String(item.itemId), Number(item.ownQuantityKg ?? 0)])),
     [stockItems]

@@ -36,6 +36,25 @@ export const flattenItemTree = (items) => {
   return rows;
 };
 
+// 형제 품목 id 목록에서 dragId 를 targetId 의 앞(before)·뒤(after)로 옮긴 새 순서. id 는 문자열로 다룬다.
+export const moveSiblingId = (ids, dragId, targetId, position) => {
+  const rest = ids.filter((id) => id !== dragId);
+  const index = rest.indexOf(targetId);
+  if (index < 0) return ids;
+  rest.splice(position === "before" ? index : index + 1, 0, dragId);
+  return rest;
+};
+
+// 형제 품목들이 품목 배열에서 차지하던 자리를 새 순서대로 다시 채운다. 다른 품목의 위치는 그대로 둔다.
+// flattenItemTree 는 형제끼리 배열 순서를 따르므로 이것만으로 화면 순서가 바뀐다.
+export const applySiblingOrder = (items, orderedIds) => {
+  const order = orderedIds.map(String);
+  const targets = new Set(order);
+  const byId = new Map(items.map((item) => [String(item.id), item]));
+  let cursor = 0;
+  return items.map((item) => (targets.has(String(item.id)) ? byId.get(order[cursor++]) : item));
+};
+
 // 화면에 보이는 행(트리 순서)에 트리 연결선 정보를 붙인다. 접기·검색으로 숨긴 행은 없는 것으로 계산한다.
 // - isLast: 같은 상위 품목 아래에서 마지막으로 보이는 행인지 (연결선을 └ 로 끝낼지)
 // - rails[k]: k+1단계 상위 품목 아래로 이어지는 행이 더 있어 k번째 칸에 세로선을 그을지

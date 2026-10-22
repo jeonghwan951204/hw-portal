@@ -76,6 +76,38 @@ function NodeMarker({ row, collapsed, filtered, onToggleCollapse }) {
   );
 }
 
+// 순서 변경용 손잡이. 행 전체가 아니라 손잡이만 끌 수 있게 해 버튼 클릭·글자 선택과 겹치지 않게 하고,
+// 끄는 동안 보이는 이미지는 행 전체로 지정한다.
+function DragHandle({ item, sortable, onDragStart, onDragEnd }) {
+  return (
+    <span
+      draggable={sortable}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", String(item.id));
+        const rowElement = event.currentTarget.closest("li");
+        if (rowElement) event.dataTransfer.setDragImage(rowElement, 16, rowElement.offsetHeight / 2);
+        onDragStart(item);
+      }}
+      onDragEnd={onDragEnd}
+      title={sortable ? "끌어서 순서 변경" : "검색 중에는 순서를 바꿀 수 없습니다."}
+      aria-hidden="true"
+      className={`flex w-5 shrink-0 items-center justify-center self-stretch ${
+        sortable ? "cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing" : "cursor-not-allowed text-slate-200"
+      }`}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="9" cy="6" r="1.5" />
+        <circle cx="15" cy="6" r="1.5" />
+        <circle cx="9" cy="12" r="1.5" />
+        <circle cx="15" cy="12" r="1.5" />
+        <circle cx="9" cy="18" r="1.5" />
+        <circle cx="15" cy="18" r="1.5" />
+      </svg>
+    </span>
+  );
+}
+
 function RowActions({ item, onAddChild, onEdit, onDeleteRequest }) {
   return (
     <div className="flex shrink-0 items-center gap-1.5">
@@ -104,19 +136,53 @@ function RowActions({ item, onAddChild, onEdit, onDeleteRequest }) {
   );
 }
 
-function ItemRow({ row, isFirst, collapsed, filtered, onToggleCollapse, actionProps }) {
+function ItemRow({
+  row,
+  isFirst,
+  collapsed,
+  filtered,
+  onToggleCollapse,
+  actionProps,
+  dragProps,
+  dragging,
+  dropEdge,
+  dropDepth,
+}) {
   const { item, depth, childCount, matched } = row;
   const isRoot = depth === 0;
+  const { sortable, onDragStart, onDragEnd, onDragOverRow, onDrop } = dragProps;
 
   return (
     // 최상위 품목마다 구분선과 배경을 넣어 계층 묶음 단위로 보이게 하고, 하위 행 사이에는 선을 두지 않아
     // 트리 연결선이 끊기지 않게 한다.
     <li
-      className={`flex items-stretch gap-3 px-4 transition-colors hover:bg-blue-50/40 ${
+      onDragOver={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
+        if (!onDragOverRow(row, position)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        onDrop();
+      }}
+      className={`relative flex items-stretch gap-3 px-4 transition-colors hover:bg-blue-50/40 ${
         isRoot ? `bg-slate-50 ${isFirst ? "" : "border-t border-slate-200"}` : ""
-      }`}
+      } ${dragging ? "opacity-40" : ""}`}
     >
+      {dropEdge && (
+        // 놓을 위치 표시선. 옮길 품목과 같은 단계의 들여쓰기에서 시작한다.
+        <span
+          className={`pointer-events-none absolute right-4 z-10 h-0.5 rounded-full bg-blue-500 ${
+            dropEdge === "top" ? "-top-px" : "-bottom-px"
+          }`}
+          style={{ left: `${2.25 + dropDepth * 1.25}rem` }}
+          aria-hidden="true"
+        />
+      )}
       <div className="flex min-w-0 flex-1 items-stretch">
+        <DragHandle item={item} sortable={sortable} onDragStart={onDragStart} onDragEnd={onDragEnd} />
         <TreeLines depth={depth} rails={row.rails} isLast={row.isLast} />
         <NodeMarker
           row={row}
@@ -163,6 +229,15 @@ export default function ItemList({
   onAddChild,
   onEdit,
   onDeleteRequest,
+  sortable,
+  dragItemId,
+  dropIndicator,
+  orderSaving,
+  orderError,
+  onDragStart,
+  onDragOverRow,
+  onDrop,
+  onDragEnd,
 }) {
   if (loading) {
     return (
@@ -188,6 +263,7 @@ export default function ItemList({
   }
 
   const actionProps = { onAddChild, onEdit, onDeleteRequest };
+  const dragProps = { sortable, onDragStart, onDragEnd, onDragOverRow, onDrop };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -197,6 +273,17 @@ export default function ItemList({
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
             {filtered ? `${matchedCount} / ${totalCount}개` : `${totalCount}개`}
           </span>
+          {orderSaving ? (
+            <span className="text-xs text-slate-400">순서 저장 중…</span>
+          ) : (
+            totalCount > 1 && (
+              <span className="hidden text-xs text-slate-400 sm:inline">
+                {filtered
+                  ? "검색 중에는 순서를 바꿀 수 없습니다."
+                  : "손잡이를 끌어 같은 단계 안에서 순서를 바꿀 수 있습니다."}
+              </span>
+            )
+          )}
         </div>
         {!filtered && totalCount > 0 && (
           <div className="flex gap-1.5">
@@ -218,6 +305,10 @@ export default function ItemList({
         )}
       </div>
 
+      {orderError && (
+        <p className="border-b border-red-100 bg-red-50 px-5 py-2.5 text-xs text-red-600">{orderError}</p>
+      )}
+
       {rows.length === 0 ? (
         <p className="px-4 py-12 text-center text-sm text-slate-400">
           {totalCount === 0 ? "등록된 품목이 없습니다." : "검색 조건에 맞는 품목이 없습니다."}
@@ -233,6 +324,13 @@ export default function ItemList({
               filtered={filtered}
               onToggleCollapse={onToggleCollapse}
               actionProps={actionProps}
+              dragProps={dragProps}
+              dragging={
+                dragItemId != null &&
+                (String(row.item.id) === dragItemId || row.ancestorIds.includes(dragItemId))
+              }
+              dropEdge={dropIndicator?.rowId === String(row.item.id) ? dropIndicator.edge : null}
+              dropDepth={dropIndicator?.depth ?? 0}
             />
           ))}
         </ul>

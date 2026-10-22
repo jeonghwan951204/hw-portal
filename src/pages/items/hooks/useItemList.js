@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createItem, deleteItem, fetchItems, updateItem } from "../api/itemApi";
-import { flattenItemTree, matchesItemKeyword, withTreeLines } from "../constants";
+import {
+  createItem,
+  deleteItem,
+  fetchItems,
+  updateItem,
+  updateItemSortOrder,
+} from "../api/itemApi";
+import {
+  applySiblingOrder,
+  flattenItemTree,
+  matchesItemKeyword,
+  moveSiblingId,
+  withTreeLines,
+} from "../constants";
 
 let aliasFieldId = 0;
 
@@ -13,6 +25,9 @@ const createEmptyItemForm = (parent = null) => ({
   parentId: parent ? String(parent.id) : "",
   aliases: [createAliasField()],
 });
+
+// 트리 행의 상위 품목 id(문자열). 최상위면 null. flattenItemTree 가 정한 계층을 그대로 따른다.
+const parentKeyOf = (row) => row.ancestorIds[row.ancestorIds.length - 1] ?? null;
 
 // 수정 모달의 초기 폼. 별칭이 없어도 입력칸 하나는 보이게 한다.
 const createItemForm = (item) => ({
@@ -37,6 +52,13 @@ export function useItemList() {
   const [form, setForm] = useState(createEmptyItemForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // 드래그로 순서 바꾸기. dropTarget 은 { id, position: "before" | "after" } 로, 끌고 있는 품목을
+  // 같은 상위 품목 아래 형제 품목(id)의 앞·뒤 어디에 놓을지 나타낸다.
+  const [dragItemId, setDragItemId] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
+  const [orderSaving, setOrderSaving] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -87,6 +109,91 @@ export function useItemList() {
   }, [collapsedIds, filtered, keyword, treeRows]);
 
   const rows = useMemo(() => withTreeLines(visibleRows), [visibleRows]);
+
+  // 검색 중에는 숨은 형제 품목이 있어 순서를 정확히 보여줄 수 없으므로 드래그를 막는다.
+  const sortable = !filtered && !orderSaving;
+  const dragRow = useMemo(
+    () => (dragItemId ? treeRows.find((row) => String(row.item.id) === dragItemId) ?? null : null),
+    [dragItemId, treeRows]
+  );
+  const dragSiblingIds = useMemo(() => {
+    if (!dragRow) return [];
+    const parentKey = parentKeyOf(dragRow);
+    return treeRows
+      .filter((row) => row.depth === dragRow.depth && parentKeyOf(row) === parentKey)
+      .map((row) => String(row.item.id));
+  }, [dragRow, treeRows]);
+
+  // 놓았을 때의 형제 순서. 놓을 곳이 없거나 순서가 그대로면 null.
+  const nextSiblingIds = useMemo(() => {
+    if (!dragItemId || !dropTarget) return null;
+    const next = moveSiblingId(dragSiblingIds, dragItemId, dropTarget.id, dropTarget.position);
+    return next.join() === dragSiblingIds.join() ? null : next;
+  }, [dragItemId, dragSiblingIds, dropTarget]);
+
+  // 놓을 위치 표시선. 형제 품목 뒤에 놓을 때는 그 품목의 보이는 하위 품목들까지 지난 마지막 행 아래에 긋는다.
+  const dropIndicator = useMemo(() => {
+    if (!nextSiblingIds || !dragRow) return null;
+    const { id, position } = dropTarget;
+    if (position === "before") return { rowId: id, edge: "top", depth: dragRow.depth };
+    let index = rows.findIndex((row) => String(row.item.id) === id);
+    while (rows[index + 1]?.ancestorIds.includes(id)) index += 1;
+    return { rowId: String(rows[index].item.id), edge: "bottom", depth: dragRow.depth };
+  }, [dragRow, dropTarget, nextSiblingIds, rows]);
+
+  // 마우스가 올라간 행과 위·아래 절반 위치로 놓을 곳을 정한다. 놓을 수 있으면 true.
+  // - 형제 품목 행: 그 앞·뒤
+  // - 형제 품목의 하위 품목 행: 그 형제 품목 뒤 (하위 품목 사이로는 들어갈 수 없다)
+  // - 끌고 있는 품목 자신·하위 품목, 다른 상위 품목 아래 행: 놓을 수 없음
+  const dragOverRow = (row, position) => {
+    if (!dragRow) return false;
+    const rowId = String(row.item.id);
+    let target = null;
+    if (rowId !== dragItemId && !row.ancestorIds.includes(dragItemId)) {
+      if (row.depth === dragRow.depth && parentKeyOf(row) === parentKeyOf(dragRow)) {
+        target = { id: rowId, position };
+      } else if (
+        row.depth > dragRow.depth &&
+        row.ancestorIds.slice(0, dragRow.depth).join() === dragRow.ancestorIds.join()
+      ) {
+        target = { id: row.ancestorIds[dragRow.depth], position: "after" };
+      }
+    }
+    setDropTarget((current) =>
+      current?.id === target?.id && current?.position === target?.position ? current : target
+    );
+    return target !== null;
+  };
+
+  const endDrag = () => {
+    setDragItemId(null);
+    setDropTarget(null);
+  };
+
+  // 화면 순서를 먼저 바꾸고 저장한다. 저장에 실패하면 이전 순서로 되돌린다.
+  const dropItem = async () => {
+    const orderedIds = nextSiblingIds;
+    const parentKey = dragRow ? parentKeyOf(dragRow) : null;
+    endDrag();
+    if (!orderedIds || orderSaving) return;
+
+    const byId = new Map(sourceItems.map((item) => [String(item.id), item]));
+    const previousItems = sourceItems;
+    setSourceItems(applySiblingOrder(sourceItems, orderedIds));
+    setOrderSaving(true);
+    setOrderError("");
+    try {
+      await updateItemSortOrder(
+        parentKey == null ? null : byId.get(parentKey).id,
+        orderedIds.map((id) => byId.get(id).id)
+      );
+    } catch (saveError) {
+      setSourceItems(previousItems);
+      setOrderError(saveError.message || "품목 순서를 저장하지 못했습니다.");
+    } finally {
+      setOrderSaving(false);
+    }
+  };
 
   // 상위 품목 선택지. 수정 중인 품목 자신과 그 하위 품목은 상위로 고를 수 없다.
   const parentOptions = useMemo(() => {
@@ -235,6 +342,18 @@ export function useItemList() {
         setDeleteError("");
         setDeleteTarget(item);
       },
+      sortable,
+      dragItemId,
+      dropIndicator,
+      orderSaving,
+      orderError,
+      onDragStart: (item) => {
+        setOrderError("");
+        setDragItemId(String(item.id));
+      },
+      onDragOverRow: dragOverRow,
+      onDrop: dropItem,
+      onDragEnd: endDrag,
     },
     formModal: {
       open: formOpen,
