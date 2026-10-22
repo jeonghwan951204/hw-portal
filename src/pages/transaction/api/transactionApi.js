@@ -47,6 +47,7 @@ export const fetchTransactions = async ({
   tradeDirection = "",
   paymentStatus = "",
   hasWarning = "",
+  sortOrder = "",
   page = 1,
   size = 20,
 }) => {
@@ -59,6 +60,8 @@ export const fetchTransactions = async ({
   if (tradeDirection) params.set("tradeDirection", tradeDirection);
   if (paymentStatus) params.set("paymentStatus", paymentStatus);
   if (hasWarning) params.set("hasWarning", hasWarning);
+  // sortOrder: OLDEST(서버 기본, 거래일 오래된 순) | LATEST(최신순) — 같은 거래일은 ID 순
+  if (sortOrder) params.set("sortOrder", sortOrder);
   return asJson(await apiFetch(`${BASE}?${params}`));
 };
 

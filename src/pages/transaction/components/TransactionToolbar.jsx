@@ -27,11 +27,13 @@ export default function TransactionToolbar({
   tradeDirection,
   paymentStatus,
   hasWarning,
+  sortOrder,
   companySearch,
   ownerCompanyOptions,
   tradeDirectionOptions,
   paymentStatusOptions,
   warningOptions,
+  sortOrderOptions,
   dateLimits,
   hasFilters,
   onDateRangeChange,
@@ -77,11 +79,12 @@ export default function TransactionToolbar({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end">
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] lg:items-end">
         <SelectField label="자사" value={ownerCompany} options={ownerCompanyOptions} onChange={(value) => onFilterChange("ownerCompany", value)} />
         <SelectField label="거래구분" value={tradeDirection} options={tradeDirectionOptions} onChange={(value) => onFilterChange("tradeDirection", value)} />
         <SelectField label="결제상태" value={paymentStatus} options={paymentStatusOptions} onChange={(value) => onFilterChange("paymentStatus", value)} />
         <SelectField label="경고" value={hasWarning} options={warningOptions} onChange={(value) => onFilterChange("hasWarning", value)} />
+        <SelectField label="정렬" value={sortOrder} options={sortOrderOptions} onChange={(value) => onFilterChange("sortOrder", value)} />
         <button
           type="button"
           onClick={onReset}

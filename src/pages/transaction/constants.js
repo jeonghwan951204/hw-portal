@@ -47,6 +47,11 @@ const withAll = (labels) => [
 // ─── 검색 필터 옵션 ───────────────────────────────────────────────────────
 export const TRADE_DIRECTION_OPTIONS = withAll(TRADE_DIRECTION_LABELS);
 export const PAYMENT_STATUS_OPTIONS = withAll(PAYMENT_STATUS_LABELS);
+// 거래 목록 정렬 — 서버 기본값은 OLDEST
+export const SORT_ORDER_OPTIONS = [
+  { value: "OLDEST", label: "오래된 순" },
+  { value: "LATEST", label: "최신순" },
+];
 // 미배정 계근 검색은 입고·출고만 지원한다(UNKNOWN 검색 불가)
 export const RECORD_TRADE_DIRECTION_OPTIONS = [
   { value: "", label: "전체" },
