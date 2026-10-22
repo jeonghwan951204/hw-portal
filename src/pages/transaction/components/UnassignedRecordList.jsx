@@ -1,7 +1,5 @@
 import {
   formatDate,
-  formatKgPrice,
-  formatMoney,
   formatWeight,
   labelOf,
   ownerCompanyLabelOf,
@@ -199,19 +197,20 @@ export default function UnassignedRecordList(list) {
               </th>
               <th className="w-[11%] px-2 py-2 text-left font-semibold">계량일자</th>
               <th className="w-[10%] px-2 py-2 text-left font-semibold">자사-입출고</th>
-              <th className="w-[18%] px-2 py-2 text-left font-semibold">거래처</th>
-              <th className="w-[11%] px-2 py-2 text-left font-semibold">차량번호</th>
+              <th className="w-[5%] px-2 py-2 text-center font-semibold" title="일자별 계량 순번">순번</th>
+              <th className="w-[16%] px-2 py-2 text-left font-semibold">거래처</th>
+              <th className="w-[10%] px-2 py-2 text-left font-semibold">차량번호</th>
               <th className="w-[9%] px-2 py-2 text-left font-semibold">품목</th>
+              <th className="w-[9%] px-2 py-2 text-right font-semibold">1차중량</th>
+              <th className="w-[9%] px-2 py-2 text-right font-semibold">2차중량</th>
               <th className="w-[8%] px-2 py-2 text-right font-semibold">실중량</th>
               <th className="w-[9%] px-2 py-2 text-right font-semibold">인수량</th>
-              <th className="w-[10%] px-2 py-2 text-right font-semibold">단가</th>
-              <th className="w-[10%] px-2 py-2 text-right font-semibold">금액</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {records.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
               </tr>
             )}
             {records.map((record) => {
@@ -237,6 +236,7 @@ export default function UnassignedRecordList(list) {
                     <span className="ml-1 text-[11px] text-slate-400">{timeOf(record)}</span>
                   </td>
                   <td className="px-2 py-2"><OwnerDirectionBadge record={record} /></td>
+                  <td className="px-2 py-2 text-center font-mono text-slate-500">{record.dailySequence ?? "-"}</td>
                   <td className="px-2 py-2 font-semibold text-slate-800">
                     <CounterpartyCell record={record} list={list} />
                   </td>
@@ -246,12 +246,10 @@ export default function UnassignedRecordList(list) {
                   <td className="px-2 py-2 text-slate-600">
                     <ItemCell record={record} list={list} />
                   </td>
+                  <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-600">{formatWeight(record.firstWeightKg)}</td>
+                  <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-600">{formatWeight(record.secondWeightKg)}</td>
                   <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatWeight(record.netWeightKg)}</td>
                   <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatWeight(record.acceptedWeightKg)}</td>
-                  <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-600">
-                    {record.unitPrice == null ? "-" : formatKgPrice(record.unitPrice, record.currency)}
-                  </td>
-                  <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatMoney(record.amount, record.currency)}</td>
                 </tr>
               );
             })}
@@ -283,7 +281,10 @@ export default function UnassignedRecordList(list) {
                     <CounterpartyCell record={record} list={list} />
                   </div>
                 </div>
-                <p className="shrink-0 text-xs text-slate-400">{formatDate(record.weighingDate)} {timeOf(record)}</p>
+                <p className="shrink-0 text-xs text-slate-400">
+                  {record.dailySequence != null && <span className="mr-1 font-mono">#{record.dailySequence}</span>}
+                  {formatDate(record.weighingDate)} {timeOf(record)}
+                </p>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                 <OwnerDirectionBadge record={record} />
@@ -291,6 +292,8 @@ export default function UnassignedRecordList(list) {
                 <span className="min-w-0 flex-1 text-slate-500"><ItemCell record={record} list={list} /></span>
               </div>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">1차중량</dt><dd className="font-medium text-slate-600">{formatWeight(record.firstWeightKg)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">2차중량</dt><dd className="font-medium text-slate-600">{formatWeight(record.secondWeightKg)}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">실중량</dt><dd className="font-medium text-slate-700">{formatWeight(record.netWeightKg)}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">인수량</dt><dd className="font-medium text-slate-700">{formatWeight(record.acceptedWeightKg)}</dd></div>
               </dl>
