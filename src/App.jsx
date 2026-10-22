@@ -5,7 +5,7 @@ import SignupPage from "./pages/SignupPage";
 import PriceManagement from "./pages/priceManagement";
 import LmePage from "./pages/price";
 import NoticePage from "./pages/NoticePage";
-import InventoryPage from "./pages/InventoryPage";
+import InventoryPage from "./pages/inventory";
 import WeighingPage from "./pages/weighing";
 import CompaniesPage from "./pages/companies";
 import CompanyFormPage from "./pages/companies/form";
