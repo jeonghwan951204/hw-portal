@@ -19,7 +19,6 @@ function DifferenceCell({ actual, book }) {
 // 품목 트리 재고 — 상위 품목 접기/펼치기, 행별 이동·증감, 일일 재고 확인(실제 수량 입력)
 export default function ItemStockTable({
   rows,
-  totalQuantityKg,
   parentIds,
   collapsedIds,
   countMode,
@@ -161,13 +160,6 @@ export default function ItemStockTable({
                 );
               })}
             </tbody>
-            <tfoot className="border-t border-slate-200 bg-slate-50 font-bold">
-              <tr>
-                <td className="px-4 py-2 text-slate-600">합계</td>
-                <td className={`px-4 py-2 text-right tabular-nums ${toneOf(totalQuantityKg)}`}>{formatKg(totalQuantityKg)}</td>
-                <td colSpan={countMode ? 3 : 2} />
-              </tr>
-            </tfoot>
           </table>
         </div>
       )}
