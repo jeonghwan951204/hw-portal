@@ -182,7 +182,6 @@ export function useInventoryStock() {
     },
     itemTable: {
       rows: filterCollapsedRows(stockItems, collapsedIds),
-      totalQuantityKg: data?.stock?.totalQuantityKg ?? 0,
       parentIds,
       collapsedIds,
       countMode,
