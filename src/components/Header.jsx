@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   {
     label: "운영관리",
     children: [
-      { label: "재고관리", to: "/inventory" },
       { label: "거래처관리", to: "/companies" },
       { label: "품목관리", to: "/items" },
     ],
@@ -25,6 +24,7 @@ const NAV_ITEMS = [
     children: [
       { label: "계근조회", to: "/weighing" },
       { label: "거래관리", to: "/transactions" },
+      { label: "재고관리", to: "/inventory" },
     ],
   },
 ];

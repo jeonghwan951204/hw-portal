@@ -18,6 +18,7 @@ import {
 } from "../constants";
 import { useTransactionDetailModal } from "./useTransactionDetailModal";
 import { useItemOptions } from "./useItemOptions";
+import { useRememberedState } from "./useRememberedState";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const MAX_SELECTION = 1000;
@@ -84,8 +85,9 @@ export function useWeighingRegister() {
   // 거래처 셀렉트 옵션 — /api/companies/options
   const companySearch = useCompanySearch();
   const [initialFilters] = useState(() => createInitialFilters(getLocalDateString()));
-  const [filters, setFilters] = useState(initialFilters);
-  const [page, setPage] = useState(1);
+  // 거래관리 화면 간 이동 시 검색 조건·페이지 유지
+  const [filters, setFilters] = useRememberedState("weighingRegister.filters", initialFilters);
+  const [page, setPage] = useRememberedState("weighingRegister.page", 1);
   const [records, setRecords] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);

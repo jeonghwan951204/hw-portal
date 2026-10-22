@@ -4,6 +4,7 @@ import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/val
 import { useToast } from "../../contract/hooks/useToast";
 import { useCompanySearch } from "../../contract/hooks/useCompanySearch";
 import { fetchTransactions, mergeTransactions } from "../api/transactionApi";
+import { useRememberedState } from "./useRememberedState";
 import { useTransactionDetailModal } from "./useTransactionDetailModal";
 import {
   getLocalDateString,
@@ -69,8 +70,9 @@ export function useTransactionList() {
   const { toast, showToast } = useToast();
   // 초기화 시에도 같은 기준일을 쓰도록 첫 렌더링 시점의 오늘 날짜를 고정한다
   const [initialFilters] = useState(() => createInitialFilters(getLocalDateString()));
-  const [filters, setFilters] = useState(initialFilters);
-  const [page, setPage] = useState(1);
+  // 거래관리 화면 간 이동 시 검색 조건·페이지 유지
+  const [filters, setFilters] = useRememberedState("transactionList.filters", initialFilters);
+  const [page, setPage] = useRememberedState("transactionList.page", 1);
   const [transactions, setTransactions] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
