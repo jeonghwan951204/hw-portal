@@ -5,6 +5,7 @@ import { useToast } from "../../contract/hooks/useToast";
 import {
   createTransaction,
   fetchUnassignedWeighingRecords,
+  mapWeighingRecord,
   STATE_CONFLICT_CODE,
   VERSION_CONFLICT_CODE,
 } from "../api/transactionApi";
@@ -16,7 +17,7 @@ import {
   UNASSIGNED_PAGE_SIZE,
 } from "../constants";
 import { useTransactionDetailModal } from "./useTransactionDetailModal";
-import { useWeighingMapping } from "./useWeighingMapping";
+import { useItemOptions } from "./useItemOptions";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const MAX_SELECTION = 1000;
@@ -32,6 +33,21 @@ const createInitialFilters = (today) => ({
 });
 
 const normalizeName = (value) => (value ?? "").trim().toLocaleLowerCase("ko-KR");
+
+// 거래처 표시명 — 매핑돼 있으면 내부 정식명, 아니면 원본명
+const counterpartyLabelOf = (record) => (record.companyId != null ? record.companyName : record.sourceCounterpartyName) ?? "";
+
+// 서버 등록 검증과 같은 거래처 불일치 판정 — 둘 다 매핑돼 있으면 companyId, 아니면 원본명으로 비교
+const hasCounterpartyMismatch = (records) => {
+  const [first] = records;
+  if (!first) return false;
+  if (new Set(records.map((record) => record.companyId).filter((id) => id != null)).size > 1) return true;
+  return records.some((record) =>
+    record.companyId != null && first.companyId != null
+      ? record.companyId !== first.companyId
+      : normalizeName(record.sourceCounterpartyName) !== normalizeName(first.sourceCounterpartyName)
+  );
+};
 
 // 등록 응답(거래 상세) → 연속 등록 결과 요약
 const toRegisteredSummary = (detail) => {
@@ -83,8 +99,11 @@ export function useWeighingRegister() {
   const [registered, setRegistered] = useState([]);
   const [detailId, setDetailId] = useState(null);
   const detailModal = useTransactionDetailModal(detailId);
-  // 미배정 계근 수동 매핑 — 응답에 매핑 결과가 없어 목록 갱신은 하지 않는다
-  const { openMapping, mappingModal } = useWeighingMapping(() => showToast("success", "매핑을 저장했습니다."));
+  // 행 안에서 바로 하는 수동 매핑 — 한 번에 한 칸만 편집한다 { id: weighingRecordId, field: "company" | "item" }
+  const [inlineEdit, setInlineEdit] = useState(null);
+  const [mappingSavingId, setMappingSavingId] = useState(null);
+  const mappingCompanySearch = useCompanySearch(inlineEdit?.field === "company");
+  const items = useItemOptions();
 
   useEffect(() => {
     let alive = true;
@@ -135,10 +154,9 @@ export function useWeighingRegister() {
 
   const selectedList = Object.values(selected);
   const selectionBlocker = getSelectionBlocker(selectedList);
-  const counterpartyNames = [...new Set(selectedList.map((record) => (record.sourceCounterpartyName ?? "").trim()))];
-  // 원본 거래처명이 서로 다르면 확인을 받는다. 서버가 내부 매핑 기준으로 다르다고 판단한 경우(forceMismatch)도 포함
-  const counterpartyMismatch =
-    new Set(selectedList.map((record) => normalizeName(record.sourceCounterpartyName))).size > 1 || confirm.forceMismatch;
+  const counterpartyNames = [...new Set(selectedList.map((record) => counterpartyLabelOf(record).trim()))];
+  // 거래처가 서로 다르면 확인을 받는다. 서버가 다르다고 거절한 경우(forceMismatch)도 포함
+  const counterpartyMismatch = hasCounterpartyMismatch(selectedList) || confirm.forceMismatch;
   const accepted = sumWithMissing(selectedList.map((record) => record.acceptedWeightKg));
   const dates = selectedList.map((record) => record.weighingDate).filter(Boolean).sort();
 
@@ -153,6 +171,35 @@ export function useWeighingRegister() {
       });
       return next;
     });
+
+  // 매핑 결과를 목록과 선택 목록의 같은 계근에 반영한다(목록을 다시 받지 않아 편집 흐름이 끊기지 않는다)
+  const patchRecord = (weighingRecordId, patch) => {
+    setRecords((current) => current.map((record) => (record.weighingRecordId === weighingRecordId ? { ...record, ...patch } : record)));
+    setSelected((current) =>
+      current[weighingRecordId] ? { ...current, [weighingRecordId]: { ...current[weighingRecordId], ...patch } } : current
+    );
+  };
+
+  // 행에서 거래처 또는 품목을 고르면 바로 저장
+  const mapInline = async (record, field, option) => {
+    if (!option?.id) return;
+    setMappingSavingId(record.weighingRecordId);
+    try {
+      const result = await mapWeighingRecord(record.weighingRecordId, field === "company" ? { companyId: Number(option.id) } : { itemId: Number(option.id) });
+      patchRecord(
+        record.weighingRecordId,
+        field === "company"
+          ? { companyId: result.companyId, companyName: option.name, companyMatchStatus: "MATCHED", companyMappingType: result.companyMappingType }
+          : { itemId: result.itemId, itemName: option.name, itemMatchStatus: "MATCHED", itemMappingType: result.itemMappingType }
+      );
+      setInlineEdit(null);
+      showToast("success", field === "company" ? "거래처를 매핑했습니다." : "품목을 매핑했습니다.");
+    } catch (mapError) {
+      showToast("error", mapError.message || "매핑을 저장하지 못했습니다.");
+    } finally {
+      setMappingSavingId(null);
+    }
+  };
 
   const submit = async () => {
     if (selectionBlocker || (counterpartyMismatch && !confirm.allowMismatch)) return;
@@ -209,14 +256,15 @@ export function useWeighingRegister() {
       onToggleRecords: toggleRecords,
       // 현재 페이지에서 같은 차량번호의 계근을 한 번에 선택
       onToggleVehicle: (vehicleNumber) => toggleRecords(records.filter((record) => record.vehicleNumber === vehicleNumber)),
-      onMap: (record) =>
-        openMapping({
-          weighingRecordId: record.weighingRecordId,
-          sourceCounterpartyName: record.sourceCounterpartyName,
-          sourceItemName: record.sourceItemName,
-          itemId: null,
-          itemName: null,
-        }),
+      // 행 안 매핑
+      inlineEdit,
+      mappingSavingId,
+      mappingCompanySearch,
+      items,
+      onStartMapping: (record, field) => setInlineEdit({ id: record.weighingRecordId, field }),
+      onCancelMapping: () => setInlineEdit(null),
+      onMapCompany: (record, company) => mapInline(record, "company", company),
+      onMapItem: (record, itemId) => mapInline(record, "item", items.find((item) => String(item.id) === String(itemId))),
       onRetry: () => setRetryCount((current) => current + 1),
     },
     pagination: {
@@ -255,7 +303,6 @@ export function useWeighingRegister() {
       ...detailModal,
       onClose: () => setDetailId(null),
     },
-    mappingModal,
     toast,
   };
 }

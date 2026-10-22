@@ -70,7 +70,7 @@ export default function RegisterConfirmModal({
         <InfoItem label="총 중량 (인수량)" note={acceptedMissing ? "인수량 미입력 계근 제외" : null}>
           {formatWeight(acceptedWeightKg)}
         </InfoItem>
-        <InfoItem label="거래처(원본)">
+        <InfoItem label="거래처">
           <span className="whitespace-pre-line">{counterpartyNames.map((name) => name || "거래처 미입력").join("\n")}</span>
         </InfoItem>
       </dl>
