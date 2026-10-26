@@ -118,21 +118,22 @@ export default function TransactionList({
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
               <th className="w-[4%] px-2 py-2" aria-label="선택" />
-              <th className="w-[9%] px-2 py-2 text-left font-semibold">거래일</th>
-              <th className="w-[10%] px-2 py-2 text-left font-semibold">자사-거래구분</th>
-              <th className="w-[14%] px-2 py-2 text-left font-semibold">거래처</th>
-              <th className="w-[12%] px-2 py-2 text-left font-semibold">차량번호</th>
-              <th className="w-[12%] px-2 py-2 text-left font-semibold">품목</th>
-              <th className="w-[10%] px-2 py-2 text-right font-semibold">총 중량</th>
-              <th className="w-[12%] px-2 py-2 text-right font-semibold">금액</th>
-              <th className="w-[8%] px-2 py-2 text-center font-semibold">결제상태</th>
-              <th className="w-[9%] px-2 py-2 text-left font-semibold">경고</th>
+              <th className="w-[6%] px-2 py-2 text-center font-semibold">거래 ID</th>
+              <th className="w-[9%] px-2 py-2 text-center font-semibold">거래일</th>
+              <th className="w-[10%] px-2 py-2 text-center font-semibold">자사-거래구분</th>
+              <th className="w-[15%] px-2 py-2 text-center font-semibold">거래처</th>
+              <th className="w-[11%] px-2 py-2 text-center font-semibold">차량번호</th>
+              <th className="w-[7%] px-2 py-2 text-center font-semibold">품목</th>
+              <th className="w-[10%] px-2 py-2 text-center font-semibold">총 중량</th>
+              <th className="w-[12%] px-2 py-2 text-center font-semibold">금액</th>
+              <th className="w-[7%] px-2 py-2 text-center font-semibold">결제상태</th>
+              <th className="w-[9%] px-2 py-2 text-center font-semibold">경고</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">{emptyMessage}</td>
               </tr>
             )}
             {transactions.map((transaction) => (
@@ -152,6 +153,7 @@ export default function TransactionList({
                     className="h-4 w-4 accent-blue-600"
                   />
                 </td>
+                <td className="whitespace-nowrap px-2 py-2 text-center font-mono text-slate-500">{transaction.transactionId}</td>
                 <td className="whitespace-nowrap px-2 py-2 text-slate-600">{formatDate(transaction.transactionDate)}</td>
                 <td className="px-2 py-2"><OwnerDirectionBadge transaction={transaction} /></td>
                 <td className="px-2 py-2 font-semibold text-slate-800">{counterpartyOf(transaction)}</td>
@@ -190,7 +192,7 @@ export default function TransactionList({
                 />
                 <p className="min-w-0 text-sm font-bold text-slate-800">{counterpartyOf(transaction)}</p>
               </div>
-              <p className="shrink-0 text-xs text-slate-400">{formatDate(transaction.transactionDate)}</p>
+              <p className="shrink-0 text-xs text-slate-400"><span className="mr-1 font-mono">#{transaction.transactionId}</span>{formatDate(transaction.transactionDate)}</p>
             </div>
             <div className="mt-2 flex flex-wrap gap-1">
               <OwnerDirectionBadge transaction={transaction} />
