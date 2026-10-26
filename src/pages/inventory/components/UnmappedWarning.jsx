@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { formatKg } from "../constants";
 
-// 품목 미매핑 계근은 재고에서 빠진다 — 건수가 있으면 경고와 계근 매핑 화면 링크를 보여 준다
-export default function UnmappedWarning({ unmapped }) {
+// 품목 미매핑 계근은 재고·기간 통계에서 빠진다 — 건수가 있으면 경고와 계근 매핑 화면 링크를 보여 준다
+export default function UnmappedWarning({ unmapped, target = "재고" }) {
   const purchaseCount = unmapped?.purchaseCount ?? 0;
   const saleCount = unmapped?.saleCount ?? 0;
   const count = purchaseCount + saleCount;
@@ -17,7 +17,7 @@ export default function UnmappedWarning({ unmapped }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
       <p>
-        품목 미매핑 계근 <b>{count}건({formatKg(quantity)} kg)</b>은 재고에 반영되지 않았습니다.
+        품목 미매핑 계근 <b>{count}건({formatKg(quantity)} kg)</b>은 {target}에 반영되지 않았습니다.
         <span className="ml-1 text-xs text-amber-700">({parts.join(" · ")})</span>
       </p>
       <Link

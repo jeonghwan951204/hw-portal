@@ -37,6 +37,9 @@ export const movementTypeLabelOf = (value) => MOVEMENT_TYPE_LABELS[value] ?? val
 // kg 수량 표시 — 서버는 소수 4자리까지 주지만 화면은 3자리까지만 보여 준다
 export const formatKg = (value) => formatNumber(value, 3);
 
+// 평균 단가(원/kg) 표시 — 서버는 소수 2자리까지 준다. 단가가 있는 계근이 없으면 null
+export const formatAveragePrice = (value) => formatNumber(value, 2);
+
 // 0 은 엑셀 재고표처럼 비워 보이도록 '-' 대신 빈칸 처리할 때 사용
 export const formatKgOrBlank = (value) => (value == null || Number(value) === 0 ? "" : formatKg(value));
 
