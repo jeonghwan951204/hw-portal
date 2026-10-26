@@ -9,14 +9,18 @@ import ItemStockTable from "./components/ItemStockTable";
 import MovementFormModal from "./components/MovementFormModal";
 import MovementList from "./components/MovementList";
 import MovementToolbar from "./components/MovementToolbar";
+import PeriodTradeTable from "./components/PeriodTradeTable";
+import PeriodTradeToolbar from "./components/PeriodTradeToolbar";
 import StockSheet from "./components/StockSheet";
 import UnmappedWarning from "./components/UnmappedWarning";
 import { useInventoryMovements } from "./hooks/useInventoryMovements";
+import { useInventoryPeriodTrades } from "./hooks/useInventoryPeriodTrades";
 import { useInventoryStock } from "./hooks/useInventoryStock";
 
 const TABS = [
   { key: "stock", label: "재고 현황" },
   { key: "movements", label: "보정 내역" },
+  { key: "period", label: "기간 통계" },
 ];
 
 function StatusBox({ loading, error, onRetry }) {
@@ -92,10 +96,23 @@ function MovementsTab() {
   );
 }
 
-// 재고관리 화면 — 탭은 ?tab=movements 로 구분해 새로고침해도 유지한다
+// 기간 통계 탭 — 기간·자사·거래처·품목별 매입/매출 수량과 평균 단가
+function PeriodTradesTab() {
+  const { toolbar, unmapped, table } = useInventoryPeriodTrades();
+  return (
+    <>
+      <PeriodTradeToolbar {...toolbar} />
+      <UnmappedWarning {...unmapped} />
+      <PeriodTradeTable {...table} />
+    </>
+  );
+}
+
+// 재고관리 화면 — 탭은 ?tab=movements / ?tab=period 로 구분해 새로고침해도 유지한다
 export default function InventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") === "movements" ? "movements" : "stock";
+  const tabParam = searchParams.get("tab");
+  const activeTab = TABS.some((tab) => tab.key === tabParam) ? tabParam : "stock";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -126,7 +143,9 @@ export default function InventoryPage() {
           ))}
         </div>
 
-        {activeTab === "stock" ? <StockTab /> : <MovementsTab />}
+        {activeTab === "stock" && <StockTab />}
+        {activeTab === "movements" && <MovementsTab />}
+        {activeTab === "period" && <PeriodTradesTab />}
       </main>
       <style>{FADE_IN_STYLE}</style>
     </div>

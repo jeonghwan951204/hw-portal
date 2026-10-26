@@ -57,6 +57,20 @@ export const fetchDailyTrades = async ({ date, ownerCompany = "", itemIds = [] }
   return asJson(await apiFetch(`/api/inventory/stock/daily-trades?${params}`));
 };
 
+// 기간별 품목별 입출고 통계 (GET /api/inventory/stock/period-trades)
+// → { dateFrom, dateTo, ownerCompany, companyId,
+//     items[{ itemId, itemName, parentItemId, depth, purchase, sale, ownPurchase, ownSale }],
+//     totalPurchase, totalSale, unmapped }
+// 통계 항목은 { quantityKg, weighingCount, averageUnitPrice(원/kg, 없으면 null), unpricedQuantityKg }
+export const fetchPeriodTrades = async ({ dateFrom = "", dateTo = "", ownerCompany = "", companyId = "", itemIds = [] }) => {
+  if (USE_MOCK) return inventoryMock.fetchPeriodTrades({ dateFrom, dateTo, ownerCompany, companyId, itemIds });
+  const params = conditionParams({ ownerCompany, itemIds });
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+  if (companyId) params.set("companyId", String(companyId));
+  return asJson(await apiFetch(`/api/inventory/stock/period-trades?${params}`));
+};
+
 // 보정 내역 (GET /api/inventory/movements) → 공통 페이지 형식
 export const fetchMovements = async ({
   ownerCompany = "",

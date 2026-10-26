@@ -7,20 +7,20 @@ import { addDays, getLocalDateString } from "../constants";
 const today = getLocalDateString();
 const dayOf = (offset) => addDays(today, offset);
 
-// 원본 계근 — itemId 가 null 이면 품목 미매핑, companyId 가 null 이면 거래처 미매핑
+// 원본 계근 — itemId 가 null 이면 품목 미매핑, companyId 가 null 이면 거래처 미매핑, unitPrice(원/kg)가 null 이면 단가 없음
 const WEIGHINGS = [
-  { date: dayOf(-1), owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 2, itemName: "A동", quantityKg: 39748 },
-  { date: dayOf(-1), owner: "HOJAE", direction: "PURCHASE", companyId: 2, companyName: "씨앤피", itemId: 4, itemName: "상동", quantityKg: 20112 },
-  { date: dayOf(-1), owner: "HOJAE", direction: "SALE", companyId: 3, companyName: "삼성전기(주)", itemId: 5, itemName: "파동", quantityKg: 6200 },
-  { date: dayOf(-1), owner: "WOONAM", direction: "PURCHASE", companyId: 4, companyName: "우진자원", itemId: 8, itemName: "알루미늄 새시", quantityKg: 8300 },
-  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 2, itemName: "A동", quantityKg: 12450 },
-  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 3, itemName: "피복 A동", quantityKg: 3562 },
-  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 5, itemName: "파동", quantityKg: 598 },
-  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 2, companyName: "씨앤피", itemId: 4, itemName: "상동", quantityKg: 4300 },
-  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: null, companyName: "다라상사", itemId: null, itemName: "A동 차핑2", quantityKg: 1200 },
-  { date: today, owner: "WOONAM", direction: "PURCHASE", companyId: 4, companyName: "우진자원", itemId: 9, itemName: "알루미늄 캔", quantityKg: 2780 },
-  { date: today, owner: "HOJAE", direction: "SALE", companyId: 3, companyName: "삼성전기(주)", itemId: 2, itemName: "A동", quantityKg: 18100 },
-  { date: today, owner: "WOONAM", direction: "SALE", companyId: 5, companyName: "미래산업", itemId: 6, itemName: "황동", quantityKg: 4100 },
+  { date: dayOf(-1), owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 2, itemName: "A동", quantityKg: 39748, unitPrice: 9800 },
+  { date: dayOf(-1), owner: "HOJAE", direction: "PURCHASE", companyId: 2, companyName: "씨앤피", itemId: 4, itemName: "상동", quantityKg: 20112, unitPrice: 9450 },
+  { date: dayOf(-1), owner: "HOJAE", direction: "SALE", companyId: 3, companyName: "삼성전기(주)", itemId: 5, itemName: "파동", quantityKg: 6200, unitPrice: 10200 },
+  { date: dayOf(-1), owner: "WOONAM", direction: "PURCHASE", companyId: 4, companyName: "우진자원", itemId: 8, itemName: "알루미늄 새시", quantityKg: 8300, unitPrice: 2100 },
+  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 2, itemName: "A동", quantityKg: 12450, unitPrice: 9850 },
+  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 3, itemName: "피복 A동", quantityKg: 3562, unitPrice: null },
+  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 1, companyName: "금강", itemId: 5, itemName: "파동", quantityKg: 598, unitPrice: 10300 },
+  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: 2, companyName: "씨앤피", itemId: 4, itemName: "상동", quantityKg: 4300, unitPrice: 9500 },
+  { date: today, owner: "HOJAE", direction: "PURCHASE", companyId: null, companyName: "다라상사", itemId: null, itemName: "A동 차핑2", quantityKg: 1200, unitPrice: 9700 },
+  { date: today, owner: "WOONAM", direction: "PURCHASE", companyId: 4, companyName: "우진자원", itemId: 9, itemName: "알루미늄 캔", quantityKg: 2780, unitPrice: 2050 },
+  { date: today, owner: "HOJAE", direction: "SALE", companyId: 3, companyName: "삼성전기(주)", itemId: 2, itemName: "A동", quantityKg: 18100, unitPrice: 10400 },
+  { date: today, owner: "WOONAM", direction: "SALE", companyId: 5, companyName: "미래산업", itemId: 6, itemName: "황동", quantityKg: 4100, unitPrice: 8900 },
 ];
 
 const createdBy = { createdBy: "00000000-0000-0000-0000-000000000001", createdByName: "홍길동" };
@@ -195,6 +195,83 @@ export const fetchDailyTrades = async ({ date, ownerCompany, itemIds }) => {
     ownerCompany: ownerCompany || null,
     purchase: groupDirection(dayWeighings.filter((weighing) => weighing.direction === "PURCHASE")),
     sale: groupDirection(dayWeighings.filter((weighing) => weighing.direction === "SALE")),
+  };
+};
+
+// 계근 목록 → 기간 통계 항목. 평균 단가는 단가가 있는 계근만 인수량으로 가중 평균한다.
+const periodStatOf = (weighings) => {
+  const quantityKg = weighings.reduce((sum, weighing) => sum + weighing.quantityKg, 0);
+  const priced = weighings.filter((weighing) => weighing.unitPrice != null);
+  const pricedQuantityKg = priced.reduce((sum, weighing) => sum + weighing.quantityKg, 0);
+  const pricedAmount = priced.reduce((sum, weighing) => sum + weighing.quantityKg * weighing.unitPrice, 0);
+  return {
+    quantityKg,
+    weighingCount: weighings.length,
+    averageUnitPrice: pricedQuantityKg === 0 ? null : Math.round((pricedAmount / pricedQuantityKg) * 100) / 100,
+    unpricedQuantityKg: quantityKg - pricedQuantityKg,
+  };
+};
+
+export const fetchPeriodTrades = async ({ dateFrom, dateTo, ownerCompany, companyId, itemIds }) => {
+  await delay();
+  const to = dateTo || today;
+  const from = dateFrom || `${to.slice(0, 8)}01`;
+  if (from > to) throw mockError(400, "INVALID_INPUT", "조회 시작일이 종료일보다 늦습니다.");
+  const { items, ordered, subtreeOf } = await loadTree();
+  assertItemsExist(items, itemIds);
+
+  const periodWeighings = WEIGHINGS.filter(
+    (weighing) =>
+      weighing.date >= from &&
+      weighing.date <= to &&
+      matchesOwner(weighing.owner, ownerCompany) &&
+      (!companyId || String(weighing.companyId) === String(companyId))
+  );
+  const statOf = (direction, ids) => {
+    const allowed = new Set(ids.map(Number));
+    return periodStatOf(
+      periodWeighings.filter((weighing) => weighing.direction === direction && allowed.has(weighing.itemId))
+    );
+  };
+
+  const selected = new Set(itemIds.map(String));
+  const rows = ordered
+    .filter((item) => selected.size === 0 || selected.has(String(item.id)))
+    .map((item) => {
+      const subtreeIds = subtreeOf(item.id);
+      return {
+        itemId: item.id,
+        itemName: item.name,
+        parentItemId: item.parentId ?? null,
+        depth: item.depth,
+        purchase: statOf("PURCHASE", subtreeIds),
+        sale: statOf("SALE", subtreeIds),
+        ownPurchase: statOf("PURCHASE", [item.id]),
+        ownSale: statOf("SALE", [item.id]),
+      };
+    });
+  const totalIds = selected.size === 0
+    ? items.map((item) => item.id)
+    : [...new Set(itemIds.flatMap((itemId) => subtreeOf(Number(itemId))))];
+
+  const unmapped = { purchaseCount: 0, purchaseQuantityKg: 0, saleCount: 0, saleQuantityKg: 0 };
+  periodWeighings
+    .filter((weighing) => weighing.itemId == null)
+    .forEach((weighing) => {
+      const key = weighing.direction === "PURCHASE" ? "purchase" : "sale";
+      unmapped[`${key}Count`] += 1;
+      unmapped[`${key}QuantityKg`] += weighing.quantityKg;
+    });
+
+  return {
+    dateFrom: from,
+    dateTo: to,
+    ownerCompany: ownerCompany || null,
+    companyId: companyId ? Number(companyId) : null,
+    items: rows,
+    totalPurchase: statOf("PURCHASE", totalIds),
+    totalSale: statOf("SALE", totalIds),
+    unmapped,
   };
 };
 
