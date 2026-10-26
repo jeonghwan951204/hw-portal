@@ -19,7 +19,7 @@ const rowOpenProps = (transaction, onOpenDetail) => ({
   title: "누르면 거래 상세를 엽니다",
 });
 
-function WarningBadges({ transaction }) {
+function WarningBadges({ transaction, className = "" }) {
   // 서버 hasWarning 기준 중 개별 배지로 드러나지 않는 항목(거래처 미매핑·원본 삭제 등)은 '경고'로 묶어 표시
   const hasOtherWarning =
     transaction.hasWarning &&
@@ -28,7 +28,7 @@ function WarningBadges({ transaction }) {
     !transaction.hasGroupingWarning &&
     transaction.tradeDirection !== "UNKNOWN";
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className={`flex flex-wrap gap-1 ${className}`}>
       {transaction.tradeDirection === "UNKNOWN" && <Badge tone="amber">구분 확인 필요</Badge>}
       {hasOtherWarning && <Badge tone="amber">경고</Badge>}
       {transaction.hasUnmappedItem && <Badge tone="amber">품목 미매핑</Badge>}
@@ -154,22 +154,22 @@ export default function TransactionList({
                   />
                 </td>
                 <td className="whitespace-nowrap px-2 py-2 text-center font-mono text-slate-500">{transaction.transactionId}</td>
-                <td className="whitespace-nowrap px-2 py-2 text-slate-600">{formatDate(transaction.transactionDate)}</td>
-                <td className="px-2 py-2"><OwnerDirectionBadge transaction={transaction} /></td>
-                <td className="px-2 py-2 font-semibold text-slate-800">{counterpartyOf(transaction)}</td>
-                <td className="truncate px-2 py-2 text-slate-600" title={(transaction.vehicleNumbers ?? []).join(", ")}>
+                <td className="whitespace-nowrap px-2 py-2 text-center text-slate-600">{formatDate(transaction.transactionDate)}</td>
+                <td className="px-2 py-2 text-center"><OwnerDirectionBadge transaction={transaction} /></td>
+                <td className="px-2 py-2 text-center font-semibold text-slate-800">{counterpartyOf(transaction)}</td>
+                <td className="truncate px-2 py-2 text-center text-slate-600" title={(transaction.vehicleNumbers ?? []).join(", ")}>
                   {vehicleOf(transaction)}
                 </td>
-                <td className="truncate px-2 py-2 text-slate-600" title={(transaction.itemNames ?? []).join(", ")}>{itemOf(transaction)}</td>
-                <td className="whitespace-nowrap px-2 py-2 text-right font-mono text-slate-700">{formatWeight(transaction.totalWeightKg)}</td>
+                <td className="truncate px-2 py-2 text-center text-slate-600" title={(transaction.itemNames ?? []).join(", ")}>{itemOf(transaction)}</td>
+                <td className="whitespace-nowrap px-2 py-2 text-center font-mono text-slate-700">{formatWeight(transaction.totalWeightKg)}</td>
                 <td
-                  className="whitespace-nowrap px-2 py-2 text-right font-mono font-semibold text-slate-800"
+                  className="whitespace-nowrap px-2 py-2 text-center font-mono font-semibold text-slate-800"
                   title={transaction.displayAmount == null ? "단가 미입력 항목이 있어 계산되지 않았습니다" : undefined}
                 >
                   {amountOf(transaction)}
                 </td>
                 <td className="px-2 py-2 text-center"><PaymentBadge status={transaction.paymentStatus} /></td>
-                <td className="px-2 py-2"><WarningBadges transaction={transaction} /></td>
+                <td className="px-2 py-2"><WarningBadges transaction={transaction} className="justify-center" /></td>
               </tr>
             ))}
           </tbody>
