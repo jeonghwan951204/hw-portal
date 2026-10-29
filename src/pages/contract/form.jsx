@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import FormStepIndicator from "./components/FormStepIndicator";
 import FormStepBasic from "./components/FormStepBasic";
 import FormStepPrices from "./components/FormStepPrices";
@@ -23,8 +22,7 @@ export default function ContractFormPage() {
   } = useContractForm();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         <div className="px-1">

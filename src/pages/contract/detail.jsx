@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import ContractDetailHeader from "./components/ContractDetailHeader";
 import PriceInfoTab from "./components/PriceInfoTab";
 import TransactionTab from "./components/TransactionTab";
@@ -28,10 +27,9 @@ export default function ContractDetailPage() {
   } = useContractDetail();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
+      <main className="max-w-[100rem] mx-auto px-4 py-6 space-y-5">
         {loading ? (
           <div className="py-24 flex flex-col items-center justify-center text-slate-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mb-3 animate-spin opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import CategoryTabs from "./components/CategoryTabs";
 import PriceInputTable from "./components/PriceInputTable";
 import PriceHistorySection from "./components/PriceHistorySection";
@@ -8,10 +7,9 @@ export default function PriceManagement() {
   const { category, handleCategoryChange, input, history } = usePriceManagement();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-8">
+      <main className="max-w-[100rem] mx-auto px-4 py-6 space-y-8">
         {/* 카테고리 탭 */}
         <div className="flex">
           <CategoryTabs current={category} onChange={handleCategoryChange} />

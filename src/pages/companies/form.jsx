@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import CompanyForm from "./components/CompanyForm";
 import { useCompanyForm } from "./hooks/useCompanyForm";
 
@@ -7,8 +6,7 @@ export default function CompanyFormPage() {
 
   if (companyForm.loading) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <Header />
+      <div className="text-slate-900">
         <main className="mx-auto max-w-6xl px-4 py-6">
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center text-sm text-slate-400 shadow-sm">
             거래처 정보를 불러오는 중입니다.
@@ -20,8 +18,7 @@ export default function CompanyFormPage() {
 
   if (companyForm.notFound) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <Header />
+      <div className="text-slate-900">
         <main className="mx-auto max-w-6xl px-4 py-6">
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm">
             <p className="text-sm text-slate-500">수정할 거래처를 찾을 수 없습니다.</p>
@@ -40,8 +37,7 @@ export default function CompanyFormPage() {
 
   if (companyForm.loadError) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <Header />
+      <div className="text-slate-900">
         <main className="mx-auto max-w-6xl px-4 py-6">
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-12 text-center shadow-sm">
             <p className="text-sm text-red-600">{companyForm.loadError}</p>
@@ -59,8 +55,7 @@ export default function CompanyFormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-5">
           <h1 className="text-xl font-bold text-slate-800">

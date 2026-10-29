@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import Toast from "../contract/components/Toast";
 import MessageList from "./components/MessageList";
 import SendResultPanel from "./components/SendResultPanel";
@@ -8,9 +7,8 @@ export default function DiscordMessagePage() {
   const { toast, onCreate, list, sendResult } = useDiscordMessageList();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+    <div className="text-slate-900">
+      <main className="mx-auto max-w-[100rem] space-y-5 px-4 py-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-slate-800">디스코드 메시지</h1>

@@ -1,5 +1,4 @@
 import { useSearchParams } from "react-router-dom";
-import Header from "../../components/Header";
 import Pagination from "../../components/Pagination";
 import Toast from "../contract/components/Toast";
 import { FADE_IN_STYLE } from "../transaction/styles";
@@ -115,9 +114,7 @@ export default function InventoryPage() {
   const activeTab = TABS.some((tab) => tab.key === tabParam) ? tabParam : "stock";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
-      {/* 재고 현황표는 품목 열이 많아 다른 화면보다 넓게 쓴다 */}
+    <div className="text-slate-900">
       <main className="mx-auto max-w-[100rem] space-y-5 px-4 py-6">
         <div>
           <h1 className="text-xl font-bold text-slate-800">재고 관리</h1>
