@@ -1,5 +1,6 @@
 // 거래 화면 공용 모달 틀 — 제목·설명·본문·하단 버튼 영역
-export default function ModalShell({ title, description, children, footer, onClose, wide = false }) {
+// 폭: 기본 max-w-lg, wide 는 max-w-2xl, extraWide 는 표가 넓은 상세 화면용 max-w-5xl
+export default function ModalShell({ title, description, children, footer, onClose, wide = false, extraWide = false }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/40" onClick={onClose} />
@@ -7,7 +8,7 @@ export default function ModalShell({ title, description, children, footer, onClo
         role="dialog"
         aria-modal="true"
         className={`relative flex max-h-[90vh] w-full flex-col rounded-2xl border border-slate-200 bg-white shadow-xl animate-fadeIn ${
-          wide ? "max-w-2xl" : "max-w-lg"
+          extraWide ? "max-w-5xl" : wide ? "max-w-2xl" : "max-w-lg"
         }`}
       >
         <div className="border-b border-slate-100 px-6 py-4">

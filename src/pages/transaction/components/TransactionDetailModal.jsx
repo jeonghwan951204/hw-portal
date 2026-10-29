@@ -62,9 +62,11 @@ const cellInputClass =
   "w-24 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-[13px] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
 
 // 포함 항목 — 결제 완료 전에는 단가(kg당)와 출고 실제출고량을 입력할 수 있다
+// 계근 거래는 계근 원본처럼 1차·2차 중량을 실중량 앞에 함께 보여준다
 function ItemTable({
   rows,
   isSale,
+  isWeighing,
   currency,
   editable,
   dirtyCount,
@@ -81,11 +83,13 @@ function ItemTable({
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-xl border border-slate-200">
-        <table className="w-full min-w-[34rem] text-[13px]">
+        <table className={`w-full text-[13px] ${isWeighing ? "min-w-[46rem]" : "min-w-[34rem]"}`}>
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
               <th className="px-3 py-2 text-left font-semibold">차량번호</th>
               <th className="px-3 py-2 text-left font-semibold">품목</th>
+              {isWeighing && <th className="px-3 py-2 text-right font-semibold">1차중량</th>}
+              {isWeighing && <th className="px-3 py-2 text-right font-semibold">2차중량</th>}
               <th className="px-3 py-2 text-right font-semibold">{isSale ? "실중량 (실제출고량)" : "실중량"}</th>
               <th className="px-3 py-2 text-right font-semibold">단가(/kg)</th>
               <th className="px-3 py-2 text-right font-semibold">총 금액</th>
@@ -94,7 +98,7 @@ function ItemTable({
           <tbody className="divide-y divide-slate-100">
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-400">포함된 항목이 없습니다.</td>
+                <td colSpan={isWeighing ? 7 : 5} className="px-3 py-8 text-center text-sm text-slate-400">포함된 항목이 없습니다.</td>
               </tr>
             )}
             {rows.map((row) => (
@@ -120,6 +124,12 @@ function ItemTable({
                     )}
                   </span>
                 </td>
+                {isWeighing && (
+                  <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-600">{formatWeight(row.firstWeightKg)}</td>
+                )}
+                {isWeighing && (
+                  <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-600">{formatWeight(row.secondWeightKg)}</td>
+                )}
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-700">
                   {formatWeight(row.netWeightKg)}
                   {isSale && (
@@ -212,7 +222,7 @@ export default function TransactionDetailModal({
 
   if (loading || error || !detail) {
     return (
-      <ModalShell wide title="거래 상세" onClose={onClose} footer={footer}>
+      <ModalShell extraWide title="거래 상세" onClose={onClose} footer={footer}>
         {error ? (
           <div className="py-8 text-center">
             <p className="text-sm text-red-600">{error}</p>
@@ -229,7 +239,7 @@ export default function TransactionDetailModal({
 
   return (
     <>
-      <ModalShell wide title={`거래 #${detail.transactionId}`} onClose={onClose} footer={footer}>
+      <ModalShell extraWide title={`거래 #${detail.transactionId}`} onClose={onClose} footer={footer}>
         <section className="space-y-4 rounded-xl border border-slate-200 p-4">
           <div className="flex flex-wrap gap-1.5">
             <OriginBadge origin={detail.transactionOrigin} />
