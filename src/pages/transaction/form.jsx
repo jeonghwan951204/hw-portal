@@ -1,5 +1,4 @@
 import { useSearchParams } from "react-router-dom";
-import Header from "../../components/Header";
 import Pagination from "../../components/Pagination";
 import Toast from "../contract/components/Toast";
 import ManualRegisterForm from "./components/ManualRegisterForm";
@@ -75,9 +74,8 @@ export default function TransactionRegisterPage() {
   const activeTab = searchParams.get("tab") === "manual" ? "manual" : "weighing";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+    <div className="text-slate-900">
+      <main className="mx-auto max-w-[100rem] space-y-5 px-4 py-6">
         <div>
           <h1 className="text-xl font-bold text-slate-800">거래 등록</h1>
           <p className="mt-1 text-sm text-slate-500">거래에 묶이지 않은 계근을 골라 거래로 등록하거나, 계근 없이 수기로 등록합니다.</p>

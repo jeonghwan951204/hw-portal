@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import Toast from "../contract/components/Toast";
 import MessageBasicFields from "./components/MessageBasicFields";
 import PreviewPanel from "./components/PreviewPanel";
@@ -9,8 +8,7 @@ import { useDiscordMessageForm } from "./hooks/useDiscordMessageForm";
 
 function StatusCard({ message, tone = "default", onCancel }) {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className={`rounded-2xl border px-5 py-12 text-center shadow-sm ${
           tone === "error" ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"
@@ -53,8 +51,7 @@ export default function DiscordMessageFormPage() {
   if (loadError) return <StatusCard message={loadError} tone="error" onCancel={onCancel} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
       <main className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-5">
           <h1 className="text-xl font-bold text-slate-800">{isEdit ? "메시지 수정" : "새 메시지"}</h1>

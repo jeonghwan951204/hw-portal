@@ -6,12 +6,12 @@ import PhoneNumbers from "./PhoneNumbers";
 import BankAccounts from "./BankAccounts";
 
 function CompanyName({ company, typeLabelOf, overflow = "wrap" }) {
-  // 목록 표에서는 거래처 구분을 회사명 위에 올려 이름이 쓸 수 있는 가로 폭을 확보한다.
+  // 목록 표에서는 행 높이를 줄이려고 거래처 구분을 회사명 앞에 같은 줄로 두고, 긴 이름은 말줄임 처리한다.
   if (overflow === "truncate") {
     return (
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold text-blue-500">{typeLabelOf(company.type)}</p>
-        <p className="truncate font-semibold text-slate-800" title={company.name}>
+      <div className="flex min-w-0 items-center gap-1.5">
+        <span className="shrink-0 text-[10px] font-bold text-blue-500">{typeLabelOf(company.type)}</span>
+        <p className="min-w-0 truncate font-semibold text-slate-800" title={company.name}>
           {company.name}
         </p>
       </div>
@@ -178,11 +178,11 @@ export default function CompanyList({
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
-              <th className="w-[32%] min-w-[10rem] max-w-0 px-4 py-3 text-left font-semibold">회사명</th>
-              <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">사업자등록번호</th>
-              <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">전화번호</th>
-              <th className="w-[68%] min-w-[16rem] max-w-0 px-4 py-3 text-left font-semibold">이메일</th>
-              <th className="whitespace-nowrap px-4 py-3 text-left font-semibold">계좌정보</th>
+              <th className="w-[32%] min-w-[10rem] max-w-0 px-4 py-2 text-left font-semibold">회사명</th>
+              <th className="whitespace-nowrap px-4 py-2 text-left font-semibold">사업자등록번호</th>
+              <th className="whitespace-nowrap px-4 py-2 text-left font-semibold">전화번호</th>
+              <th className="w-[68%] min-w-[16rem] max-w-0 px-4 py-2 text-left font-semibold">이메일</th>
+              <th className="whitespace-nowrap px-4 py-2 text-left font-semibold">계좌정보</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -207,10 +207,10 @@ export default function CompanyList({
                       expanded ? "bg-blue-50/20" : ""
                     }`}
                   >
-                    <td className="max-w-0 px-4 py-4">
+                    <td className="max-w-0 px-4 py-2">
                       <CompanyName company={company} typeLabelOf={typeLabelOf} overflow="truncate" />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-4">
+                    <td className="whitespace-nowrap px-4 py-2">
                       <CopyableValue
                         label="사업자등록번호"
                         value={company.businessNumber}
@@ -218,13 +218,13 @@ export default function CompanyList({
                         overflow="nowrap"
                       />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-4">
+                    <td className="whitespace-nowrap px-4 py-2">
                       <PhoneNumbers phoneNumbers={visiblePhoneNumbers} onCopy={onCopy} overflow="nowrap" />
                     </td>
-                    <td className="max-w-0 px-4 py-4">
+                    <td className="max-w-0 px-4 py-2">
                       <EmailAddresses emails={visibleEmails} onCopy={onCopy} overflow="truncate" />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-4">
+                    <td className="whitespace-nowrap px-4 py-2">
                       <BankAccounts bankAccounts={company.bankAccounts} onCopy={onCopy} overflow="nowrap" />
                     </td>
                   </tr>

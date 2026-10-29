@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import Pagination from "../../components/Pagination";
 import Toast from "../contract/components/Toast";
 import MergeModal from "./components/MergeModal";
@@ -12,9 +11,8 @@ export default function TransactionListPage() {
   const { toolbar, actions, list, pagination, mergeModal, detailModal, toast } = useTransactionList();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+    <div className="text-slate-900">
+      <main className="mx-auto max-w-[100rem] space-y-5 px-4 py-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-slate-800">거래 관리</h1>

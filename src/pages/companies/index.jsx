@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import { Link } from "react-router-dom";
 import CompanyList from "./components/CompanyList";
 import CompanyToolbar from "./components/CompanyToolbar";
@@ -9,9 +8,8 @@ export default function CompaniesPage() {
   const companyList = useCompanyList();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+    <div className="text-slate-900">
+      <main className="mx-auto max-w-[100rem] space-y-5 px-4 py-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-slate-800">거래처관리</h1>

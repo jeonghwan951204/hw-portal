@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Header from "../../components/Header";
 import Pagination from "../../components/Pagination";
 import AllTransactionsTab from "./components/AllTransactionsTab";
 import MarketBanner from "./components/MarketBanner";
@@ -21,10 +20,9 @@ export default function ContractListPage() {
   const allTransactions = useAllTransactions(activeTab === "transactions");
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-[100rem] mx-auto px-4 py-6 space-y-6">
         <MarketBanner {...market} />
 
         <div className="flex items-center gap-1.5">

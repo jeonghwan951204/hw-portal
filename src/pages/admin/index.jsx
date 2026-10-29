@@ -1,4 +1,3 @@
-import Header from "../../components/Header";
 import AdminTabs from "./components/AdminTabs";
 import MemberManagement from "./components/MemberManagement";
 import ShareLinkManagement from "./components/ShareLinkManagement";
@@ -8,10 +7,9 @@ export default function AdminPage() {
   const { tabs, members, links } = useAdminPage();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
+    <div className="text-slate-900">
 
-      <main className="mx-auto max-w-6xl px-4 py-7">
+      <main className="mx-auto max-w-[100rem] px-4 py-7">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-bold text-blue-600">ADMIN CONSOLE</p>
