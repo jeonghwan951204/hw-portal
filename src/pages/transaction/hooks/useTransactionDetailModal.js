@@ -111,6 +111,9 @@ export function useTransactionDetailModal(transactionId, onChanged) {
           source: row,
           vehicleNumber: row.vehicleNumber,
           itemName: row.itemName,
+          // 1차·2차 중량은 계근 행에만 있다(수기 품목은 없음)
+          firstWeightKg: row.firstWeightKg,
+          secondWeightKg: row.secondWeightKg,
           mapped: row.itemId != null,
           netWeightKg: row.netWeightKg,
           acceptedWeightKg: row.acceptedWeightKg,
@@ -228,6 +231,7 @@ export function useTransactionDetailModal(transactionId, onChanged) {
     items: {
       rows,
       isSale,
+      isWeighing,
       currency: current?.currency,
       editable,
       dirtyCount: dirtyRows.length,
