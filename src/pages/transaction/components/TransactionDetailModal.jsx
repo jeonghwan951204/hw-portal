@@ -1,3 +1,4 @@
+import CompanySelect from "../../contract/components/CompanySelect";
 import NumericInput from "../../contract/components/NumericInput";
 import { formatDate, formatKgPrice, formatMoney, formatWeight, labelOf, ownerCompanyLabelOf, PAYMENT_STATUS_LABELS } from "../constants";
 import { Badge, DirectionBadge, MappedName, OriginBadge, PaymentBadge, TransactionStatusBadge } from "./Badges";
@@ -13,6 +14,67 @@ function InfoItem({ label, note, children }) {
       <dt className="text-[11px] font-bold text-slate-400">{label}</dt>
       <dd className="mt-0.5 text-sm font-semibold text-slate-800">{children ?? "-"}</dd>
       {note && <p className="text-[10px] text-amber-600">{note}</p>}
+    </div>
+  );
+}
+
+// 거래처 — 결제 완료 전에는 변경 가능. 계근 거래는 소속 계근의 거래처도 함께 바뀐다
+function CounterpartyInfo({ detail, counterparty }) {
+  if (!counterparty.editing) {
+    return (
+      <InfoItem label="거래처">
+        <span className="flex items-center gap-1.5">
+          <MappedName name={detail.counterpartyName} mapped={detail.companyId != null} emptyLabel="거래처 미입력" />
+          {counterparty.editable && (
+            <button
+              type="button"
+              onClick={counterparty.onStart}
+              className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-50"
+            >
+              변경
+            </button>
+          )}
+        </span>
+        {/* 버전 충돌로 최신 내용을 다시 불러온 경우 안내 */}
+        {counterparty.error && <span className="mt-1 block text-xs font-normal text-red-600">{counterparty.error}</span>}
+      </InfoItem>
+    );
+  }
+
+  return (
+    <div className="col-span-2 min-w-0 sm:col-span-3">
+      <p className="text-[11px] font-bold text-slate-400">거래처 변경</p>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <div className="min-w-[14rem] flex-1">
+          <CompanySelect
+            value={counterparty.draft.id}
+            selectedName={counterparty.draft.name}
+            onSelect={counterparty.onChange}
+            className={inputClass}
+            {...counterparty.companySearch}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={counterparty.onCancel}
+          disabled={counterparty.saving}
+          className="h-[38px] rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+        >
+          취소
+        </button>
+        <button
+          type="button"
+          onClick={counterparty.onSave}
+          disabled={counterparty.saving}
+          className="h-[38px] rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-40"
+        >
+          {counterparty.saving ? "저장 중..." : "저장"}
+        </button>
+      </div>
+      {counterparty.error && <p className="mt-2 text-sm text-red-600">{counterparty.error}</p>}
+      {detail.transactionOrigin === "WEIGHING" && (
+        <p className="mt-1 text-xs text-slate-400">포함된 계근의 거래처도 함께 변경됩니다.</p>
+      )}
     </div>
   );
 }
@@ -112,7 +174,7 @@ function ItemTable({
                         type="button"
                         onClick={() => onMap(row)}
                         disabled={mappingBlocked}
-                        title={mappingBlocked ? "입력한 단가·실제출고량을 먼저 저장하세요" : "거래처·품목 매핑"}
+                        title={mappingBlocked ? "입력한 단가·실제출고량을 먼저 저장하세요" : "품목 매핑"}
                         className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${
                           row.mapped
                             ? "border-slate-200 text-slate-400 hover:bg-slate-50"
@@ -202,6 +264,7 @@ export default function TransactionDetailModal({
   error,
   detail,
   isSale,
+  counterparty,
   items,
   acceptedWeightKg,
   acceptedMissing,
@@ -248,9 +311,7 @@ export default function TransactionDetailModal({
             <TransactionStatusBadge status={detail.transactionStatus} />
           </div>
           <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">
-            <InfoItem label="거래처">
-              <MappedName name={detail.counterpartyName} mapped={detail.companyId != null} emptyLabel="거래처 미입력" />
-            </InfoItem>
+            <CounterpartyInfo detail={detail} counterparty={counterparty} />
             <InfoItem label="거래일">{formatDate(detail.transactionDate)}</InfoItem>
             <InfoItem label="자사"><Badge>{ownerCompanyLabelOf(detail.ownerCompany)}</Badge></InfoItem>
             <InfoItem label="총 중량 (인수량)" note={acceptedMissing ? "인수량 미입력 항목 제외" : null}>

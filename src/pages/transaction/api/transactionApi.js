@@ -99,6 +99,10 @@ export const createTransaction = (body) => send(BASE, "POST", body);
 // 수기 거래 생성 { ownerCompany, companyId, counterpartyName, tradeDirection, transactionDate, currency, memo, items[] }
 export const createManualTransaction = (body) => send(`${BASE}/manual`, "POST", body);
 
+// 결제 완료 전 거래 헤더 수정 { companyId(필수), counterpartyName, tradeDirection, transactionDate, memo, version }
+// 계근 거래의 거래처를 바꾸면 소속 계근 매핑의 거래처도 서버에서 함께 수동 매핑으로 바뀐다.
+export const updateTransactionHeader = (transactionId, body) => send(`${BASE}/${transactionId}`, "PATCH", body);
+
 // 계근 행 적용 단가·실제출고량 수정 { appliedUnitPrice, actualDeliveryWeightKg, version } — 두 값 모두 그대로 저장(null=지움)
 export const updateWeighingRecord = (transactionId, mappingId, body) =>
   send(`${BASE}/${transactionId}/weighing-records/${mappingId}`, "PATCH", body);
@@ -109,6 +113,7 @@ export const updateManualItem = (transactionId, manualItemId, body) =>
 
 // 계근 거래처·품목 수동 매핑 (PATCH /api/weighing-mappings/{weighingRecordId}) { companyId, itemId }
 // 경로 ID 는 계근 원본 weighingRecordId(mappingId 아님). 생략·null 항목은 기존 값 유지, 최소 하나 필요.
+// 거래에 배정된 계근의 거래처는 이 API 로 바꿀 수 없다(거래 헤더 수정으로만 변경).
 // 응답 transactionId/transactionVersion — 진행 중 거래의 계근이면 거래 버전이 오르므로 상세를 다시 받아야 한다.
 export const mapWeighingRecord = (weighingRecordId, body) =>
   send(`/api/weighing-mappings/${weighingRecordId}`, "PATCH", body);
