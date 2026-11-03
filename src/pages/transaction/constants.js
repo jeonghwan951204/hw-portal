@@ -105,6 +105,19 @@ export const sumWithMissing = (values) => ({
   missing: values.some((value) => value == null),
 });
 
+// 품목별 총 중량(인수량) — 내부 품목 ID(미매핑은 원본 품목명) 기준으로 묶는다.
+// 인수량이 없는 항목은 합계에서 빠지므로 missing 으로 표시한다. → [{ key, itemName, mapped, count, total, missing }]
+export const sumAcceptedWeightByItem = (rows) => {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const key = row.itemId != null ? `id:${row.itemId}` : `name:${(row.itemName ?? "").trim()}`;
+    const group = groups.get(key) ?? { key, itemName: row.itemName, mapped: row.itemId != null, values: [] };
+    group.values.push(row.acceptedWeightKg);
+    groups.set(key, group);
+  });
+  return [...groups.values()].map(({ values, ...group }) => ({ ...group, count: values.length, ...sumWithMissing(values) }));
+};
+
 // ─── 계근 정렬 ────────────────────────────────────────────────────────────
 const compareText = (a, b) => String(a ?? "").localeCompare(String(b ?? ""));
 

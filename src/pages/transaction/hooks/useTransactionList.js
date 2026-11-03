@@ -4,6 +4,7 @@ import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/val
 import { useToast } from "../../contract/hooks/useToast";
 import { useCompanySearch } from "../../contract/hooks/useCompanySearch";
 import { fetchTransactions, mergeTransactions } from "../api/transactionApi";
+import { useMergeItemWeights } from "./useMergeItemWeights";
 import { useRememberedState } from "./useRememberedState";
 import { useTransactionDetailModal } from "./useTransactionDetailModal";
 import {
@@ -140,6 +141,8 @@ export function useTransactionList() {
 
   const selectedList = Object.values(selected);
   const mergeIssues = getMergeIssues(selectedList, merge.targetId);
+  // 합치기 모달이 열려 있을 때만 선택한 거래의 품목별 총 중량을 불러온다
+  const mergeItemWeights = useMergeItemWeights(merge.open ? selectedList.map((transaction) => transaction.transactionId) : []);
 
   const toggleSelect = (transaction) =>
     setSelected((current) => {
@@ -224,6 +227,7 @@ export function useTransactionList() {
       transactions: selectedList,
       blocking: mergeIssues.blocking,
       counterpartyMismatch: mergeIssues.counterpartyMismatch,
+      itemWeights: mergeItemWeights,
       onTargetChange: (targetId) => setMerge((current) => ({ ...current, targetId, allowMismatch: false })),
       onReasonChange: (reason) => setMerge((current) => ({ ...current, reason })),
       onAllowMismatchChange: (allowMismatch) => setMerge((current) => ({ ...current, allowMismatch })),

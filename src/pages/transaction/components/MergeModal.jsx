@@ -1,5 +1,27 @@
-import { formatDate, formatMoney, labelOf, ORIGIN_LABELS, ownerCompanyLabelOf, TRADE_DIRECTION_LABELS } from "../constants";
+import { formatDate, formatMoney, formatWeight, labelOf, ORIGIN_LABELS, ownerCompanyLabelOf, TRADE_DIRECTION_LABELS } from "../constants";
 import ModalShell from "./ModalShell";
+
+// 품목별 총 중량(인수량) 목록 — 인수량이 없는 항목이 있으면 합계에서 빠졌음을 표시
+function ItemWeightList({ groups }) {
+  if (groups.length === 0) return <p className="text-xs text-slate-400">포함된 항목이 없습니다.</p>;
+  return (
+    <ul className="flex flex-wrap gap-1.5">
+      {groups.map((group) => (
+        <li key={group.key} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+          <span className={group.itemName ? "" : "text-amber-600"}>{group.itemName || "품목 미입력"}</span>
+          {group.itemName && !group.mapped && <span className="ml-0.5 text-amber-600">(미매핑)</span>}
+          <span className="ml-1.5 font-mono font-semibold text-slate-800">{formatWeight(group.total)}</span>
+          <span className="ml-1 text-slate-400">{group.count}건</span>
+          {group.missing && (
+            <span className="ml-1 text-amber-600" title="인수량이 없는 항목은 합계에서 제외했습니다">
+              (인수량 누락 제외)
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function MergeModal({
   open,
@@ -10,6 +32,7 @@ export default function MergeModal({
   submitting,
   blocking,
   counterpartyMismatch,
+  itemWeights,
   onTargetChange,
   onReasonChange,
   onAllowMismatchChange,
@@ -68,13 +91,29 @@ export default function MergeModal({
                   {transaction.transactionOrigin === "MANUAL" ? `수기 ${transaction.manualItemCount}건` : `계근 ${transaction.weighingRecordCount}건`} ·{" "}
                   {formatMoney(transaction.displayAmount, transaction.currency)}
                 </span>
+                {itemWeights.byTransaction[transaction.transactionId] && (
+                  <span className="mt-1.5 block">
+                    <ItemWeightList groups={itemWeights.byTransaction[transaction.transactionId]} />
+                  </span>
+                )}
               </span>
             </label>
           ))}
         </div>
       </fieldset>
 
-      {blocking && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{blocking}</p>}
+      <section className="rounded-lg bg-slate-50 px-3 py-2.5">
+        <h3 className="mb-1.5 text-xs font-semibold text-slate-500">합친 후 품목별 총 중량 (인수량)</h3>
+        {itemWeights.loading ? (
+          <p className="text-xs text-slate-400">품목별 중량을 불러오는 중입니다.</p>
+        ) : itemWeights.error ? (
+          <p className="text-xs text-red-600">{itemWeights.error}</p>
+        ) : (
+          <ItemWeightList groups={itemWeights.combined} />
+        )}
+      </section>
+
+      {blocking &&<p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{blocking}</p>}
 
       {!blocking && counterpartyMismatch && (
         <label className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
