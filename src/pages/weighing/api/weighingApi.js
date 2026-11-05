@@ -200,7 +200,13 @@ const fetchMockWeighings = ({
   );
   const offset = (page - 1) * size;
   return {
-    content: filtered.slice(offset, offset + size).map((item) => ({ ...item })),
+    // 목업 원본은 gross/tare/received 이름이라, 실서버 매핑(mapWeighingRecord)과 같은 필드명으로 맞춘다
+    content: filtered.slice(offset, offset + size).map((item) => ({
+      ...item,
+      firstWeight: item.grossWeight,
+      secondWeight: item.tareWeight,
+      netWeight: item.receivedWeight,
+    })),
     page,
     size,
     totalElements: filtered.length,

@@ -62,24 +62,26 @@ export default function WeighingList({
       </div>
 
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[62rem] table-fixed text-[13px]">
+        <table className="w-full min-w-[72rem] table-fixed text-[13px]">
           <thead className="bg-slate-50 text-xs text-slate-400">
             <tr>
-              <th className="w-[7%] px-2 py-2 text-center font-semibold">구분</th>
+              <th className="w-[6%] px-2 py-2 text-center font-semibold">구분</th>
               <th className="w-[7%] px-2 py-2 text-center font-semibold">회사구분</th>
-              <th className="w-[11%] px-2 py-2 text-left font-semibold">계량일자</th>
-              <th className="w-[17%] px-2 py-2 text-left font-semibold">거래처</th>
-              <th className="w-[9%] px-2 py-2 text-left font-semibold">품목</th>
-              <th className="w-[12%] px-2 py-2 text-left font-semibold">차량번호</th>
-              <th className="w-[12%] px-2 py-2 text-right font-semibold">인수량</th>
-              <th className="w-[11%] px-2 py-2 text-right font-semibold">단가</th>
-              <th className="w-[14%] px-2 py-2 text-right font-semibold">금액</th>
+              <th className="w-[10%] px-2 py-2 text-left font-semibold">계량일자</th>
+              <th className="w-[13%] px-2 py-2 text-left font-semibold">거래처</th>
+              <th className="w-[8%] px-2 py-2 text-left font-semibold">품목</th>
+              <th className="w-[10%] px-2 py-2 text-left font-semibold">차량번호</th>
+              <th className="w-[9%] px-2 py-2 text-right font-semibold">1차중량</th>
+              <th className="w-[9%] px-2 py-2 text-right font-semibold">2차중량</th>
+              <th className="w-[9%] px-2 py-2 text-right font-semibold">실중량</th>
+              <th className="w-[9%] px-2 py-2 text-right font-semibold">단가</th>
+              <th className="w-[10%] px-2 py-2 text-right font-semibold">금액</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {weighings.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-400">
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">
                   {totalCount === 0 ? "등록된 계근 내역이 없습니다." : "검색 조건에 맞는 계근 내역이 없습니다."}
                 </td>
               </tr>
@@ -112,13 +114,15 @@ export default function WeighingList({
                     <td className="truncate px-2 py-1.5 font-semibold text-slate-800" title={weighing.companyName}>{weighing.companyName}</td>
                     <td className="truncate px-2 py-1.5 text-slate-600" title={weighing.itemName}>{weighing.itemName}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-slate-600">{weighing.vehicleNumber}</td>
-                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-700">{formatWeight(weighing.receivedWeight)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-600">{formatWeight(weighing.firstWeight)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-600">{formatWeight(weighing.secondWeight)}</td>
+                    <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-700">{formatWeight(weighing.netWeight)}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono text-slate-600">{formatUnitPrice(weighing.unitPrice, weighing.currency, weighing.priceUnit)}</td>
                     <td className="whitespace-nowrap px-2 py-1.5 text-right font-mono font-semibold text-slate-800">{formatAmount(weighing.amount, weighing.currency)}</td>
                   </tr>
                   {expanded && (
                     <tr>
-                      <td colSpan={9} className="px-3 pb-3 pt-1">
+                      <td colSpan={11} className="px-3 pb-3 pt-1">
                         <WeighingDetail weighing={weighing} />
                       </td>
                     </tr>
@@ -160,7 +164,9 @@ export default function WeighingList({
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">품목</dt><dd className="font-medium text-slate-600">{weighing.itemName}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">차량번호</dt><dd className="font-medium text-slate-600">{weighing.vehicleNumber}</dd></div>
-                <div className="flex justify-between gap-2"><dt className="text-slate-400">인수량</dt><dd className="font-medium text-slate-700">{formatWeight(weighing.receivedWeight)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">1차중량</dt><dd className="font-medium text-slate-600">{formatWeight(weighing.firstWeight)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">2차중량</dt><dd className="font-medium text-slate-600">{formatWeight(weighing.secondWeight)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-slate-400">실중량</dt><dd className="font-medium text-slate-700">{formatWeight(weighing.netWeight)}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">단가</dt><dd className="font-medium text-slate-600">{formatUnitPrice(weighing.unitPrice, weighing.currency, weighing.priceUnit)}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">금액</dt><dd className="font-bold text-slate-800">{formatAmount(weighing.amount, weighing.currency)}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-slate-400">회사구분</dt><dd className="font-bold text-slate-600">{ownerCompanyLabelOf(weighing.ownerCompany)}</dd></div>
