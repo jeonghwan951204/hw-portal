@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - deploy
       - production
 
 concurrency:
@@ -12,15 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy-home:
-    if: github.ref == 'refs/heads/deploy'
-    runs-on: [self-hosted, hw-portal, hw-portal-deploy]
-
-    steps:
-      - name: Deploy hw-portal
-        run: |
-          /srv/docker/hw-project/scripts/deploy-hw-portal.sh
-
   deploy-production:
     if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
