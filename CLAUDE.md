@@ -75,3 +75,17 @@ The hook returns a single object whose keys (e.g. `average`, `history`, `rateMod
 - [src/utils/validate.js](src/utils/validate.js) — `normalizeDateRangeChange` / `getDateRangeLimits` for the start/end date-range filters used across list pages.
 
 Prefer reusing these shared modules over per-feature duplicates.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in this repo's GitHub Issues (`gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
