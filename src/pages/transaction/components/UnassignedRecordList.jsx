@@ -131,17 +131,18 @@ function ItemCell({ record, list }) {
   );
 }
 
-// 차량번호 — 누르면 현재 페이지의 같은 차량 계근을 한 번에 선택/해제
-function VehicleButton({ vehicleNumber, onToggleVehicle }) {
+// 차량번호 — 누르면 현재 페이지에서 차량·자사·입출고 구분·거래처가 같은 계근을 한 번에 선택/해제
+function VehicleButton({ record, onToggleVehicle }) {
+  const { vehicleNumber } = record;
   if (!vehicleNumber) return <span className="text-slate-400">-</span>;
   return (
     <button
       type="button"
       onClick={(event) => {
         event.stopPropagation();
-        onToggleVehicle(vehicleNumber);
+        onToggleVehicle(record);
       }}
-      title="같은 차량 계근 전체 선택"
+      title="같은 차량·자사·입출고·거래처 계근 전체 선택"
       className="rounded px-1 text-left text-slate-700 underline decoration-dotted underline-offset-2 hover:bg-blue-50 hover:text-blue-600"
     >
       {vehicleNumber}
@@ -241,7 +242,7 @@ export default function UnassignedRecordList(list) {
                     <CounterpartyCell record={record} list={list} />
                   </td>
                   <td className="whitespace-nowrap px-2 py-2">
-                    <VehicleButton vehicleNumber={record.vehicleNumber} onToggleVehicle={onToggleVehicle} />
+                    <VehicleButton record={record} onToggleVehicle={onToggleVehicle} />
                   </td>
                   <td className="px-2 py-2 text-slate-600">
                     <ItemCell record={record} list={list} />
@@ -288,7 +289,7 @@ export default function UnassignedRecordList(list) {
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                 <OwnerDirectionBadge record={record} />
-                <VehicleButton vehicleNumber={record.vehicleNumber} onToggleVehicle={onToggleVehicle} />
+                <VehicleButton record={record} onToggleVehicle={onToggleVehicle} />
                 <span className="min-w-0 flex-1 text-slate-500"><ItemCell record={record} list={list} /></span>
               </div>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">

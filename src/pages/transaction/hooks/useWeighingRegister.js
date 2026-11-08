@@ -50,6 +50,19 @@ const hasCounterpartyMismatch = (records) => {
   );
 };
 
+// 같은 거래처 판정 — 둘 다 매핑돼 있으면 companyId, 아니면 원본명으로 비교
+const isSameCounterparty = (a, b) =>
+  a.companyId != null && b.companyId != null
+    ? a.companyId === b.companyId
+    : normalizeName(a.sourceCounterpartyName) === normalizeName(b.sourceCounterpartyName);
+
+// 차량번호 일괄 선택 대상 — 차량번호·자사·입출고 구분·거래처가 모두 같은 계근
+const isSameVehicleGroup = (record, base) =>
+  record.vehicleNumber === base.vehicleNumber &&
+  record.ownerCompany === base.ownerCompany &&
+  (record.tradeDirection ?? null) === (base.tradeDirection ?? null) &&
+  isSameCounterparty(record, base);
+
 // 등록 응답(거래 상세) → 연속 등록 결과 요약
 const toRegisteredSummary = (detail) => {
   const records = detail.weighingRecords ?? [];
@@ -262,8 +275,8 @@ export function useWeighingRegister() {
       error,
       selectedIds: selected,
       onToggleRecords: toggleRecords,
-      // 현재 페이지에서 같은 차량번호의 계근을 한 번에 선택
-      onToggleVehicle: (vehicleNumber) => toggleRecords(records.filter((record) => record.vehicleNumber === vehicleNumber)),
+      // 현재 페이지에서 차량번호·자사·입출고 구분·거래처가 같은 계근을 한 번에 선택
+      onToggleVehicle: (base) => toggleRecords(records.filter((record) => isSameVehicleGroup(record, base))),
       // 행 안 매핑
       inlineEdit,
       mappingSavingId,
