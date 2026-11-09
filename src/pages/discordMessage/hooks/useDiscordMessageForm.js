@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useConfirm } from "../../../hooks/useConfirm";
 import { useToast } from "../../contract/hooks/useToast";
 import {
   createDiscordMessage,
@@ -50,6 +51,7 @@ export function useDiscordMessageForm() {
   const { id } = useParams();
   const isEdit = id !== undefined;
   const { toast, showToast } = useToast();
+  const { confirm, confirmModal } = useConfirm();
   const contentRef = useRef(null);
 
   const [form, setForm] = useState(createInitialForm);
@@ -166,13 +168,19 @@ export function useDiscordMessageForm() {
     settings: cloneSettings(source?.defaultSettings),
   });
 
-  const changeDataSource = (type) => {
+  const changeDataSource = async (type) => {
     if (type === form.dataSource) return;
     const source = dataSources.find((item) => item.type === type);
 
     // 수정 중에는 기존 템플릿을 지킬지 묻는다. 생성 중에는 바로 기본값으로 채운다.
+    // 취소해도 데이터 종류는 바뀌고, 기존 템플릿·상수만 유지된다.
     const useDefaults = !isEdit ||
-      window.confirm("데이터 종류를 바꾸면 기존 템플릿이 맞지 않을 수 있습니다.\n템플릿과 상수를 새 데이터 종류의 기본값으로 바꾸시겠습니까?");
+      (await confirm({
+        title: "데이터 종류 변경",
+        message: "데이터 종류를 바꾸면 기존 템플릿이 맞지 않을 수 있습니다.\n템플릿과 상수를 새 데이터 종류의 기본값으로 바꾸시겠습니까?",
+        confirmLabel: "기본값으로 바꾸기",
+        cancelLabel: "기존 템플릿 유지",
+      }));
 
     setForm((current) => ({
       ...current,
@@ -183,9 +191,14 @@ export function useDiscordMessageForm() {
     setError("");
   };
 
-  const resetToDefaults = () => {
+  const resetToDefaults = async () => {
     if (!selectedDataSource) return;
-    if (!window.confirm("템플릿과 상수를 기본값으로 되돌리시겠습니까?\n입력란만 바뀌며, 저장은 따로 눌러야 합니다.")) {
+    const ok = await confirm({
+      title: "기본값으로 되돌리기",
+      message: "템플릿과 상수를 기본값으로 되돌리시겠습니까?\n입력란만 바뀌며, 저장은 따로 눌러야 합니다.",
+      confirmLabel: "되돌리기",
+    });
+    if (!ok) {
       return;
     }
     setForm((current) => ({ ...current, ...applyDefaults(selectedDataSource) }));
@@ -351,6 +364,7 @@ export function useDiscordMessageForm() {
     notFound,
     loadError,
     toast,
+    confirmModal,
     onCancel: () => navigate(LIST_PATH),
     basic: {
       form,

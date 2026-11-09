@@ -1,12 +1,13 @@
 import PageContainer from "../../components/PageContainer";
 import PageHeader from "../../components/PageHeader";
+import Toast from "../contract/components/Toast";
 import AverageCalculator from "./components/AverageCalculator";
 import LmeHistorySection from "./components/LmeHistorySection.jsx";
 import ExchangeModal from "./components/ExchangeModal.jsx";
 import { useLmePage } from "./hooks/useLmePage";
 
 export default function LmePage() {
-  const { average, history, rateModal } = useLmePage();
+  const { toast, average, history, rateModal } = useLmePage();
 
   return (
     <>
@@ -22,6 +23,8 @@ export default function LmePage() {
           onOpenRateModal={() => rateModal.setRateModalOpen(true)}
         />
       </PageContainer>
+
+      <Toast toast={toast} />
     </>
   );
 }

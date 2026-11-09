@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useConfirm } from "../../../hooks/useConfirm";
 import { useToast } from "../../contract/hooks/useToast";
 import {
   deleteDiscordMessage,
@@ -13,6 +14,7 @@ import { LIST_PATH, toRequestBody } from "../constants";
 export const useDiscordMessageList = () => {
   const navigate = useNavigate();
   const { toast, showToast } = useToast();
+  const { confirm, confirmModal } = useConfirm();
   const [messages, setMessages] = useState([]);
   const [dataSources, setDataSources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,13 @@ export const useDiscordMessageList = () => {
   };
 
   const handleDelete = async (message) => {
-    if (!window.confirm(`'${message.name}' 메시지를 삭제하시겠습니까?\n삭제한 메시지는 복구할 수 없습니다.`)) {
+    const ok = await confirm({
+      title: "메시지 삭제",
+      message: `'${message.name}' 메시지를 삭제하시겠습니까?\n삭제한 메시지는 복구할 수 없습니다.`,
+      confirmLabel: "삭제",
+      danger: true,
+    });
+    if (!ok) {
       return;
     }
 
@@ -84,7 +92,12 @@ export const useDiscordMessageList = () => {
   };
 
   const handleSendNow = async (message) => {
-    if (!window.confirm(`'${message.name}' 메시지를 '${message.channel}' 채널로 지금 발송하시겠습니까?\n실제 디스코드 채널로 나갑니다.`)) {
+    const ok = await confirm({
+      title: "지금 발송",
+      message: `'${message.name}' 메시지를 '${message.channel}' 채널로 지금 발송하시겠습니까?\n실제 디스코드 채널로 나갑니다.`,
+      confirmLabel: "발송",
+    });
+    if (!ok) {
       return;
     }
 
@@ -106,6 +119,7 @@ export const useDiscordMessageList = () => {
 
   return {
     toast,
+    confirmModal,
     onCreate: () => navigate(`${LIST_PATH}/new`),
     list: {
       messages,

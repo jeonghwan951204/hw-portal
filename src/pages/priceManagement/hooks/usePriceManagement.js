@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
+import { useToast } from "../../contract/hooks/useToast";
 import {
   fetchCurrentPrice,
   fetchPriceHistory,
@@ -8,6 +9,8 @@ import {
 import { CATEGORY_ITEMS, PAGE_SIZE } from "../constants";
 
 export const usePriceManagement = () => {
+  const { toast, showToast } = useToast();
+
   // 현재 선택된 카테고리 (hojae | woonam)
   const [category, setCategory] = useState("hojae");
 
@@ -86,11 +89,11 @@ export const usePriceManagement = () => {
 
     try {
       await savePrice(category, priceData);
-      alert("성공적으로 저장되었습니다.");
+      showToast("success", "저장했습니다.");
       fetchHistory(1);
     } catch (err) {
       console.error("저장 실패:", err);
-      alert("저장에 실패했습니다.");
+      showToast("error", "저장에 실패했습니다.");
     }
   };
 
@@ -123,6 +126,7 @@ export const usePriceManagement = () => {
   return {
     category,
     handleCategoryChange,
+    toast,
     input: {
       category,
       prices,

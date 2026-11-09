@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
+import { useToast } from "../../contract/hooks/useToast";
 import { fetchLmeAverage, fetchLmePriceHistory, requestCrawlingSync } from "../api/priceApi";
 import { AVG_FIELDS, LIST_FIELDS, PAGE_SIZE, parsePercentRate } from "../constants";
 
@@ -23,6 +24,7 @@ const calculateRatePercent = (avgClose, exchangeRate, krwPrice) => {
 };
 
 export const useLmePage = () => {
+  const { toast, showToast } = useToast();
   const [history, setHistory] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,7 +65,7 @@ export const useLmePage = () => {
 
   const fetchAverage = async () => {
     if (!avgStartDate || !avgEndDate) {
-      alert("시작일과 종료일을 모두 입력해주세요.");
+      showToast("error", "시작일과 종료일을 모두 입력해주세요.");
       return;
     }
 
@@ -101,7 +103,7 @@ export const useLmePage = () => {
       await fetchHistory(currentPage);
     } catch (err) {
       console.error("동기화 실패:", err);
-      alert("동기화에 실패했습니다.");
+      showToast("error", "동기화에 실패했습니다.");
     } finally {
       setSyncing(false);
     }
@@ -150,6 +152,7 @@ export const useLmePage = () => {
   }, []);
 
   return {
+    toast,
     average: {
       avgStartDate,
       avgEndDate,

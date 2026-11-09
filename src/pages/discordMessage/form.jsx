@@ -1,4 +1,5 @@
 import Button from "../../components/Button";
+import ConfirmModal from "../../components/ConfirmModal";
 import PageContainer from "../../components/PageContainer";
 import PageHeader from "../../components/PageHeader";
 import Toast from "../contract/components/Toast";
@@ -33,6 +34,7 @@ export default function DiscordMessageFormPage() {
     notFound,
     loadError,
     toast,
+    confirmModal,
     onCancel,
     basic,
     template,
@@ -83,6 +85,7 @@ export default function DiscordMessageFormPage() {
         </form>
       </PageContainer>
 
+      <ConfirmModal {...confirmModal} />
       <Toast toast={toast} />
     </>
   );

@@ -1,4 +1,5 @@
 import Button from "../../components/Button";
+import ConfirmModal from "../../components/ConfirmModal";
 import PageContainer from "../../components/PageContainer";
 import PageHeader from "../../components/PageHeader";
 import Toast from "../contract/components/Toast";
@@ -7,7 +8,7 @@ import SendResultPanel from "./components/SendResultPanel";
 import { useDiscordMessageList } from "./hooks/useDiscordMessageList";
 
 export default function DiscordMessagePage() {
-  const { toast, onCreate, list, sendResult } = useDiscordMessageList();
+  const { toast, confirmModal, onCreate, list, sendResult } = useDiscordMessageList();
 
   return (
     <>
@@ -22,6 +23,7 @@ export default function DiscordMessagePage() {
         <MessageList {...list} />
       </PageContainer>
 
+      <ConfirmModal {...confirmModal} />
       <Toast toast={toast} />
     </>
   );

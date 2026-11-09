@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useConfirm } from "../../../hooks/useConfirm";
 import {
   createShareLink,
   deleteMember,
@@ -15,6 +16,7 @@ const getPageData = (data) => ({
 });
 
 export const useAdminPage = () => {
+  const { confirm, confirmModal } = useConfirm();
   const [activeTab, setActiveTab] = useState("members");
 
   const [members, setMembers] = useState([]);
@@ -133,7 +135,13 @@ export const useAdminPage = () => {
   };
 
   const handleMemberDelete = async (member) => {
-    if (!window.confirm(`'${member.name}' 회원을 삭제하시겠습니까?\n삭제한 회원은 복구할 수 없습니다.`)) {
+    const ok = await confirm({
+      title: "회원 삭제",
+      message: `'${member.name}' 회원을 삭제하시겠습니까?\n삭제한 회원은 복구할 수 없습니다.`,
+      confirmLabel: "삭제",
+      danger: true,
+    });
+    if (!ok) {
       return;
     }
 
@@ -211,6 +219,7 @@ export const useAdminPage = () => {
   };
 
   return {
+    confirmModal,
     tabs: { activeTab, onChange: handleTabChange },
     members: {
       members,
