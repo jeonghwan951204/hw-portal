@@ -1,5 +1,8 @@
 import { useState } from "react";
+import PageContainer from "../../components/PageContainer";
+import PageHeader from "../../components/PageHeader";
 import Pagination from "../../components/Pagination";
+import Tabs from "../../components/Tabs";
 import AllTransactionsTab from "./components/AllTransactionsTab";
 import MarketBanner from "./components/MarketBanner";
 import ContractToolbar from "./components/ContractToolbar";
@@ -20,27 +23,13 @@ export default function ContractListPage() {
   const allTransactions = useAllTransactions(activeTab === "transactions");
 
   return (
-    <div className="text-slate-900">
+    <>
+      <PageContainer>
+        <PageHeader title="계약별 조회" description="계약별 단가와 거래 내역을 확인합니다." />
 
-      <main className="max-w-[100rem] mx-auto px-4 py-6 space-y-6">
         <MarketBanner {...market} />
 
-        <div className="flex items-center gap-1.5">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
-                activeTab === tab.key
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
         {activeTab === "contracts" ? (
           <>
@@ -51,17 +40,9 @@ export default function ContractListPage() {
         ) : (
           <AllTransactionsTab {...allTransactions} />
         )}
-      </main>
+      </PageContainer>
 
       <Toast toast={toast} />
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-      `}</style>
-    </div>
+    </>
   );
 }

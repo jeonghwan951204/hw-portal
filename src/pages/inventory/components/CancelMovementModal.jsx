@@ -1,4 +1,5 @@
-import ModalShell from "../../transaction/components/ModalShell";
+import Button from "../../../components/Button";
+import Modal from "../../../components/Modal";
 import { formatDate, formatKg, movementTypeLabelOf, REASON_MAX_LENGTH } from "../constants";
 import { FieldLabel, INPUT_CLASS } from "./Fields";
 
@@ -7,23 +8,23 @@ export default function CancelMovementModal({ target, reason, submitting, error,
   if (!target) return null;
 
   return (
-    <ModalShell
+    <Modal
       title={`보정 취소 #${target.movementId}`}
       description="취소하면 원래 발생일로 반대 방향 내역이 추가됩니다. 취소한 내역은 다시 되돌릴 수 없습니다."
       onClose={onClose}
+      closeDisabled={submitting}
       footer={
         <>
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <Button variant="secondary" onClick={onClose}>
             닫기
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
             onClick={onSubmit}
             disabled={submitting}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submitting ? "취소 중..." : "보정 취소"}
-          </button>
+          </Button>
         </>
       }
     >
@@ -53,6 +54,6 @@ export default function CancelMovementModal({ target, reason, submitting, error,
         />
       </FieldLabel>
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-    </ModalShell>
+    </Modal>
   );
 }

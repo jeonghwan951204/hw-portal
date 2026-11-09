@@ -3,7 +3,10 @@ import FormStepBasic from "./components/FormStepBasic";
 import FormStepPrices from "./components/FormStepPrices";
 import FormStepItems from "./components/FormStepItems";
 import FormStepConfirm from "./components/FormStepConfirm";
-import ConfirmModal from "./components/ConfirmModal";
+import Button from "../../components/Button";
+import ConfirmModal from "../../components/ConfirmModal";
+import PageContainer from "../../components/PageContainer";
+import PageHeader from "../../components/PageHeader";
 import Toast from "./components/Toast";
 import { useContractForm } from "./hooks/useContractForm";
 
@@ -22,39 +25,26 @@ export default function ContractFormPage() {
   } = useContractForm();
 
   return (
-    <div className="text-slate-900">
-
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <div className="px-1">
-          <h1 className="font-bold text-slate-700 text-lg">
-            {isEdit ? "계약 수정" : "계약 등록"}
-          </h1>
-          {isEdit && (
-            <p className="mt-1 text-xs text-slate-400">
-              계약 기본 정보(헤더)만 수정합니다. 단가·품목은 별도로 관리됩니다.
-            </p>
-          )}
-        </div>
+    <>
+      <PageContainer width="narrow">
+        <PageHeader
+          title={isEdit ? "계약 수정" : "계약 등록"}
+          description={
+            isEdit
+              ? "계약 기본 정보(헤더)만 수정합니다. 단가·품목은 별도로 관리됩니다."
+              : "기본 정보 → 단가 → 품목 순서로 입력한 뒤 확인하고 등록합니다."
+          }
+        />
 
         {isEdit ? (
           // 수정 모드 — 헤더만 수정 (PUT). 단일 단계
           <>
             <FormStepBasic {...basicStep} />
             <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={nav.onCancel}
-                className="px-5 py-2.5 text-sm font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
-              >
+              <Button variant="secondary" onClick={nav.onCancel}>
                 취소
-              </button>
-              <button
-                type="button"
-                onClick={nav.onSave}
-                className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
-              >
-                저장
-              </button>
+              </Button>
+              <Button onClick={nav.onSave}>저장</Button>
             </div>
           </>
         ) : (
@@ -70,47 +60,27 @@ export default function ContractFormPage() {
             {/* 이전 / 취소 / 다음·등록 */}
             <div className="flex items-center justify-between">
               {nav.step > 1 ? (
-                <button
-                  type="button"
-                  onClick={nav.onPrev}
-                  className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
-                >
+                <Button variant="secondary" onClick={nav.onPrev}>
                   이전
-                </button>
+                </Button>
               ) : (
                 <span />
               )}
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={nav.onCancel}
-                  className="px-5 py-2.5 text-sm font-semibold text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
-                >
+                <Button variant="secondary" onClick={nav.onCancel}>
                   취소
-                </button>
+                </Button>
                 {nav.step < nav.totalSteps ? (
-                  <button
-                    type="button"
-                    onClick={nav.onNext}
-                    className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
-                  >
-                    다음
-                  </button>
+                  <Button onClick={nav.onNext}>다음</Button>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={nav.onSave}
-                    className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
-                  >
-                    등록
-                  </button>
+                  <Button onClick={nav.onSave}>등록</Button>
                 )}
               </div>
             </div>
           </>
         )}
-      </main>
+      </PageContainer>
 
       <ConfirmModal
         open={saveModal.open}
@@ -120,14 +90,6 @@ export default function ContractFormPage() {
         onCancel={saveModal.onCancel}
       />
       <Toast toast={toast} />
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-      `}</style>
-    </div>
+    </>
   );
 }

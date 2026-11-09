@@ -1,3 +1,5 @@
+import PageContainer from "../../components/PageContainer";
+import PageHeader from "../../components/PageHeader";
 import AverageCalculator from "./components/AverageCalculator";
 import LmeHistorySection from "./components/LmeHistorySection.jsx";
 import ExchangeModal from "./components/ExchangeModal.jsx";
@@ -7,26 +9,19 @@ export default function LmePage() {
   const { average, history, rateModal } = useLmePage();
 
   return (
-    <div className="text-slate-900">
+    <>
       {rateModal.rateModalOpen && (
         <ExchangeModal onClose={() => rateModal.setRateModalOpen(false)} />
       )}
 
-      <main className="max-w-[100rem] mx-auto px-4 py-6 space-y-8">
+      <PageContainer>
+        <PageHeader title="LME 조회" description="기간 평균 단가를 계산하고 LME 구리 가격 내역을 확인합니다." />
         <AverageCalculator {...average} />
         <LmeHistorySection
           {...history}
           onOpenRateModal={() => rateModal.setRateModalOpen(true)}
         />
-      </main>
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-      `}</style>
-    </div>
+      </PageContainer>
+    </>
   );
 }

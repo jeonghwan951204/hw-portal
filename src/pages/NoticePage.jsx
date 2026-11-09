@@ -1,10 +1,10 @@
+import PageContainer from "../components/PageContainer";
+import PageHeader from "../components/PageHeader";
+
 export default function NoticePage() {
   return (
-    <>
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-xl font-bold text-slate-800">공지사항</h1>
-        <p className="mt-2 text-slate-500">준비 중입니다.</p>
-      </main>
-    </>
+    <PageContainer>
+      <PageHeader title="공지사항" description="준비 중입니다." />
+    </PageContainer>
   );
 }

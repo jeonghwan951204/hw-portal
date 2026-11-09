@@ -1,7 +1,10 @@
 import { useSearchParams } from "react-router-dom";
+import Button from "../../components/Button";
+import PageContainer from "../../components/PageContainer";
+import PageHeader from "../../components/PageHeader";
 import Pagination from "../../components/Pagination";
+import Tabs from "../../components/Tabs";
 import Toast from "../contract/components/Toast";
-import { FADE_IN_STYLE } from "../transaction/styles";
 import CancelMovementModal from "./components/CancelMovementModal";
 import InventoryToolbar from "./components/InventoryToolbar";
 import ItemStockTable from "./components/ItemStockTable";
@@ -33,13 +36,9 @@ function StatusBox({ loading, error, onRetry }) {
   return (
     <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-10 text-center shadow-sm">
       <p className="text-sm text-red-600">{error}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-4 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100"
-      >
+      <Button variant="dangerOutline" size="sm" className="mt-4" onClick={onRetry}>
         다시 시도
-      </button>
+      </Button>
     </div>
   );
 }
@@ -50,20 +49,10 @@ function StockTab() {
   return (
     <>
       <div className="flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          onClick={actions.onOpenAdjustment}
-          className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50"
-        >
+        <Button variant="outline" onClick={actions.onOpenAdjustment}>
           재고 증감
-        </button>
-        <button
-          type="button"
-          onClick={actions.onOpenTransfer}
-          className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700"
-        >
-          품목 간 이동
-        </button>
+        </Button>
+        <Button onClick={actions.onOpenTransfer}>품목 간 이동</Button>
       </div>
       <InventoryToolbar {...toolbar} />
       {status.loading || status.error ? (
@@ -114,37 +103,21 @@ export default function InventoryPage() {
   const activeTab = TABS.some((tab) => tab.key === tabParam) ? tabParam : "stock";
 
   return (
-    <div className="text-slate-900">
-      <main className="mx-auto max-w-[100rem] space-y-5 px-4 py-6">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">재고 관리</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            원본 계근데이터 기준으로 기준일까지 누적된 품목별 재고와 그날의 입출고·보정을 확인합니다.
-          </p>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="재고 관리"
+        description="원본 계근데이터 기준으로 기준일까지 누적된 품목별 재고와 그날의 입출고·보정을 확인합니다."
+      />
 
-        <div className="flex items-center gap-1.5">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setSearchParams(tab.key === "stock" ? {} : { tab: tab.key }, { replace: true })}
-              className={`rounded-lg border px-4 py-2 text-sm font-semibold transition-all ${
-                activeTab === tab.key
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <Tabs
+        tabs={TABS}
+        active={activeTab}
+        onChange={(key) => setSearchParams(key === "stock" ? {} : { tab: key }, { replace: true })}
+      />
 
-        {activeTab === "stock" && <StockTab />}
-        {activeTab === "movements" && <MovementsTab />}
-        {activeTab === "period" && <PeriodTradesTab />}
-      </main>
-      <style>{FADE_IN_STYLE}</style>
-    </div>
+      {activeTab === "stock" && <StockTab />}
+      {activeTab === "movements" && <MovementsTab />}
+      {activeTab === "period" && <PeriodTradesTab />}
+    </PageContainer>
   );
 }

@@ -2,7 +2,8 @@ import CompanySelect from "../../contract/components/CompanySelect";
 import NumericInput from "../../contract/components/NumericInput";
 import { formatDate, formatKgPrice, formatMoney, formatWeight, labelOf, ownerCompanyLabelOf, PAYMENT_STATUS_LABELS } from "../constants";
 import { Badge, DirectionBadge, MappedName, OriginBadge, PaymentBadge, TransactionStatusBadge } from "./Badges";
-import ModalShell from "./ModalShell";
+import Button from "../../../components/Button";
+import Modal from "../../../components/Modal";
 import WeighingMappingModal from "./WeighingMappingModal";
 
 const inputClass =
@@ -278,14 +279,14 @@ export default function TransactionDetailModal({
   if (!open) return null;
 
   const footer = (
-    <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+    <Button variant="secondary" onClick={onClose}>
       닫기
-    </button>
+    </Button>
   );
 
   if (loading || error || !detail) {
     return (
-      <ModalShell extraWide title="거래 상세" onClose={onClose} footer={footer}>
+      <Modal size="xl" title="거래 상세" onClose={onClose} footer={footer}>
         {error ? (
           <div className="py-8 text-center">
             <p className="text-sm text-red-600">{error}</p>
@@ -296,13 +297,13 @@ export default function TransactionDetailModal({
         ) : (
           <p className="py-8 text-center text-sm text-slate-400">거래를 불러오는 중입니다.</p>
         )}
-      </ModalShell>
+      </Modal>
     );
   }
 
   return (
     <>
-      <ModalShell extraWide title={`거래 #${detail.transactionId}`} onClose={onClose} footer={footer}>
+      <Modal size="xl" title={`거래 #${detail.transactionId}`} onClose={onClose} footer={footer}>
         <section className="space-y-4 rounded-xl border border-slate-200 p-4">
           <div className="flex flex-wrap gap-1.5">
             <OriginBadge origin={detail.transactionOrigin} />
@@ -333,7 +334,7 @@ export default function TransactionDetailModal({
           <h3 className="text-sm font-bold text-slate-700">포함 항목 ({items.rows.length})</h3>
           <ItemTable {...items} />
         </section>
-      </ModalShell>
+      </Modal>
       {/* 상세 모달 위에 겹쳐 뜨도록 뒤에 렌더링한다 */}
       <WeighingMappingModal {...mappingModal} />
     </>

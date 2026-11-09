@@ -1,4 +1,5 @@
-import ModalShell from "../../transaction/components/ModalShell";
+import Button from "../../../components/Button";
+import Modal from "../../../components/Modal";
 import { ADJUSTMENT_DIRECTION_OPTIONS, MOVEMENT_OWNER_OPTIONS, REASON_MAX_LENGTH } from "../constants";
 import { FieldLabel, INPUT_CLASS, ItemSelect, SegmentedFilter } from "./Fields";
 
@@ -29,23 +30,23 @@ export default function MovementFormModal({
   const isTransfer = form.mode === "TRANSFER";
 
   return (
-    <ModalShell
+    <Modal
       title="재고 보정"
       description={DESCRIPTIONS[form.mode]}
       onClose={onClose}
+      closeDisabled={submitting}
       footer={
         <>
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <Button variant="secondary" onClick={onClose}>
             취소
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
             onClick={onSubmit}
             disabled={Boolean(blocker) || submitting}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submitting ? "등록 중..." : "등록"}
-          </button>
+          </Button>
         </>
       }
     >
@@ -115,6 +116,6 @@ export default function MovementFormModal({
       {shortageWarning && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{shortageWarning}</p>}
       {blocker && <p className="text-xs text-slate-400">{blocker}</p>}
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-    </ModalShell>
+    </Modal>
   );
 }

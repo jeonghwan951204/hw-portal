@@ -1,4 +1,5 @@
-import ModalShell from "./ModalShell";
+import Button from "../../../components/Button";
+import Modal from "../../../components/Modal";
 
 const inputClass =
   "w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
@@ -30,23 +31,23 @@ export default function WeighingMappingModal({
   if (!open || !target) return null;
 
   return (
-    <ModalShell
+    <Modal
       title="품목 매핑"
       description="선택한 계근 1건의 품목을 내부 데이터에 직접 연결합니다."
       onClose={onClose}
+      closeDisabled={saving}
       footer={
         <>
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <Button variant="secondary" onClick={onClose}>
             취소
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
             onClick={onSave}
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-40"
           >
             {saving ? "저장 중..." : "매핑 저장"}
-          </button>
+          </Button>
         </>
       }
     >
@@ -72,6 +73,6 @@ export default function WeighingMappingModal({
       <p className="text-xs text-slate-400">
         같은 원본명을 가진 다른 계근에는 적용되지 않으며, 매핑 해제는 지원하지 않습니다. 거래에 등록된 계근의 거래처는 거래 상세의 거래처 변경으로만 바꿀 수 있습니다.
       </p>
-    </ModalShell>
+    </Modal>
   );
 }

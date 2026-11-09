@@ -1,7 +1,10 @@
 import ContractDetailHeader from "./components/ContractDetailHeader";
 import PriceInfoTab from "./components/PriceInfoTab";
 import TransactionTab from "./components/TransactionTab";
-import ConfirmModal from "./components/ConfirmModal";
+import Button from "../../components/Button";
+import ConfirmModal from "../../components/ConfirmModal";
+import PageContainer from "../../components/PageContainer";
+import Tabs from "../../components/Tabs";
 import Toast from "./components/Toast";
 import { useContractDetail } from "./hooks/useContractDetail";
 import { useNavigate } from "react-router-dom";
@@ -27,9 +30,8 @@ export default function ContractDetailPage() {
   } = useContractDetail();
 
   return (
-    <div className="text-slate-900">
-
-      <main className="max-w-[100rem] mx-auto px-4 py-6 space-y-5">
+    <>
+      <PageContainer>
         {loading ? (
           <div className="py-24 flex flex-col items-center justify-center text-slate-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mb-3 animate-spin opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,35 +42,15 @@ export default function ContractDetailPage() {
         ) : !contract ? (
           <div className="py-24 flex flex-col items-center justify-center text-slate-400 text-center">
             <p className="font-medium">계약을 찾을 수 없습니다.</p>
-            <button
-              type="button"
-              onClick={() => navigate("/contract")}
-              className="mt-4 px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all"
-            >
+            <Button className="mt-4" onClick={() => navigate("/contract")}>
               목록으로
-            </button>
+            </Button>
           </div>
         ) : (
           <>
             <ContractDetailHeader {...header} />
 
-            {/* 탭 */}
-            <div className="flex items-center gap-1.5">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => tabs.onTabChange(tab.key)}
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg border transition-all ${
-                    tabs.activeTab === tab.key
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <Tabs tabs={TABS} active={tabs.activeTab} onChange={tabs.onTabChange} />
 
             {tabs.activeTab === "price" ? (
               <PriceInfoTab {...priceTab} />
@@ -77,7 +59,7 @@ export default function ContractDetailPage() {
             )}
           </>
         )}
-      </main>
+      </PageContainer>
 
       <ConfirmModal
         open={deleteModal.open}
@@ -97,14 +79,6 @@ export default function ContractDetailPage() {
         onCancel={transactionDeleteModal.onCancel}
       />
       <Toast toast={toast} />
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-      `}</style>
-    </div>
+    </>
   );
 }

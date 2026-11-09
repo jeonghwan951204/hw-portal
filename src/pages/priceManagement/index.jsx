@@ -1,3 +1,5 @@
+import PageContainer from "../../components/PageContainer";
+import PageHeader from "../../components/PageHeader";
 import CategoryTabs from "./components/CategoryTabs";
 import PriceInputTable from "./components/PriceInputTable";
 import PriceHistorySection from "./components/PriceHistorySection";
@@ -7,29 +9,19 @@ export default function PriceManagement() {
   const { category, handleCategoryChange, input, history } = usePriceManagement();
 
   return (
-    <div className="text-slate-900">
+    <PageContainer>
+      <PageHeader title="사이트 관리" description="카테고리별 가격을 입력하고 최근 내역을 확인합니다." />
 
-      <main className="max-w-[100rem] mx-auto px-4 py-6 space-y-8">
-        {/* 카테고리 탭 */}
-        <div className="flex">
-          <CategoryTabs current={category} onChange={handleCategoryChange} />
-        </div>
+      {/* 카테고리 탭 */}
+      <div className="flex">
+        <CategoryTabs current={category} onChange={handleCategoryChange} />
+      </div>
 
-        {/* 가격 입력 섹션 */}
-        <PriceInputTable {...input} />
+      {/* 가격 입력 섹션 */}
+      <PriceInputTable {...input} />
 
-        {/* 최근 내역 섹션 */}
-        <PriceHistorySection {...history} />
-      </main>
-
-      {/* 페이드인 애니메이션 */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(5px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-      `}</style>
-    </div>
+      {/* 최근 내역 섹션 */}
+      <PriceHistorySection {...history} />
+    </PageContainer>
   );
 }

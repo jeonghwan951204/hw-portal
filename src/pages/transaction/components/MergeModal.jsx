@@ -1,5 +1,6 @@
 import { formatDate, formatMoney, formatWeight, labelOf, ORIGIN_LABELS, ownerCompanyLabelOf, TRADE_DIRECTION_LABELS } from "../constants";
-import ModalShell from "./ModalShell";
+import Button from "../../../components/Button";
+import Modal from "../../../components/Modal";
 
 // 품목별 총 중량(인수량) 목록 — 인수량이 없는 항목이 있으면 합계에서 빠졌음을 표시
 function ItemWeightList({ groups }) {
@@ -44,23 +45,23 @@ export default function MergeModal({
   const disabled = submitting || Boolean(blocking) || !targetId || (counterpartyMismatch && !allowMismatch);
 
   return (
-    <ModalShell
+    <Modal
       title="거래 합치기"
       description="대상 거래를 고르면 나머지 거래의 계근·품목이 대상 거래로 이동합니다. 비게 된 거래는 삭제되지 않고 '합쳐짐' 상태로 보존됩니다."
       onClose={onClose}
+      closeDisabled={submitting}
       footer={
         <>
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <Button variant="secondary" onClick={onClose}>
             취소
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
             onClick={onSubmit}
             disabled={disabled}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submitting ? "처리 중..." : "합치기"}
-          </button>
+          </Button>
         </>
       }
     >
@@ -136,6 +137,6 @@ export default function MergeModal({
           className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
         />
       </label>
-    </ModalShell>
+    </Modal>
   );
 }
