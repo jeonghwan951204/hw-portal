@@ -37,3 +37,11 @@ export const normalizeDecimalInput = (value) => {
   if (dotIndex === -1) return stripped;
   return `${stripped.slice(0, dotIndex + 1)}${stripped.slice(dotIndex + 1).replaceAll(".", "")}`;
 };
+
+// kg당 원화 단가 = LME 구리 종가($/t) × 환율(₩/$) ÷ 1000, 소수점 이하는 버린다.
+// 종가나 환율이 없으면 null
+export const calcKrwPerKg = (closePrice, exchangeRate) => {
+  if (closePrice == null || !exchangeRate) return null;
+  const value = (Number(closePrice) * Number(exchangeRate)) / 1000;
+  return Number.isFinite(value) ? Math.trunc(value) : null;
+};

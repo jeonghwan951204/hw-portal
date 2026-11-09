@@ -1,5 +1,5 @@
-import { formatRate, formatUSD } from "../../../utils/format";
-import { LIST_FIELDS } from "../constants";
+import { formatKRW, formatRate, formatUSD } from "../../../utils/format";
+import { calcKrwPerKg, LIST_FIELDS } from "../constants";
 
 export default function LmeHistoryTable({ history }) {
   if (history.length === 0) {
@@ -18,19 +18,23 @@ export default function LmeHistoryTable({ history }) {
       <table className="w-full table-fixed sm:table-auto text-[11px] sm:text-sm border-collapse">
         <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
           <tr>
-            <th className="w-[26%] sm:w-40 py-3 px-2 sm:px-6 text-left border-r border-slate-200">
+            <th className="w-[20%] sm:w-40 py-3 px-2 sm:px-6 text-left border-r border-slate-200">
               날짜
             </th>
-            <th className="w-[27%] py-3 px-2 sm:px-6 text-right border-r border-slate-200">
+            <th className="w-[22%] py-3 px-2 sm:px-6 text-right border-r border-slate-200">
               <span className="sm:hidden">LME 종가</span>
               <span className="hidden sm:inline">LME 구리 종가 ($/t)</span>
             </th>
-            <th className="w-[21%] py-3 px-2 sm:px-6 text-right border-r border-slate-200">
+            <th className="w-[17%] py-3 px-2 sm:px-6 text-right border-r border-slate-200">
               변동폭
             </th>
-            <th className="w-[26%] py-3 px-2 sm:px-6 text-right">
+            <th className="w-[20%] py-3 px-2 sm:px-6 text-right border-r border-slate-200">
               <span className="sm:hidden">환율</span>
               <span className="hidden sm:inline">환율 (₩/$)</span>
+            </th>
+            <th className="w-[21%] py-3 px-2 sm:px-6 text-right">
+              <span className="sm:hidden">₩/kg</span>
+              <span className="hidden sm:inline">kg당 원화 단가 (₩/kg)</span>
             </th>
           </tr>
         </thead>
@@ -39,6 +43,7 @@ export default function LmeHistoryTable({ history }) {
             const diff = row.priceChange;
             const isUp = diff !== null && diff > 0;
             const isDown = diff !== null && diff < 0;
+            const krwPerKg = calcKrwPerKg(row.price, row.rate);
 
             return (
               <tr
@@ -76,8 +81,11 @@ export default function LmeHistoryTable({ history }) {
                     {!isUp && !isDown && <span className="text-slate-400">-</span>}
                   </span>
                 </td>
-                <td className="py-3 px-2 sm:px-6 text-right font-mono text-slate-700 font-semibold whitespace-nowrap">
+                <td className="py-3 px-2 sm:px-6 border-r border-slate-100 text-right font-mono text-slate-700 font-semibold whitespace-nowrap">
                   {formatRate(row.rate)}
+                </td>
+                <td className="py-3 px-2 sm:px-6 text-right font-mono text-slate-800 font-bold whitespace-nowrap">
+                  {krwPerKg == null ? <span className="text-slate-400">-</span> : formatKRW(krwPerKg)}
                 </td>
               </tr>
             );
