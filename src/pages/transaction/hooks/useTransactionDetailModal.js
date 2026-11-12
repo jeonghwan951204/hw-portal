@@ -10,7 +10,9 @@ import {
 } from "../api/transactionApi";
 import {
   displayAmountOf,
+  MANUAL_TRADE_DIRECTION_OPTIONS,
   PAYMENT_STATUS_LABELS,
+  TRADE_DIRECTION_LABELS,
   sortWeighingRecords,
   sumWithMissing,
   toInputValue,
@@ -56,14 +58,14 @@ export function useTransactionDetailModal(transactionId, onChanged) {
   const [rowDrafts, setRowDrafts] = useState({}); // 행 key → { unitPrice, actualDeliveryWeightKg } (입력 문자열)
   const [rowsSaving, setRowsSaving] = useState(false);
   const [rowsError, setRowsError] = useState("");
-  // 거래처 변경 — 편집 중일 때만 { id, name } (null=편집 안 함)
-  const [companyDraft, setCompanyDraft] = useState(null);
+  // 거래 헤더 수정 — 편집 중일 때만 { companyId, counterpartyName, tradeDirection, transactionDate } (null=편집 안 함)
+  const [headerDraft, setHeaderDraft] = useState(null);
   const [headerSaving, setHeaderSaving] = useState(false);
   // 버전 충돌 후 다시 불러와도 안내가 남도록 거래 ID 와 함께 보관한다(다른 거래를 열면 보이지 않음)
   const [headerErrorState, setHeaderErrorState] = useState(null);
   const setHeaderError = (message) => setHeaderErrorState(message ? { transactionId, message } : null);
   const headerError = headerErrorState?.transactionId === transactionId ? headerErrorState.message : "";
-  const companySearch = useCompanySearch(companyDraft != null);
+  const companySearch = useCompanySearch(headerDraft != null);
   // 계근 품목 수동 매핑(거래처는 헤더에서만 변경) — 거래 버전이 오르므로 저장 후 상세를 다시 받고 목록도 갱신한다
   const { openMapping, mappingModal } = useWeighingMapping(() => {
     setReloadKey((key) => key + 1);
@@ -79,7 +81,7 @@ export function useTransactionDetailModal(transactionId, onChanged) {
     setPaymentError("");
     setRowDrafts({});
     setRowsError("");
-    setCompanyDraft(null);
+    setHeaderDraft(null);
     fetchTransactionDetail(transactionId)
       .then((response) => {
         if (alive) setDetail(response);
@@ -183,33 +185,51 @@ export function useTransactionDetailModal(transactionId, onChanged) {
     }
   };
 
-  // 거래처 변경 — 헤더 수정 API 는 다른 헤더 값도 받으므로 현재 값을 그대로 함께 보낸다.
+  // 거래구분 변경 — 미결제 거래만 가능하고 UNKNOWN 으로는 바꿀 수 없다(이미 UNKNOWN 이면 그대로 둘 수는 있다)
+  const directionEditable = current?.paymentStatus === "UNPAID";
+  const directionChanged = headerDraft != null && headerDraft.tradeDirection !== current?.tradeDirection;
+  const directionOptions =
+    current?.tradeDirection === "UNKNOWN"
+      ? [{ value: "UNKNOWN", label: TRADE_DIRECTION_LABELS.UNKNOWN }, ...MANUAL_TRADE_DIRECTION_OPTIONS]
+      : MANUAL_TRADE_DIRECTION_OPTIONS;
+
+  // 거래 헤더 수정 — API 는 거래처·거래구분·거래일·비고를 모두 덮어쓰므로 바꾸지 않는 값(비고)도 현재 값을 그대로 보낸다.
   // 계근 거래는 서버에서 소속 계근 매핑의 거래처도 함께 바뀐다.
   const saveHeader = async () => {
-    if (!companyDraft?.id) {
+    if (!headerDraft?.companyId) {
       setHeaderError("거래처를 선택하세요.");
+      return;
+    }
+    if (!headerDraft.transactionDate) {
+      setHeaderError("거래일을 입력하세요.");
+      return;
+    }
+    // 거래구분이 바뀌면 금액 계산식·실제출고량 사용 여부가 달라지므로 입력 중인 항목 값을 먼저 저장하게 한다
+    if (directionChanged && Object.keys(rowDrafts).length > 0) {
+      setHeaderError("저장하지 않은 항목 변경이 있습니다. 항목을 먼저 저장하세요.");
       return;
     }
     setHeaderSaving(true);
     setHeaderError("");
     try {
       const result = await updateTransactionHeader(current.transactionId, {
-        companyId: Number(companyDraft.id),
-        counterpartyName: companyDraft.name || null,
-        tradeDirection: current.tradeDirection,
-        transactionDate: current.transactionDate,
+        companyId: Number(headerDraft.companyId),
+        counterpartyName: headerDraft.counterpartyName || null,
+        tradeDirection: headerDraft.tradeDirection,
+        transactionDate: headerDraft.transactionDate,
         memo: current.memo ?? null,
         version: current.version,
       });
       setDetail(result);
-      setCompanyDraft(null);
+      setHeaderDraft(null);
       onChanged?.();
     } catch (saveError) {
       if (saveError.code === VERSION_CONFLICT_CODE) {
         setHeaderError("다른 작업자가 먼저 수정했습니다. 최신 내용을 다시 불러옵니다.");
         setReloadKey((key) => key + 1);
       } else {
-        setHeaderError(saveError.message || "거래처를 변경하지 못했습니다.");
+        // 결제 진행 거래·원본 계근과 다른 거래구분 등은 서버 메시지(409 STATE_CONFLICT)를 그대로 보여준다
+        setHeaderError(saveError.message || "거래 정보를 수정하지 못했습니다.");
       }
     } finally {
       setHeaderSaving(false);
@@ -272,21 +292,29 @@ export function useTransactionDetailModal(transactionId, onChanged) {
     acceptedMissing: accepted.missing,
     actualDeliveryWeightKg: actualDelivery.total,
     actualDeliveryMissing: actualDelivery.missing,
-    // 거래처 변경 — 결제 완료 전 진행 중 거래만
-    counterparty: {
+    // 거래 헤더(거래처·입출고 구분·거래일) 수정 — 결제 완료 전 진행 중 거래만
+    header: {
       editable,
-      editing: companyDraft != null,
-      draft: companyDraft,
+      editing: headerDraft != null,
+      draft: headerDraft,
       companySearch,
+      directionOptions,
+      directionEditable,
+      directionChanged,
       saving: headerSaving,
       error: headerError,
       onStart: () => {
-        setCompanyDraft(current?.companyId != null ? { id: current.companyId, name: current.counterpartyName ?? "" } : { id: "", name: "" });
+        setHeaderDraft({
+          companyId: current?.companyId ?? "",
+          counterpartyName: current?.companyId != null ? current.counterpartyName ?? "" : "",
+          tradeDirection: current?.tradeDirection ?? "",
+          transactionDate: current?.transactionDate ?? "",
+        });
         setHeaderError("");
       },
-      onChange: (selected) => setCompanyDraft({ id: selected.id ?? "", name: selected.name ?? "" }),
+      onChange: (patch) => setHeaderDraft((draft) => ({ ...draft, ...patch })),
       onCancel: () => {
-        setCompanyDraft(null);
+        setHeaderDraft(null);
         setHeaderError("");
       },
       onSave: saveHeader,

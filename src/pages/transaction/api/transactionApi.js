@@ -100,7 +100,9 @@ export const createTransaction = (body) => send(BASE, "POST", body);
 export const createManualTransaction = (body) => send(`${BASE}/manual`, "POST", body);
 
 // 결제 완료 전 거래 헤더 수정 { companyId(필수), counterpartyName, tradeDirection, transactionDate, memo, version }
+// 거래처·거래구분·거래일·비고를 모두 덮어쓰므로 바꾸지 않는 값도 현재 값을 그대로 보낸다.
 // 계근 거래의 거래처를 바꾸면 소속 계근 매핑의 거래처도 서버에서 함께 수동 매핑으로 바뀐다.
+// 거래구분 변경: 미결제(UNPAID)만 가능, UNKNOWN 으로 전환 불가, 계근 거래는 원본 계근 거래구분(UNKNOWN 제외)과 같아야 한다(아니면 409).
 export const updateTransactionHeader = (transactionId, body) => send(`${BASE}/${transactionId}`, "PATCH", body);
 
 // 계근 행 적용 단가·실제출고량 수정 { appliedUnitPrice, actualDeliveryWeightKg, version } — 두 값 모두 그대로 저장(null=지움)

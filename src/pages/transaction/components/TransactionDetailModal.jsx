@@ -19,63 +19,73 @@ function InfoItem({ label, note, children }) {
   );
 }
 
-// 거래처 — 결제 완료 전에는 변경 가능. 계근 거래는 소속 계근의 거래처도 함께 바뀐다
-function CounterpartyInfo({ detail, counterparty }) {
-  if (!counterparty.editing) {
-    return (
-      <InfoItem label="거래처">
-        <span className="flex items-center gap-1.5">
-          <MappedName name={detail.counterpartyName} mapped={detail.companyId != null} emptyLabel="거래처 미입력" />
-          {counterparty.editable && (
-            <button
-              type="button"
-              onClick={counterparty.onStart}
-              className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-50"
-            >
-              변경
-            </button>
-          )}
-        </span>
-        {/* 버전 충돌로 최신 내용을 다시 불러온 경우 안내 */}
-        {counterparty.error && <span className="mt-1 block text-xs font-normal text-red-600">{counterparty.error}</span>}
-      </InfoItem>
-    );
-  }
-
+// 거래 헤더 수정 — 거래처·입출고 구분·거래일. 계근 거래는 소속 계근의 거래처도 함께 바뀐다
+function HeaderEditForm({ detail, header }) {
+  const isWeighing = detail.transactionOrigin === "WEIGHING";
   return (
-    <div className="col-span-2 min-w-0 sm:col-span-3">
-      <p className="text-[11px] font-bold text-slate-400">거래처 변경</p>
-      <div className="mt-1 flex flex-wrap items-center gap-2">
-        <div className="min-w-[14rem] flex-1">
+    <div className="col-span-2 min-w-0 space-y-3 rounded-lg border border-blue-100 bg-blue-50/30 p-3 sm:col-span-3">
+      <p className="text-[11px] font-bold text-slate-400">거래 정보 수정</p>
+      <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+        <div className="min-w-0">
+          <span className="mb-1 block text-xs font-semibold text-slate-500">거래처</span>
           <CompanySelect
-            value={counterparty.draft.id}
-            selectedName={counterparty.draft.name}
-            onSelect={counterparty.onChange}
+            value={header.draft.companyId}
+            selectedName={header.draft.counterpartyName}
+            onSelect={(selected) => header.onChange({ companyId: selected.id ?? "", counterpartyName: selected.name ?? "" })}
             className={inputClass}
-            {...counterparty.companySearch}
+            {...header.companySearch}
           />
         </div>
+        <label className="min-w-0">
+          <span className="mb-1 block text-xs font-semibold text-slate-500">입출고 구분</span>
+          <select
+            value={header.draft.tradeDirection}
+            onChange={(event) => header.onChange({ tradeDirection: event.target.value })}
+            disabled={!header.directionEditable}
+            title={header.directionEditable ? undefined : "미결제 거래만 입출고 구분을 바꿀 수 있습니다"}
+            className={`${inputClass} disabled:bg-slate-50 disabled:text-slate-400`}
+          >
+            {header.directionOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="min-w-0">
+          <span className="mb-1 block text-xs font-semibold text-slate-500">거래일</span>
+          <input
+            type="date"
+            value={header.draft.transactionDate}
+            onChange={(event) => header.onChange({ transactionDate: event.target.value })}
+            className={inputClass}
+          />
+        </label>
+      </div>
+      <div className="space-y-0.5 text-xs text-slate-400">
+        {isWeighing && <p>포함된 계근의 거래처도 함께 변경됩니다. 입출고 구분은 원본 계근과 같아야 합니다.</p>}
+        {!header.directionEditable && <p>결제가 진행된 거래는 입출고 구분을 바꿀 수 없습니다. 결제상태를 미결제로 되돌린 뒤 변경하세요.</p>}
+        {header.directionChanged && (
+          <p className="text-amber-600">입출고 구분이 바뀌면 금액 계산 방식이 달라집니다. 적용 단가는 자동으로 바뀌지 않으니 저장 후 단가를 확인하세요.</p>
+        )}
+      </div>
+      {header.error && <p className="text-sm text-red-600">{header.error}</p>}
+      <div className="flex justify-end gap-2">
         <button
           type="button"
-          onClick={counterparty.onCancel}
-          disabled={counterparty.saving}
+          onClick={header.onCancel}
+          disabled={header.saving}
           className="h-[38px] rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
         >
           취소
         </button>
         <button
           type="button"
-          onClick={counterparty.onSave}
-          disabled={counterparty.saving}
+          onClick={header.onSave}
+          disabled={header.saving}
           className="h-[38px] rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-40"
         >
-          {counterparty.saving ? "저장 중..." : "저장"}
+          {header.saving ? "저장 중..." : "저장"}
         </button>
       </div>
-      {counterparty.error && <p className="mt-2 text-sm text-red-600">{counterparty.error}</p>}
-      {detail.transactionOrigin === "WEIGHING" && (
-        <p className="mt-1 text-xs text-slate-400">포함된 계근의 거래처도 함께 변경됩니다.</p>
-      )}
     </div>
   );
 }
@@ -265,7 +275,7 @@ export default function TransactionDetailModal({
   error,
   detail,
   isSale,
-  counterparty,
+  header,
   items,
   acceptedWeightKg,
   acceptedMissing,
@@ -305,15 +315,34 @@ export default function TransactionDetailModal({
     <>
       <Modal size="xl" title={`거래 #${detail.transactionId}`} onClose={onClose} footer={footer}>
         <section className="space-y-4 rounded-xl border border-slate-200 p-4">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <OriginBadge origin={detail.transactionOrigin} />
             <DirectionBadge direction={detail.tradeDirection} />
             <PaymentBadge status={detail.paymentStatus} />
             <TransactionStatusBadge status={detail.transactionStatus} />
+            {header.editable && !header.editing && (
+              <button
+                type="button"
+                onClick={header.onStart}
+                className="ml-auto shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-50"
+              >
+                거래 정보 수정
+              </button>
+            )}
           </div>
+          {/* 버전 충돌로 최신 내용을 다시 불러온 경우 안내 */}
+          {!header.editing && header.error && <p className="text-xs text-red-600">{header.error}</p>}
           <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">
-            <CounterpartyInfo detail={detail} counterparty={counterparty} />
-            <InfoItem label="거래일">{formatDate(detail.transactionDate)}</InfoItem>
+            {header.editing ? (
+              <HeaderEditForm detail={detail} header={header} />
+            ) : (
+              <>
+                <InfoItem label="거래처">
+                  <MappedName name={detail.counterpartyName} mapped={detail.companyId != null} emptyLabel="거래처 미입력" />
+                </InfoItem>
+                <InfoItem label="거래일">{formatDate(detail.transactionDate)}</InfoItem>
+              </>
+            )}
             <InfoItem label="자사"><Badge>{ownerCompanyLabelOf(detail.ownerCompany)}</Badge></InfoItem>
             <InfoItem label="총 중량 (인수량)" note={acceptedMissing ? "인수량 미입력 항목 제외" : null}>
               {formatWeight(acceptedWeightKg)}
