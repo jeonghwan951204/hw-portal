@@ -41,6 +41,21 @@ apply: always
 - For normal code modification requests, edit the code only and skip build/test verification.
 - If commands were not run, say: "Build, compile, lint, and tests were not run because they were not requested."
 
+## Docker (home server)
+
+- The `orca` user is not in the `docker` group, so plain `docker` commands fail with "permission denied". Use `sudo -n` with one of the whitelisted commands in `/etc/sudoers.d/orca-docker` and `/etc/sudoers.d/orca-docker-frontend`.
+- The command must match the whitelist exactly (absolute `/usr/bin/docker`, `-f` with the absolute compose path, same argument order). Any other form is refused by sudo.
+- Allowed commands (`<service>` is `backend` or `frontend`):
+  - `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml up -d --build --no-deps --force-recreate <service>` (rebuild and redeploy)
+  - `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml ps <service>`
+  - `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml logs <service>`
+  - `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml logs --tail 200 <service>`
+  - `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml restart <service>`
+  - `sudo -n /usr/bin/docker image prune -f`
+- Other Docker commands (`exec`, `down`, `logs -f`, other services, etc.) are not allowed. Ask the user to run them.
+- The Command Execution rule still applies: run these only when the user explicitly asks.
+- The image is built from the current working tree of `/srv/docker/hw-project/hw-back` (backend) or `/srv/docker/hw-project/hw-portal` (frontend), not from the remote. Make sure the working tree has the intended code before redeploying.
+
 ## Security
 
 - Never hardcode secrets, API keys, access tokens, refresh tokens, passwords, database credentials, private IPs, or environment-specific values.

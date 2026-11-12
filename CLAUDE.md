@@ -21,6 +21,13 @@ There is no test runner configured in this project.
 - **Do not run** build, compile, lint, install, migration, or deployment commands (`npm run build`, `npm test`, `npm install`, `./gradlew …`, Docker, etc.) unless explicitly requested. For normal edits, change code only. If verification would help, suggest the command instead of running it, and state: "Build, compile, lint, and tests were not run because they were not requested."
 - Do not modify lock files unless an install was explicitly requested and performed.
 
+**Docker on the home server (sudo whitelist)**
+- The `orca` user is not in the `docker` group, so plain `docker` fails with "permission denied". When the user explicitly asks, use `sudo -n` with a command whitelisted in `/etc/sudoers.d/orca-docker-frontend`. It must match exactly (absolute `/usr/bin/docker`, `-f` with the absolute compose path, same argument order):
+  - `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml up -d --build --no-deps --force-recreate frontend` (rebuild and redeploy from the current working tree, not the remote)
+  - `... ps frontend`, `... logs frontend`, `... logs --tail 200 frontend`, `... restart frontend` (same `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml` prefix)
+  - `sudo -n /usr/bin/docker image prune -f`
+- The same forms are allowed for `backend`. Any other Docker command (`exec`, `down`, `logs -f`, other services) is not allowed; ask the user.
+
 **Scope discipline**
 - Keep changes minimal and focused on the request. Do not refactor unrelated code, rename components/files/routes/public APIs, or reorganize folders unless explicitly asked.
 - Use `rg` (ripgrep, installed) for searching. Before editing, inspect related files, existing usages, and nearby patterns — don't rely only on the open file when a change may affect others.
