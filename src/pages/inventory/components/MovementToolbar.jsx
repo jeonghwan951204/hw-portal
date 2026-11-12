@@ -6,6 +6,7 @@ export default function MovementToolbar({
   ownerCompany,
   itemId,
   movementType,
+  excludeCanceled,
   ownerCompanyOptions,
   movementTypeOptions,
   itemOptions,
@@ -15,6 +16,7 @@ export default function MovementToolbar({
   onOwnerCompanyChange,
   onItemIdChange,
   onMovementTypeChange,
+  onExcludeCanceledChange,
   onReset,
 }) {
   return (
@@ -46,16 +48,33 @@ export default function MovementToolbar({
         <SegmentedFilter label="유형" value={movementType} options={movementTypeOptions} onChange={onMovementTypeChange} />
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(12rem,20rem)_auto] sm:items-end sm:justify-between">
+      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(12rem,20rem)_auto_1fr] sm:items-end">
         <label className="min-w-0">
           <span className="mb-1.5 block text-xs font-semibold text-slate-500">품목 (출발 또는 도착)</span>
           <ItemSelect value={itemId} itemOptions={itemOptions} placeholder="전체 품목" onChange={onItemIdChange} />
         </label>
+        <fieldset className="min-w-0">
+          <legend className="mb-1.5 text-xs font-semibold text-slate-500">취소 내역</legend>
+          <label
+            title="취소된 보정과 그 취소 내역을 함께 숨깁니다"
+            className={`flex h-[38px] cursor-pointer items-center gap-2 rounded-lg border px-3 text-xs font-bold transition-colors ${
+              excludeCanceled ? "border-blue-300 bg-blue-50 text-blue-600" : "border-slate-200 text-slate-500 hover:bg-slate-50"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={excludeCanceled}
+              onChange={(event) => onExcludeCanceledChange(event.target.checked)}
+              className="h-4 w-4 accent-blue-600"
+            />
+            취소 제외
+          </label>
+        </fieldset>
         <button
           type="button"
           onClick={onReset}
           disabled={!hasFilters}
-          className="h-[38px] rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-[38px] rounded-lg sm:justify-self-end border border-slate-200 px-3 text-xs font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           초기화
         </button>

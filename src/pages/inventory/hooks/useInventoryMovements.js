@@ -21,6 +21,8 @@ const createInitialFilters = (today) => ({
   ownerCompany: "",
   itemId: "",
   movementType: "",
+  // 취소된 보정과 그 취소 내역은 서로 상쇄되므로 기본으로 숨긴다
+  excludeCanceled: true,
 });
 
 // 보정 내역 탭 — 조회와 취소
@@ -55,6 +57,7 @@ export function useInventoryMovements() {
         dateTo: filters.endDate,
         itemId: filters.itemId,
         movementType: filters.movementType,
+        excludeCanceled: filters.excludeCanceled,
         page,
         size: MOVEMENT_PAGE_SIZE,
       })
@@ -121,6 +124,7 @@ export function useInventoryMovements() {
       onOwnerCompanyChange: (value) => updateFilters({ ownerCompany: value }),
       onItemIdChange: (value) => updateFilters({ itemId: value }),
       onMovementTypeChange: (value) => updateFilters({ movementType: value }),
+      onExcludeCanceledChange: (value) => updateFilters({ excludeCanceled: value }),
       onReset: () => {
         setFilters(initialFilters);
         setPage(1);

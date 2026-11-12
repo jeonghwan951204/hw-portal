@@ -74,17 +74,19 @@ export const fetchPeriodTrades = async ({ dateFrom = "", dateTo = "", ownerCompa
 };
 
 // 보정 내역 (GET /api/inventory/movements) → 공통 페이지 형식
+// excludeCanceled=true 면 취소된 내역과 그 취소 내역을 모두 제외한다(서버 기본 false)
 export const fetchMovements = async ({
   ownerCompany = "",
   dateFrom = "",
   dateTo = "",
   itemId = "",
   movementType = "",
+  excludeCanceled = false,
   page = 1,
   size = 20,
 }) => {
   if (USE_MOCK) {
-    return inventoryMock.fetchMovements({ ownerCompany, dateFrom, dateTo, itemId, movementType, page, size });
+    return inventoryMock.fetchMovements({ ownerCompany, dateFrom, dateTo, itemId, movementType, excludeCanceled, page, size });
   }
   const params = new URLSearchParams({ page: String(page), size: String(size) });
   if (ownerCompany) params.set("ownerCompany", ownerCompany);
@@ -92,6 +94,7 @@ export const fetchMovements = async ({
   if (dateTo) params.set("dateTo", dateTo);
   if (itemId) params.set("itemId", String(itemId));
   if (movementType) params.set("movementType", movementType);
+  if (excludeCanceled) params.set("excludeCanceled", "true");
   return asJson(await apiFetch(`/api/inventory/movements?${params}`));
 };
 

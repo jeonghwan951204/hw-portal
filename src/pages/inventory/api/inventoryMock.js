@@ -283,7 +283,7 @@ const withItemNames = (items, movement) => ({
   toItemName: items.find((item) => item.id === movement.toItemId)?.name ?? null,
 });
 
-export const fetchMovements = async ({ ownerCompany, dateFrom, dateTo, itemId, movementType, page, size }) => {
+export const fetchMovements = async ({ ownerCompany, dateFrom, dateTo, itemId, movementType, excludeCanceled = false, page, size }) => {
   await delay();
   const { items } = await loadTree();
   const filtered = movements
@@ -293,7 +293,8 @@ export const fetchMovements = async ({ ownerCompany, dateFrom, dateTo, itemId, m
         (!dateFrom || movement.occurredDate >= dateFrom) &&
         (!dateTo || movement.occurredDate <= dateTo) &&
         (!itemId || String(movement.fromItemId) === String(itemId) || String(movement.toItemId) === String(itemId)) &&
-        (!movementType || movement.movementType === movementType)
+        (!movementType || movement.movementType === movementType) &&
+        (!excludeCanceled || (movement.canceledByMovementId == null && movement.reversalOfId == null))
     )
     .sort((a, b) => b.occurredDate.localeCompare(a.occurredDate) || b.movementId - a.movementId);
   const offset = (page - 1) * size;

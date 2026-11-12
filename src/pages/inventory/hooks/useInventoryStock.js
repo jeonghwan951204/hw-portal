@@ -50,10 +50,11 @@ export function useInventoryStock() {
         fetchStock({ ...stockCondition, asOfDate }),
         fetchStock({ ...stockCondition, asOfDate: addDays(asOfDate, -1) }),
         fetchDailyTrades({ ...condition, date: asOfDate }),
+        // 취소 쌍은 같은 날 서로 상쇄되므로 빼고 받는다(합계 동일).
         // 보정 제외 시 재고에 보정이 빠지므로 현황표 조정 행도 비워 둔다(전일+매입-매출+조정=금일 검산 유지)
         excludeMovements
           ? Promise.resolve({ content: [], totalElements: 0 })
-          : fetchMovements({ ownerCompany, dateFrom: asOfDate, dateTo: asOfDate, page: 1, size: DAILY_MOVEMENT_SIZE }),
+          : fetchMovements({ ownerCompany, dateFrom: asOfDate, dateTo: asOfDate, excludeCanceled: true, page: 1, size: DAILY_MOVEMENT_SIZE }),
       ])
         .then(([stock, prevStock, trades, movementPage]) => {
           if (!alive) return;
