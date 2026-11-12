@@ -23,6 +23,8 @@ export function useInventoryStock() {
   const [asOfDate, setAsOfDate] = useState(today);
   const [ownerCompany, setOwnerCompany] = useState("");
   const [selectedItemIds, setSelectedItemIds] = useState([]);
+  // 보정 내역(증가·감소·품목 이동) 제외 — 계근데이터만으로 계산한 재고를 본다
+  const [excludeMovements, setExcludeMovements] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,11 +45,15 @@ export function useInventoryStock() {
 
     const timer = setTimeout(() => {
       const condition = { ownerCompany, itemIds: selectedItemIds };
+      const stockCondition = { ...condition, excludeManualMovements: excludeMovements };
       Promise.all([
-        fetchStock({ ...condition, asOfDate }),
-        fetchStock({ ...condition, asOfDate: addDays(asOfDate, -1) }),
+        fetchStock({ ...stockCondition, asOfDate }),
+        fetchStock({ ...stockCondition, asOfDate: addDays(asOfDate, -1) }),
         fetchDailyTrades({ ...condition, date: asOfDate }),
-        fetchMovements({ ownerCompany, dateFrom: asOfDate, dateTo: asOfDate, page: 1, size: DAILY_MOVEMENT_SIZE }),
+        // 보정 제외 시 재고에 보정이 빠지므로 현황표 조정 행도 비워 둔다(전일+매입-매출+조정=금일 검산 유지)
+        excludeMovements
+          ? Promise.resolve({ content: [], totalElements: 0 })
+          : fetchMovements({ ownerCompany, dateFrom: asOfDate, dateTo: asOfDate, page: 1, size: DAILY_MOVEMENT_SIZE }),
       ])
         .then(([stock, prevStock, trades, movementPage]) => {
           if (!alive) return;
@@ -73,7 +79,7 @@ export function useInventoryStock() {
       alive = false;
       clearTimeout(timer);
     };
-  }, [asOfDate, ownerCompany, reloadKey, selectedItemIds]);
+  }, [asOfDate, excludeMovements, ownerCompany, reloadKey, selectedItemIds]);
 
   const reload = () => setReloadKey((current) => current + 1);
 
@@ -94,8 +100,9 @@ export function useInventoryStock() {
   );
 
   // 화면 재고와 자사·기준일이 같을 때만 자체 재고를 알 수 있다(품목 선택으로 빠진 품목은 모름)
+  // 보정 제외 재고는 실제 장부 재고가 아니므로 쓰지 않는다
   const ownStockOf = (owner, date, itemId) =>
-    owner === ownerCompany && date === asOfDate ? ownStockMap.get(String(itemId)) ?? null : null;
+    !excludeMovements && owner === ownerCompany && date === asOfDate ? ownStockMap.get(String(itemId)) ?? null : null;
 
   const movementForm = useMovementForm({ today, itemOptions, ownStockOf, showToast, onSaved: reload });
 
@@ -112,7 +119,14 @@ export function useInventoryStock() {
   const countEntries = Object.entries(actuals)
     .map(([itemId, value]) => ({ itemId, actualQuantityKg: parseQuantity(value) }))
     .filter((entry) => entry.actualQuantityKg != null);
+  // 재고 확인은 서버 장부 재고(보정 포함)와 비교하므로 보정 제외 화면에서는 입력할 수 없다
+  const countUnavailableReason = !ownerCompany
+    ? "자사를 선택하면 재고 확인을 입력할 수 있습니다"
+    : excludeMovements
+      ? "보정 내역을 제외한 재고에서는 재고 확인을 입력할 수 없습니다"
+      : "";
   const countBlocker = (() => {
+    if (excludeMovements) return "보정 내역을 제외한 재고에서는 재고 확인을 입력할 수 없습니다.";
     if (!ownerCompany) return "재고 확인은 자사를 선택한 뒤 입력할 수 있습니다.";
     if (asOfDate > today) return "미래 날짜는 재고 확인할 수 없습니다.";
     if (countEntries.length === 0) return "실제 수량을 입력한 품목이 없습니다.";
@@ -159,15 +173,22 @@ export function useInventoryStock() {
       ownerCompanyOptions: OWNER_COMPANY_OPTIONS,
       itemOptions,
       selectedItemIds,
-      hasFilters: asOfDate !== today || Boolean(ownerCompany) || selectedItemIds.length > 0,
+      excludeMovements,
+      hasFilters: asOfDate !== today || Boolean(ownerCompany) || selectedItemIds.length > 0 || excludeMovements,
       onAsOfDateChange: (value) => changeCondition(() => setAsOfDate(value || today)),
       onOwnerCompanyChange: (value) => changeCondition(() => setOwnerCompany(value)),
       onSelectedItemIdsChange: (ids) => changeCondition(() => setSelectedItemIds(ids)),
+      onExcludeMovementsChange: (value) =>
+        changeCondition(() => {
+          setExcludeMovements(value);
+          setCountMode(false);
+        }),
       onReset: () =>
         changeCondition(() => {
           setAsOfDate(today);
           setOwnerCompany("");
           setSelectedItemIds([]);
+          setExcludeMovements(false);
         }),
     },
     status: {
@@ -189,7 +210,8 @@ export function useInventoryStock() {
       parentIds,
       collapsedIds,
       countMode,
-      countAvailable: Boolean(ownerCompany),
+      countAvailable: !countUnavailableReason,
+      countUnavailableReason,
       actuals,
       countReason,
       countBlocker,

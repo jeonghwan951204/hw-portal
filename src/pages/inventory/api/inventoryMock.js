@@ -74,7 +74,7 @@ const assertItemsExist = (items, itemIds) => {
 const matchesOwner = (owner, ownerCompany) => !ownerCompany || owner === ownerCompany;
 
 // 기준일까지의 품목별 자체 재고(ownQuantityKg)와 미매핑 요약
-const ownQuantities = (asOfDate, ownerCompany) => {
+const ownQuantities = (asOfDate, ownerCompany, excludeManualMovements = false) => {
   const own = {};
   const add = (itemId, quantity) => {
     if (itemId == null) return;
@@ -93,6 +93,8 @@ const ownQuantities = (asOfDate, ownerCompany) => {
     add(weighing.itemId, sign * weighing.quantityKg);
   });
 
+  if (excludeManualMovements) return { own, unmapped };
+
   movements.filter((movement) => movement.occurredDate <= asOfDate && matchesOwner(movement.ownerCompany, ownerCompany)).forEach((movement) => {
     add(movement.fromItemId, -movement.quantityKg);
     add(movement.toItemId, movement.quantityKg);
@@ -101,12 +103,12 @@ const ownQuantities = (asOfDate, ownerCompany) => {
   return { own, unmapped };
 };
 
-export const fetchStock = async ({ asOfDate, ownerCompany, itemIds }) => {
+export const fetchStock = async ({ asOfDate, ownerCompany, itemIds, excludeManualMovements = false }) => {
   await delay();
   const date = asOfDate || today;
   const { items, ordered, subtreeOf } = await loadTree();
   assertItemsExist(items, itemIds);
-  const { own, unmapped } = ownQuantities(date, ownerCompany);
+  const { own, unmapped } = ownQuantities(date, ownerCompany, excludeManualMovements);
   const sumOf = (ids) => ids.reduce((sum, itemId) => sum + (own[itemId] ?? 0), 0);
   const selected = new Set(itemIds.map(String));
   const rows = ordered

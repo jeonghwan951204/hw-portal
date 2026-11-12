@@ -41,11 +41,13 @@ const conditionParams = ({ ownerCompany, itemIds }) => {
 };
 
 // 기준일 품목별 재고 (GET /api/inventory/stock)
+// excludeManualMovements=true 면 보정 내역(증가·감소·품목 이동)을 빼고 계근데이터만으로 계산한다(서버 기본 false)
 // → { asOfDate, ownerCompany, items[{ itemId, itemName, parentItemId, depth, ownQuantityKg, quantityKg }], totalQuantityKg, unmapped }
-export const fetchStock = async ({ asOfDate, ownerCompany = "", itemIds = [] }) => {
-  if (USE_MOCK) return inventoryMock.fetchStock({ asOfDate, ownerCompany, itemIds });
+export const fetchStock = async ({ asOfDate, ownerCompany = "", itemIds = [], excludeManualMovements = false }) => {
+  if (USE_MOCK) return inventoryMock.fetchStock({ asOfDate, ownerCompany, itemIds, excludeManualMovements });
   const params = conditionParams({ ownerCompany, itemIds });
   if (asOfDate) params.set("asOfDate", asOfDate);
+  if (excludeManualMovements) params.set("excludeManualMovements", "true");
   return asJson(await apiFetch(`/api/inventory/stock?${params}`));
 };
 

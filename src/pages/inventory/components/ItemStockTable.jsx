@@ -23,6 +23,7 @@ export default function ItemStockTable({
   collapsedIds,
   countMode,
   countAvailable,
+  countUnavailableReason,
   actuals,
   countReason,
   countBlocker,
@@ -61,7 +62,7 @@ export default function ItemStockTable({
             type="button"
             onClick={onToggleCountMode}
             disabled={!countAvailable && !countMode}
-            title={countAvailable ? undefined : "자사를 선택하면 재고 확인을 입력할 수 있습니다"}
+            title={countAvailable ? undefined : countUnavailableReason}
             className={`rounded-lg px-3 py-1.5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40 ${
               countMode
                 ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
