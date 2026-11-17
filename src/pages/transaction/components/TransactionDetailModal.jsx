@@ -1,9 +1,22 @@
+import { Fragment } from "react";
 import CompanySelect from "../../contract/components/CompanySelect";
 import NumericInput from "../../contract/components/NumericInput";
-import { formatDate, formatKgPrice, formatMoney, formatWeight, labelOf, ownerCompanyLabelOf, PAYMENT_STATUS_LABELS } from "../constants";
+import {
+  formatDate,
+  formatKgPrice,
+  formatMoney,
+  formatSettlementDiff,
+  formatWeight,
+  labelOf,
+  ownerCompanyLabelOf,
+  isReturnLine,
+  PAYMENT_STATUS_LABELS,
+  settlementDiffToneOf,
+} from "../constants";
 import { Badge, DirectionBadge, MappedName, OriginBadge, PaymentBadge, TransactionStatusBadge } from "./Badges";
 import Button from "../../../components/Button";
 import Modal from "../../../components/Modal";
+import SettlementLinesModal, { SettlementTypeBadge } from "./SettlementLinesModal";
 import WeighingMappingModal from "./WeighingMappingModal";
 
 const inputClass =
@@ -134,6 +147,79 @@ function PaymentSection({ detail, payment }) {
 const cellInputClass =
   "w-24 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-[13px] outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20";
 
+// 정산 줄 펼침 — 계근 행 아래에 매출 줄·반품 줄과 반품 합계·실중량 대비 차이를 보여준다
+function SettlementRows({ row, colSpan, currency, editable, blocked, onEdit }) {
+  const { returnedWeightKg, diffKg, diffPercent } = row.settlementSummary;
+  return (
+    <tr className="bg-slate-50/70">
+      <td colSpan={colSpan} className="px-3 pb-2.5 pt-0.5">
+        <ul className="space-y-1 border-l-2 border-blue-200 pl-3">
+          {row.settlementLines.map((line, index) => {
+            const isReturn = isReturnLine(line);
+            return (
+              <li key={line.lineId ?? index} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs text-slate-600">
+                <SettlementTypeBadge isReturn={isReturn} />
+                {isReturn ? (
+                  <>
+                    <b className="min-w-[9rem] text-slate-700">{line.itemName ?? "품목 미선택"}</b>
+                    <span className="font-mono text-violet-600">
+                      {formatWeight(line.quantityKg)} (재고 +{formatWeight(line.quantityKg)})
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {/* 계산서 품목명이 품목명과 다를 때만 "부스바 → 캔디"처럼 둘 다 보여준다 */}
+                    <span className="min-w-[9rem]">
+                      {line.invoiceItemName && line.invoiceItemName !== line.itemName && (
+                        <>
+                          {line.invoiceItemName}
+                          <span className="mx-1 text-slate-300">→</span>
+                        </>
+                      )}
+                      <b className="text-slate-700">{line.itemName ?? "품목 미선택"}</b>
+                    </span>
+                    <span className="font-mono text-slate-700">
+                      {formatWeight(line.quantityKg)} × {formatKgPrice(line.unitPrice, currency)} ={" "}
+                      <b className="text-slate-800">{formatMoney(line.amount, currency)}</b>
+                    </span>
+                  </>
+                )}
+                {line.memo && <span className="text-slate-400">메모: {line.memo}</span>}
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-3.5 text-xs">
+          {returnedWeightKg > 0 && (
+            <span className="rounded bg-violet-50 px-1.5 py-0.5 font-mono font-semibold text-violet-600">
+              반품 {formatWeight(returnedWeightKg)}
+            </span>
+          )}
+          <span
+            className={`rounded px-1.5 py-0.5 font-mono font-semibold ${
+              diffKg ? (diffKg > 0 ? "bg-red-50" : "bg-amber-50") : "bg-slate-100"
+            } ${settlementDiffToneOf(diffKg)}`}
+            title="차이 = (매출 수량 + 반품 수량) − 실중량"
+          >
+            차이 {formatSettlementDiff(diffKg, diffPercent)}
+          </span>
+          {editable && (
+            <button
+              type="button"
+              onClick={() => onEdit(row)}
+              disabled={blocked}
+              title={blocked ? "입력한 단가·실제출고량을 먼저 저장하세요" : "정산 줄 수정"}
+              className="ml-auto rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              수정
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 // 포함 항목 — 결제 완료 전에는 단가(kg당)와 출고 실제출고량을 입력할 수 있다
 // 계근 거래는 계근 원본처럼 1차·2차 중량을 실중량 앞에 함께 보여준다
 function ItemTable({
@@ -148,11 +234,14 @@ function ItemTable({
   error,
   mappable,
   mappingBlocked,
+  settlementEditable,
   onDraftChange,
   onReset,
   onSave,
   onMap,
+  onSettlement,
 }) {
+  const colCount = (isWeighing ? 7 : 5) + (settlementEditable ? 1 : 0);
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -166,82 +255,117 @@ function ItemTable({
               <th className="px-3 py-2 text-right font-semibold">{isSale ? "실중량 (실제출고량)" : "실중량"}</th>
               <th className="px-3 py-2 text-right font-semibold">단가(/kg)</th>
               <th className="px-3 py-2 text-right font-semibold">총 금액</th>
+              {settlementEditable && <th className="px-3 py-2 text-right font-semibold">정산</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.length === 0 && (
               <tr>
-                <td colSpan={isWeighing ? 7 : 5} className="px-3 py-8 text-center text-sm text-slate-400">포함된 항목이 없습니다.</td>
+                <td colSpan={colCount} className="px-3 py-8 text-center text-sm text-slate-400">포함된 항목이 없습니다.</td>
               </tr>
             )}
-            {rows.map((row) => (
-              <tr key={row.key} className={row.draft ? "bg-blue-50/40" : isSale && row.unitPrice == null ? "bg-red-50/60" : ""}>
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.vehicleNumber || "-"}</td>
-                <td className="px-3 py-2 text-slate-700">
-                  <span className="flex items-center gap-1.5">
-                    <MappedName name={row.itemName} mapped={row.mapped} emptyLabel="품목 미입력" />
-                    {mappable && (
-                      <button
-                        type="button"
-                        onClick={() => onMap(row)}
-                        disabled={mappingBlocked}
-                        title={mappingBlocked ? "입력한 단가·실제출고량을 먼저 저장하세요" : "품목 매핑"}
-                        className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${
-                          row.mapped
-                            ? "border-slate-200 text-slate-400 hover:bg-slate-50"
-                            : "border-amber-300 text-amber-700 hover:bg-amber-50"
-                        }`}
-                      >
-                        매핑
-                      </button>
-                    )}
-                  </span>
-                </td>
-                {isWeighing && (
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-600">{formatWeight(row.firstWeightKg)}</td>
-                )}
-                {isWeighing && (
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-600">{formatWeight(row.secondWeightKg)}</td>
-                )}
-                <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-700">
-                  {formatWeight(row.netWeightKg)}
-                  {isSale && (
-                    editable ? (
-                      <span className="mt-1 flex items-center justify-end gap-1 text-[11px] text-slate-500">
-                        (
-                        <NumericInput
-                          value={row.draft ? row.draft.actualDeliveryWeightKg : row.actualDeliveryDefault}
-                          onChange={(value) => onDraftChange(row, { actualDeliveryWeightKg: value })}
-                          placeholder="실제출고량"
-                          aria-label="실제출고량(kg)"
-                          className={cellInputClass}
-                        />
-                        kg)
+            {rows.map((row) => {
+              const split = row.settlementLines.length > 0;
+              return (
+                <Fragment key={row.key}>
+                  <tr className={row.draft ? "bg-blue-50/40" : split ? "bg-slate-50/70" : isSale && row.unitPrice == null ? "bg-red-50/60" : ""}>
+                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.vehicleNumber || "-"}</td>
+                    <td className="px-3 py-2 text-slate-700">
+                      <span className="flex items-center gap-1.5">
+                        <MappedName name={row.itemName} mapped={row.mapped} emptyLabel="품목 미입력" />
+                        {mappable && (
+                          <button
+                            type="button"
+                            onClick={() => onMap(row)}
+                            disabled={mappingBlocked}
+                            title={mappingBlocked ? "입력한 단가·실제출고량을 먼저 저장하세요" : "품목 매핑"}
+                            className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${
+                              row.mapped
+                                ? "border-slate-200 text-slate-400 hover:bg-slate-50"
+                                : "border-amber-300 text-amber-700 hover:bg-amber-50"
+                            }`}
+                          >
+                            매핑
+                          </button>
+                        )}
                       </span>
-                    ) : (
-                      <span className="block text-[11px] text-slate-500">({formatWeight(row.actualDeliveryWeightKg)})</span>
-                    )
-                  )}
-                </td>
-                <td className={`whitespace-nowrap px-3 py-2 text-right font-mono ${row.unitPrice == null ? "text-amber-600" : "text-slate-600"}`}>
-                  {editable ? (
-                    <NumericInput
-                      value={row.draft ? row.draft.unitPrice : row.unitPrice ?? ""}
-                      onChange={(value) => onDraftChange(row, { unitPrice: value })}
-                      placeholder="미입력"
-                      aria-label="kg당 단가"
-                      className={`${cellInputClass} ${isSale && row.unitPrice == null && !row.draft ? "border-red-300" : ""}`}
+                    </td>
+                    {isWeighing && (
+                      <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-600">{formatWeight(row.firstWeightKg)}</td>
+                    )}
+                    {isWeighing && (
+                      <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-600">{formatWeight(row.secondWeightKg)}</td>
+                    )}
+                    <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-slate-700">
+                      {formatWeight(row.netWeightKg)}
+                      {isSale && (
+                        editable && !split ? (
+                          <span className="mt-1 flex items-center justify-end gap-1 text-[11px] text-slate-500">
+                            (
+                            <NumericInput
+                              value={row.draft ? row.draft.actualDeliveryWeightKg : row.actualDeliveryDefault}
+                              onChange={(value) => onDraftChange(row, { actualDeliveryWeightKg: value })}
+                              placeholder="실제출고량"
+                              aria-label="실제출고량(kg)"
+                              className={cellInputClass}
+                            />
+                            kg)
+                          </span>
+                        ) : (
+                          <span className="block text-[11px] text-slate-500">({formatWeight(row.actualDeliveryWeightKg)})</span>
+                        )
+                      )}
+                    </td>
+                    <td className={`whitespace-nowrap px-3 py-2 text-right font-mono ${row.unitPrice == null && !split ? "text-amber-600" : "text-slate-600"}`}>
+                      {split ? (
+                        <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-600" title="정산 줄 단가로 계산합니다">
+                          분할
+                        </span>
+                      ) : editable ? (
+                        <NumericInput
+                          value={row.draft ? row.draft.unitPrice : row.unitPrice ?? ""}
+                          onChange={(value) => onDraftChange(row, { unitPrice: value })}
+                          placeholder="미입력"
+                          aria-label="kg당 단가"
+                          className={`${cellInputClass} ${isSale && row.unitPrice == null && !row.draft ? "border-red-300" : ""}`}
+                        />
+                      ) : (
+                        formatKgPrice(row.unitPrice, currency)
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-semibold text-slate-800">
+                      {formatMoney(row.amount, currency)}
+                      {row.draft && <span className="block text-[10px] font-normal text-blue-500">저장 후 반영</span>}
+                    </td>
+                    {settlementEditable && (
+                      <td className="whitespace-nowrap px-3 py-2 text-right">
+                        {!split && (
+                          <button
+                            type="button"
+                            onClick={() => onSettlement(row)}
+                            disabled={mappingBlocked}
+                            title={mappingBlocked ? "입력한 단가·실제출고량을 먼저 저장하세요" : "계산서 기준으로 품목·단가를 나누고 반품을 입력합니다"}
+                            className="rounded-md border border-blue-200 px-2 py-1 text-[11px] font-semibold text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            품목 나누기·반품
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                  {split && (
+                    <SettlementRows
+                      row={row}
+                      colSpan={colCount}
+                      currency={currency}
+                      editable={settlementEditable}
+                      blocked={mappingBlocked}
+                      onEdit={onSettlement}
                     />
-                  ) : (
-                    formatKgPrice(row.unitPrice, currency)
                   )}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right font-mono font-semibold text-slate-800">
-                  {formatMoney(row.amount, currency)}
-                  {row.draft && <span className="block text-[10px] font-normal text-blue-500">저장 후 반영</span>}
-                </td>
-              </tr>
-            ))}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -283,6 +407,7 @@ export default function TransactionDetailModal({
   actualDeliveryMissing,
   payment,
   mappingModal,
+  settlementModal,
   onRetry,
   onClose,
 }) {
@@ -366,6 +491,7 @@ export default function TransactionDetailModal({
       </Modal>
       {/* 상세 모달 위에 겹쳐 뜨도록 뒤에 렌더링한다 */}
       <WeighingMappingModal {...mappingModal} />
+      <SettlementLinesModal {...settlementModal} />
     </>
   );
 }

@@ -125,3 +125,10 @@ export const updateTransactionPayment = (transactionId, body) => send(`${BASE}/$
 
 // 여러 진행 중 거래 합치기 { targetTransactionId, targetVersion, sources[], allowCounterpartyMismatch, reason } → 대상 거래 상세
 export const mergeTransactions = (body) => send(`${BASE}/merge`, "POST", body);
+
+// 계근 행 정산 줄 전체 교체 (PUT …/weighing-records/{mappingId}/settlement-lines) — 진행 중 매출 계근 거래만
+// { version, lines: [{ lineType: SALE|RETURN, invoiceItemName, itemId, quantityKg, unitPrice, memo }] }
+// 반품 줄(RETURN)은 invoiceItemName·unitPrice 를 비운다. lines: [] 이면 나누기 해제(반품 재고도 함께 사라짐)
+// 응답은 거래 상세 전체(기존 계근 행 수정 API 와 같음). version 불일치 시 WEIGHING_TRANSACTION_CONFLICT
+export const replaceSettlementLines = (transactionId, mappingId, body) =>
+  send(`${BASE}/${transactionId}/weighing-records/${mappingId}/settlement-lines`, "PUT", body);

@@ -1,4 +1,4 @@
-import { formatNumber, OWNER_COMPANY_OPTIONS } from "../weighing/constants";
+import { formatNumber, formatWeight, OWNER_COMPANY_OPTIONS } from "../weighing/constants";
 
 export {
   formatDate,
@@ -169,3 +169,44 @@ export const validateManualItem = (form) => {
   if (numbers.some((value) => value !== "" && !(Number(value) >= 0))) return "중량과 단가는 0 이상이어야 합니다.";
   return "";
 };
+
+// ─── 정산 줄(품목 나누기·반품) ────────────────────────────────────────────
+// 매출 줄(SALE): 계산서 한 줄. 금액에만 반영된다.
+// 반품 줄(RETURN): 거래처에서 돌아온 수량. 금액에 넣지 않고 재고에 다시 더해진다(계근 일시 기준).
+export const SETTLEMENT_LINE_TYPES = { SALE: "SALE", RETURN: "RETURN" };
+export const SETTLEMENT_LINE_TYPE_LABELS = { SALE: "매출", RETURN: "반품" };
+// 서버가 거절하는 최대 줄 수
+export const SETTLEMENT_MAX_LINES = 50;
+
+// lineType 을 생략하면 매출 줄이다
+export const isReturnLine = (line) => line.lineType === SETTLEMENT_LINE_TYPES.RETURN;
+
+// 매출 줄 1줄 금액 — 수량·단가가 모두 있어야 계산한다(입력 중 미리보기, 저장 후에는 서버 값을 쓴다)
+export const settlementLineAmountOf = (quantityKg, unitPrice) =>
+  quantityKg == null || unitPrice == null ? null : Math.round(quantityKg * unitPrice);
+
+// 정산 합계 — lines: [{ lineType, quantityKg, amount }] (숫자 또는 null)
+// 차이 = (매출 수량 + 반품 수량) − 실중량. 반품까지 넣으면 계근 오차만 남는다.
+export const settlementSummaryOf = (lines, netWeightKg) => {
+  const saleLines = lines.filter((line) => !isReturnLine(line));
+  const returnLines = lines.filter(isReturnLine);
+  const saleQuantityKg = saleLines.reduce((sum, line) => sum + (line.quantityKg ?? 0), 0);
+  const saleAmount = saleLines.reduce((sum, line) => sum + (line.amount ?? 0), 0);
+  const returnedWeightKg = returnLines.reduce((sum, line) => sum + (line.quantityKg ?? 0), 0);
+  const diffKg = netWeightKg == null ? null : saleQuantityKg + returnedWeightKg - netWeightKg;
+  return { saleQuantityKg, saleAmount, returnedWeightKg, diffKg, diffPercent: diffPercentOf(diffKg, netWeightKg) };
+};
+
+export const diffPercentOf = (diffKg, netWeightKg) => (diffKg == null || !netWeightKg ? null : (diffKg / netWeightKg) * 100);
+
+// 차이 표시 — "−383 kg (−3.7%)", 차이가 없으면 "0 kg (0.0%)"
+export const formatSettlementDiff = (diffKg, diffPercent) => {
+  if (diffKg == null) return "-";
+  const sign = diffKg > 0 ? "+" : diffKg < 0 ? "−" : "";
+  const percent = diffPercent == null ? "" : ` (${sign}${Math.abs(diffPercent).toFixed(1)}%)`;
+  return `${sign}${formatWeight(Math.abs(diffKg))}${percent}`;
+};
+
+// 차이 색 — 차이가 없으면 회색, 실중량보다 적으면 주황, 많으면 빨강
+export const settlementDiffToneOf = (diffKg) =>
+  diffKg == null || diffKg === 0 ? "text-slate-500" : diffKg > 0 ? "text-red-600" : "text-amber-600";

@@ -11,6 +11,8 @@ import {
 import {
   displayAmountOf,
   MANUAL_TRADE_DIRECTION_OPTIONS,
+  diffPercentOf,
+  settlementSummaryOf,
   PAYMENT_STATUS_LABELS,
   TRADE_DIRECTION_LABELS,
   sortWeighingRecords,
@@ -18,6 +20,7 @@ import {
   toInputValue,
   toNumberOrNull,
 } from "../constants";
+import { useSettlementLines } from "./useSettlementLines";
 import { useWeighingMapping } from "./useWeighingMapping";
 
 const PAYMENT_STATUS_OPTIONS = Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => ({ value, label }));
@@ -106,16 +109,33 @@ export function useTransactionDetailModal(transactionId, onChanged) {
   // 결제 완료(마감) 전 진행 중 거래만 항목·결제정보를 수정할 수 있다
   const editable = Boolean(current) && current.paymentStatus !== "PAID" && current.transactionStatus === "OPEN";
 
+  // 정산 줄(품목 나누기·반품)은 진행 중인 매출 계근 거래에서만 편집한다
+  const settlementEditable = editable && isSale && isWeighing;
+
   // 포함 항목 — 계근 거래는 계근 행, 수기 거래는 수기 품목
   const rows = !current
     ? []
     : (isWeighing ? sortWeighingRecords(current.weighingRecords ?? []) : current.manualItems ?? []).map((row) => {
         const key = String(row.mappingId ?? row.manualItemId);
-        const actualDeliveryDefault = toInputValue(row.actualDeliveryWeightKg ?? row.netWeightKg);
+        // 정산 줄 — 있으면 서버가 매출 줄 합계를 실제출고량·금액으로 내려준다(적용 단가는 null)
+        const settlementLines = row.settlementLines ?? [];
+        const split = settlementLines.length > 0;
+        // 반품 합계·차이는 서버 값을 우선하고, 없으면 정산 줄로 계산한다
+        const computed = split ? settlementSummaryOf(settlementLines, row.netWeightKg) : null;
+        const settlementSummary = split
+          ? {
+              returnedWeightKg: row.returnedWeightKg ?? computed.returnedWeightKg,
+              diffKg: row.settlementDiffKg ?? computed.diffKg,
+              diffPercent: diffPercentOf(row.settlementDiffKg ?? computed.diffKg, row.netWeightKg),
+            }
+          : null;
+        const actualDeliveryWeightKg = row.actualDeliveryWeightKg;
+        const actualDeliveryDefault = toInputValue(actualDeliveryWeightKg ?? row.netWeightKg);
         // 출고 행의 실제출고량이 비어 있으면 실중량 기본값을 저장 대상으로 잡아 둔다
         // (항목 저장 전에는 결제정보를 저장할 수 없으므로 기본값이 서버에 반드시 반영된다)
+        // 정산 줄이 있는 행은 적용 단가·실제출고량을 직접 입력하지 않는다
         const autoDraft =
-          editable && isSale && row.actualDeliveryWeightKg == null
+          editable && isSale && !split && row.actualDeliveryWeightKg == null
             ? { unitPrice: toInputValue(row.unitPrice), actualDeliveryWeightKg: actualDeliveryDefault }
             : null;
         return {
@@ -130,18 +150,36 @@ export function useTransactionDetailModal(transactionId, onChanged) {
           mapped: row.itemId != null,
           netWeightKg: row.netWeightKg,
           acceptedWeightKg: row.acceptedWeightKg,
-          actualDeliveryWeightKg: row.actualDeliveryWeightKg,
+          actualDeliveryWeightKg,
           // 실제출고량 입력란 기본값 — 저장된 값이 없으면 실중량
           actualDeliveryDefault,
-          unitPrice: row.unitPrice,
+          unitPrice: split ? null : row.unitPrice,
           amount: displayAmountOf(row),
-          draft: rowDrafts[key] ?? autoDraft,
+          draft: split ? null : rowDrafts[key] ?? autoDraft,
+          settlementLines,
+          settlementSummary,
         };
       });
   const dirtyRows = rows.filter((row) => row.draft);
   // 총 중량은 인수량 합계 — 인수량이 없는 항목은 합계에서 빠지므로 누락 여부를 함께 표시한다
   const accepted = sumWithMissing(rows.map((row) => row.acceptedWeightKg));
   const actualDelivery = sumWithMissing(rows.map((row) => row.actualDeliveryWeightKg));
+
+  // 정산 줄 편집 — 저장 응답(거래 상세 전체)으로 교체하고 목록 금액도 갱신한다
+  const { openSettlement, settlementModal } = useSettlementLines({
+    transaction: current,
+    onSaved: (result) => {
+      setDetail(result);
+      setHeaderError("");
+      onChanged?.();
+    },
+    onConflict: () => {
+      // 다시 불러와도 안내가 남도록 거래 헤더 안내 자리에 띄운다
+      setHeaderError("다른 작업자가 먼저 수정했습니다. 최신 내용을 다시 불러왔으니 정산 줄을 다시 입력하세요.");
+      setReloadKey((key) => key + 1);
+      onChanged?.();
+    },
+  });
 
   const changeRowDraft = (row, patch) =>
     setRowDrafts((drafts) => {
@@ -339,6 +377,9 @@ export function useTransactionDetailModal(transactionId, onChanged) {
       // 진행 중인 계근 거래만 매핑 가능. 매핑 후 상세를 다시 받으므로 직접 입력한 값이 있으면 먼저 저장하게 한다
       mappable: isWeighing && editable,
       mappingBlocked: Object.keys(rowDrafts).length > 0,
+      // 품목 나누기·반품 — 매핑과 같은 이유로 직접 입력한 값이 있으면 먼저 저장하게 한다
+      settlementEditable,
+      onSettlement: openSettlement,
       onMap: (row) =>
         openMapping({
           weighingRecordId: row.source.weighingRecordId,
@@ -364,6 +405,7 @@ export function useTransactionDetailModal(transactionId, onChanged) {
       onSave: savePayment,
     },
     mappingModal,
+    settlementModal,
     onRetry: () => setReloadKey((key) => key + 1),
   };
 }
