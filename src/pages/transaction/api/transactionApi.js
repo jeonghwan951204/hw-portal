@@ -43,7 +43,7 @@ const ownerCompanyQuery = (ownerCompany) =>
   ownerCompany ? `?${new URLSearchParams({ ownerCompany })}` : "";
 
 export const fetchPaymentStatus = async (ownerCompany) =>
-  asJson(await apiFetch(`${BASE}/payment-status${ownerCompanyQuery(ownerCompany)}`));
+  asJson(await apiFetch(`${BASE}/payment-status/summary${ownerCompanyQuery(ownerCompany)}`));
 
 export const fetchTradePlans = async (ownerCompany) =>
   asJson(await apiFetch(`${TRADE_PLANS}${ownerCompanyQuery(ownerCompany)}`));

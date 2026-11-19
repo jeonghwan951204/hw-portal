@@ -4,14 +4,15 @@ import { useToast } from "../../contract/hooks/useToast";
 import { createTradePlan, deleteTradePlan, fetchPaymentStatus, fetchTradePlans, updateTradePlan } from "../api/transactionApi";
 import { useTransactionDetailModal } from "./useTransactionDetailModal";
 
-function useStatusRows(fetchRows, ownerCompany, revision) {
+function useStatusData(fetchData, ownerCompany, revision) {
   const [result, setResult] = useState(null);
 
   useEffect(() => {
     let current = true;
-    fetchRows(ownerCompany)
-      .then((rows) => {
-        if (current) setResult({ revision, rows, loadedAt: new Date() });
+    fetchData(ownerCompany)
+      .then((data) => {
+        const result = Array.isArray(data) ? { rows: data } : data;
+        if (current) setResult({ ...result, revision, loadedAt: new Date() });
       })
       .catch(() => {
         if (current) setResult({ revision, failed: true });
@@ -20,7 +21,7 @@ function useStatusRows(fetchRows, ownerCompany, revision) {
     return () => {
       current = false;
     };
-  }, [fetchRows, ownerCompany, revision]);
+  }, [fetchData, ownerCompany, revision]);
 
   return result?.revision === revision ? result : null;
 }
@@ -37,8 +38,8 @@ export function usePaymentStatus() {
   const { toast, showToast } = useToast();
   const planBusy = savingPlan || deletingPlan || deletePlanConfirm.open;
   const refresh = () => setRevision((current) => current + 1);
-  const payments = useStatusRows(fetchPaymentStatus, ownerCompany, revision);
-  const plans = useStatusRows(fetchTradePlans, ownerCompany, revision);
+  const payments = useStatusData(fetchPaymentStatus, ownerCompany, revision);
+  const plans = useStatusData(fetchTradePlans, ownerCompany, revision);
   const detailModal = useTransactionDetailModal(detailId, refresh);
 
   const submitPlan = async (event) => {

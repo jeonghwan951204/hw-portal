@@ -8,7 +8,6 @@ import {
   OWNER_COMPANY_OPTIONS,
   ownerCompanyLabelOf,
   PAYMENT_STATUS_LABELS,
-  sumWithMissing,
 } from "../constants";
 import { usePaymentStatus } from "../hooks/usePaymentStatus";
 import TradePlanFormModal from "./TradePlanFormModal";
@@ -126,34 +125,25 @@ function PlanTable({ direction, result, onOpenPlan }) {
   );
 }
 
-function PaymentTotals({ rows }) {
-  const amountsByOwner = new Map();
-  for (const row of rows) {
-    const amounts = amountsByOwner.get(row.ownerCompany) ?? [];
-    amounts.push(row.totalAmount);
-    amountsByOwner.set(row.ownerCompany, amounts);
-  }
-
+function PaymentTotals({ totals }) {
   return (
     <dl className="border-t border-amber-100 bg-amber-50/50 px-2.5 py-1.5 text-[11px] leading-4">
-      {[...amountsByOwner].map(([owner, amounts]) => {
-        const { total, missing } = sumWithMissing(amounts);
-        return (
-          <div key={owner} className="flex flex-wrap items-baseline justify-between gap-x-3">
-            <dt className="font-semibold text-slate-700">{ownerCompanyLabelOf(owner)} 합계</dt>
-            <dd className="text-right font-bold tabular-nums text-slate-900">
-              {amounts.every((amount) => amount == null) ? "산정 전" : formatMoney(total)}
-              {missing && <span className="ml-2 font-normal text-amber-800">금액 미산정 건 제외</span>}
-            </dd>
-          </div>
-        );
-      })}
+      {totals.map(({ ownerCompany, totalAmount, totalAmountText, missingAmountCount }) => (
+        <div key={ownerCompany} className="flex flex-wrap items-baseline justify-between gap-x-3">
+          <dt className="font-semibold text-slate-700">{ownerCompanyLabelOf(ownerCompany)} 합계</dt>
+          <dd className="text-right font-bold tabular-nums text-slate-900" title={totalAmount == null ? undefined : formatMoney(totalAmount)}>
+            {totalAmountText ?? "산정 전"}
+            {missingAmountCount > 0 && <span className="ml-2 font-normal text-amber-800">금액 미산정 건 제외</span>}
+          </dd>
+        </div>
+      ))}
     </dl>
   );
 }
 
 function PaymentTable({ direction, result, onOpenDetail }) {
   const rows = result?.rows?.filter((row) => row.tradeDirection === direction.key) ?? [];
+  const totals = result?.totals?.filter((total) => total.tradeDirection === direction.key) ?? [];
   return (
     <StatusTable
       title={direction.paymentTitle}
@@ -162,7 +152,7 @@ function PaymentTable({ direction, result, onOpenDetail }) {
       hasRows={rows.length > 0}
       columns={PAYMENT_COLUMNS}
       isPayment
-      footer={<PaymentTotals rows={rows} />}
+      footer={<PaymentTotals totals={totals} />}
     >
       {rows.map((row) => {
         const counterparty = row.counterpartyName || "거래처 미입력";
