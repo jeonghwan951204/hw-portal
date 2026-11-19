@@ -74,7 +74,6 @@ const PLAN_COLUMNS = [
   { label: "수량", className: "w-[14%]" },
   { label: "단가", className: "w-[24%]" },
   { label: "비고", className: "" },
-  { label: "관리", className: "w-10 text-center" },
 ];
 const PAYMENT_COLUMNS = [
   { label: "날짜", className: "w-9 sm:w-11" },
@@ -103,21 +102,24 @@ function PlanTable({ direction, result, onOpenPlan }) {
         ].filter(Boolean).join(" ");
 
         return (
-          <tr key={row.planId}>
-            <td className={`${CELL} font-semibold text-slate-900`} title={counterparty}>{counterparty}</td>
+          <tr
+            key={row.planId}
+            className="cursor-pointer hover:bg-blue-50/60 focus-within:bg-blue-50/60"
+            onClick={() => onOpenPlan(direction.key, row)}
+          >
+            <td className={CELL}>
+              <button
+                type="button"
+                className="block max-w-full cursor-pointer truncate text-left font-semibold text-slate-900 focus-visible:underline"
+                title={counterparty}
+                aria-label={`${direction.planLabel} ${counterparty} 수정`}
+              >
+                {counterparty}
+              </button>
+            </td>
             <td className={CELL} title={row.quantity ?? undefined}>{row.quantity || "—"}</td>
             <td className={CELL} title={row.purchasePrice ?? undefined}>{row.purchasePrice || "—"}</td>
             <td className={`${CELL} text-slate-500`} title={row.memo ?? undefined}>{row.memo || "—"}</td>
-            <td className={`${CELL} text-center`}>
-              <button
-                type="button"
-                className="font-semibold text-blue-700 hover:underline"
-                aria-label={`${direction.planLabel} ${row.counterparty || row.planDate || row.planId} 수정`}
-                onClick={() => onOpenPlan(direction.key, row)}
-              >
-                수정
-              </button>
-            </td>
           </tr>
         );
       })}

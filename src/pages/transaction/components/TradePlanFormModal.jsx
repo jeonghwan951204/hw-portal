@@ -63,7 +63,7 @@ export default function TradePlanFormModal({ editor, ownerCompany, saving, delet
           <input name="purchasePrice" type="text" defaultValue={plan?.purchasePrice ?? ""} maxLength={200} className={inputClass} />
         </Field>
         <Field label="비고">
-          <textarea name="memo" rows={3} defaultValue={plan?.memo ?? ""} maxLength={1000} className={inputClass} />
+          <input name="memo" type="text" defaultValue={plan?.memo?.replace(/\r\n?|\n/g, " ") ?? ""} maxLength={1000} className={inputClass} />
         </Field>
       </fieldset>
       {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
