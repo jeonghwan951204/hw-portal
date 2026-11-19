@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Button from "../../../components/Button";
 import ConfirmModal from "../../../components/ConfirmModal";
 import Toast from "../../contract/components/Toast";
@@ -156,7 +157,8 @@ function PaymentTable({ direction, result, onOpenDetail }) {
       isPayment
       footer={<PaymentTotals totals={totals} />}
     >
-      {rows.map((row) => {
+      {rows.map((row, index) => {
+        const startsOwnerGroup = index > 0 && rows[index - 1].ownerCompany !== row.ownerCompany;
         const counterparty = row.counterpartyName || "거래처 미입력";
         const vehicleNumbers = row.vehicleNumbers.map((number) => number.trim().slice(-4)).join(", ");
         const items = row.items.map(({ itemName, unitPrice }) =>
@@ -168,28 +170,35 @@ function PaymentTable({ direction, result, onOpenDetail }) {
           .filter(Boolean).join(" · ");
 
         return (
-          <tr key={row.transactionId}>
-            <td className={`${CELL} tabular-nums text-slate-500`} title={formatDate(row.transactionDate)}>
-              <time dateTime={row.transactionDate}>{row.transactionDate.slice(5).replace("-", "/")}</time>
-            </td>
-            <td className={CELL}>
-              <button
-                type="button"
-                className="block max-w-full truncate text-left font-semibold text-blue-700 hover:underline"
-                title={counterparty}
-                aria-label={`${counterparty} 거래 #${row.transactionId} 상세`}
-                onClick={() => onOpenDetail(row.transactionId)}
-              >
-                {counterparty}
-              </button>
-            </td>
-            <td className={`${CELL} tabular-nums`} title={vehicleNumbers}>{vehicleNumbers || "—"}</td>
-            <td className={CELL} title={items}>{items || "—"}</td>
-            <td className={CELL}>{ownerCompanyLabelOf(row.ownerCompany)}</td>
-            <td className={`${CELL} text-right font-semibold tabular-nums text-slate-900`} title={amountDetails}>
-              {`${row.totalAmountText ?? amount}${suffix}`}
-            </td>
-          </tr>
+          <Fragment key={row.transactionId}>
+            {startsOwnerGroup && (
+              <tr aria-hidden="true">
+                <td colSpan={PAYMENT_COLUMNS.length} className="h-2" />
+              </tr>
+            )}
+            <tr>
+              <td className={`${CELL} tabular-nums text-slate-500`} title={formatDate(row.transactionDate)}>
+                <time dateTime={row.transactionDate}>{row.transactionDate.slice(5).replace("-", "/")}</time>
+              </td>
+              <td className={CELL}>
+                <button
+                  type="button"
+                  className="block max-w-full truncate text-left font-semibold text-blue-700 hover:underline"
+                  title={counterparty}
+                  aria-label={`${counterparty} 거래 #${row.transactionId} 상세`}
+                  onClick={() => onOpenDetail(row.transactionId)}
+                >
+                  {counterparty}
+                </button>
+              </td>
+              <td className={`${CELL} tabular-nums`} title={vehicleNumbers}>{vehicleNumbers || "—"}</td>
+              <td className={CELL} title={items}>{items || "—"}</td>
+              <td className={CELL}>{ownerCompanyLabelOf(row.ownerCompany)}</td>
+              <td className={`${CELL} text-right font-semibold tabular-nums text-slate-900`} title={amountDetails}>
+                {`${row.totalAmountText ?? amount}${suffix}`}
+              </td>
+            </tr>
+          </Fragment>
         );
       })}
     </StatusTable>
