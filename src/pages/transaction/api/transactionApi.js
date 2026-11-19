@@ -27,6 +27,7 @@ const asJson = async (res) => {
 };
 
 const BASE = "/api/weighing-transactions";
+const TRADE_PLANS = "/api/trade-plans";
 
 const send = async (path, method, body) =>
   asJson(
@@ -38,6 +39,15 @@ const send = async (path, method, body) =>
   );
 
 // ─── 조회 ─────────────────────────────────────────────────────────────────
+const ownerCompanyQuery = (ownerCompany) =>
+  ownerCompany ? `?${new URLSearchParams({ ownerCompany })}` : "";
+
+export const fetchPaymentStatus = async (ownerCompany) =>
+  asJson(await apiFetch(`${BASE}/payment-status${ownerCompanyQuery(ownerCompany)}`));
+
+export const fetchTradePlans = async (ownerCompany) =>
+  asJson(await apiFetch(`${TRADE_PLANS}${ownerCompanyQuery(ownerCompany)}`));
+
 // 거래 목록 (GET /api/weighing-transactions, page 1-기반) — 값이 없는 필터는 파라미터에서 제외
 export const fetchTransactions = async ({
   dateFrom = "",
@@ -132,3 +142,11 @@ export const mergeTransactions = (body) => send(`${BASE}/merge`, "POST", body);
 // 응답은 거래 상세 전체(기존 계근 행 수정 API 와 같음). version 불일치 시 WEIGHING_TRANSACTION_CONFLICT
 export const replaceSettlementLines = (transactionId, mappingId, body) =>
   send(`${BASE}/${transactionId}/weighing-records/${mappingId}/settlement-lines`, "PUT", body);
+
+// 매입·매출 예정 메모 등록·수정 → CommonResponse<TradePlanResponse>
+export const createTradePlan = (body) => send(TRADE_PLANS, "POST", body);
+
+export const updateTradePlan = (planId, body) => send(`${TRADE_PLANS}/${planId}`, "PUT", body);
+
+export const deleteTradePlan = async (planId) =>
+  asJson(await apiFetch(`${TRADE_PLANS}/${planId}`, { method: "DELETE" }));
