@@ -305,6 +305,12 @@ function ItemTable({
                             <NumericInput
                               value={row.draft ? row.draft.actualDeliveryWeightKg : row.actualDeliveryDefault}
                               onChange={(value) => onDraftChange(row, { actualDeliveryWeightKg: value })}
+                              // 실중량 기본값이 채워져 있으므로 클릭하면 전체 선택해 바로 새 값을 입력하게 한다.
+                              // 클릭 시 브라우저가 focus 뒤에 커서를 다시 놓으므로 한 틱 뒤에 선택한다.
+                              onFocus={(event) => {
+                                const input = event.target;
+                                setTimeout(() => input.select(), 0);
+                              }}
                               placeholder="실제출고량"
                               aria-label="실제출고량(kg)"
                               className={cellInputClass}
