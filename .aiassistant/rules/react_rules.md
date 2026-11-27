@@ -98,7 +98,8 @@ apply: always
 
 ## Testing and Verification
 
-- Do not run `npm run build`, `npm test`, `npm install`, `pnpm build`, `pnpm test`, `pnpm install`, `yarn build`, `yarn test`, `yarn install`, or deployment commands unless explicitly requested.
+- When the work is done, redeploy the `frontend` container to dev (see Common Rules → Command Execution).
+- Do not run `npm run build`, `npm test`, `npm install`, `pnpm build`, `pnpm test`, `pnpm install`, `yarn build`, `yarn test`, `yarn install`, or production deployment commands unless explicitly requested.
 - Do not modify lock files unless package installation was explicitly requested and performed.
 - If verification would be useful, suggest the relevant build, lint, or test command without executing it.
 - If code was modified but not built or tested, clearly state that verification commands were not run because they were not requested.

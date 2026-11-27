@@ -13,7 +13,7 @@
 - 계약 **목록 · 상세 · 등록 · 수정 · 삭제 · 거래 등록/결제 · 단가 확정/재계산**을 모두 **실제 API**로 연동함.
 - 선택값(단가유형·거래구분·상태·소속회사 등)은 전부 `GET /api/enums/{group}` 로더로 처리(하드코딩 제거).
 - 거래처는 `GET /api/companies`, 시장 배너는 `GET /api/price/latest` 사용.
-- 초기 mock 데이터(`mockData.js`)는 **더 이상 사용되지 않음(정리 대상)**. `PaymentForm.jsx`는 거래별 결제 등록·수정에 사용.
+- 초기 mock 데이터(`mockData.js`)는 삭제했다. `PaymentForm.jsx`는 거래별 결제 등록·수정에 사용.
 
 ---
 
@@ -36,7 +36,6 @@ contract/
 ├── detail.jsx       # 상세 (헤더 + 탭 2개)
 ├── form.jsx         # 등록(스텝형) / 수정(헤더 단일 단계) 분기
 ├── constants.js     # 상태·단가유형 스타일, 표시 헬퍼(formatDate/Number/Quantity, krwUnitLabel …)
-├── mockData.js      # (미사용) 초기 mock — 정리 대상
 ├── api/
 │   ├── contractApi.js  # 계약·단가·거래·거래처 엔드포인트 래퍼
 │   ├── enumsApi.js     # ENUM_GROUPS + /api/enums/{group}
@@ -108,7 +107,7 @@ contract/
 
 - **목록 카드 `finalUnitPrice` 크기 이상**: 예시 데이터에서 `finalUnitPrice`(≈20.5억)가 `baseUnitPrice`(≈2천만, LME×환율 원/ton 수준)의 **약 100배**. 요율(%)이 소수(1.005)로 안 나눠지고 정수(100.5)로 곱해진 **서버 계산 의심**. → 서버 수정 or 카드에 `baseUnitPrice` 표시로 전환 결정 필요.
 - **오류 메시지**: mutation은 `CommonResponse{message}`라 서버 메시지를 토스트로 그대로 노출. (조회 실패는 일반 문구)
-- **정리 대상**: `mockData.js` 미사용.
+- `mockData.js` 삭제 완료.
 
 ## 6. 미지원(엔드포인트 없음) / 다음 작업 후보
 

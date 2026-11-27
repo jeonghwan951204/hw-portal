@@ -35,10 +35,12 @@ apply: always
 
 ## Command Execution
 
-- Do not run build, compile, lint, test, package install, migration, or deployment commands unless explicitly requested by the user.
-- Do not run commands such as `npm install`, `pnpm install`, `yarn install`, `./gradlew build`, `./gradlew test`, Docker commands, database migration commands, or deployment scripts unless explicitly requested.
+- Dev deploys follow `/srv/docker/hw-project/AGENTS.md` → "dev 배포 절차":
+  - Frontend: when the work is done, redeploy the `frontend` container to dev right away (no confirmation needed).
+  - Backend: when the feature is done, redeploy the `backend` container to dev. If the schema changed (new Flyway migration or stale jOOQ code), get the user's confirmation first, then run `hw-db-gradle flywayMigrate jooqCodegen` (wrapper in `~/.local/bin`; uses JDK 25 and the DB credentials in `~/.config/hw-db/dev.env`), and deploy only after that.
+- Other build, compile, lint, test, package install, migration, or deployment commands (`npm install`, `./gradlew build`, `./gradlew test`, deployment scripts, production deploys, etc.) run only when explicitly requested by the user.
 - If a command would be useful, suggest the command and explain why, but do not execute it without confirmation.
-- For normal code modification requests, edit the code only and skip build/test verification.
+- For normal code modification requests, skip separate build/test runs; the dev deploy above is the verification step.
 - If commands were not run, say: "Build, compile, lint, and tests were not run because they were not requested."
 
 ## Docker (home server)
@@ -53,7 +55,7 @@ apply: always
   - `sudo -n /usr/bin/docker compose -f /srv/docker/hw-project/docker-compose.yml restart <service>`
   - `sudo -n /usr/bin/docker image prune -f`
 - Other Docker commands (`exec`, `down`, `logs -f`, other services, etc.) are not allowed. Ask the user to run them.
-- The Command Execution rule still applies: run these only when the user explicitly asks.
+- When to run them: see Command Execution above.
 - The image is built from the current working tree of `/srv/docker/hw-project/hw-back` (backend) or `/srv/docker/hw-project/hw-portal` (frontend), not from the remote. Make sure the working tree has the intended code before redeploying.
 
 ## Security
@@ -81,4 +83,5 @@ After making changes, provide:
 1. A brief summary of what changed.
 2. A list of modified files.
 3. Any important notes or assumptions.
-4. Whether build, compile, lint, or tests were run.
+4. The dev deploy result (deployed service, whether `flywayMigrate`/`jooqCodegen` ran, container status).
+5. Whether any other build, compile, lint, or tests were run.
