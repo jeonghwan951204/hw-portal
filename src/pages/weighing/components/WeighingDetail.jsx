@@ -1,3 +1,4 @@
+import Button from "../../../components/Button";
 import { formatAmount, formatDateTime, formatNumber, formatUnitPrice, formatWeight } from "../constants";
 
 function DetailItem({ label, children }) {
@@ -9,7 +10,13 @@ function DetailItem({ label, children }) {
   );
 }
 
-export default function WeighingDetail({ weighing }) {
+export default function WeighingDetail({
+  weighing,
+  slipDownloading,
+  slipDownloadDisabled,
+  slipError,
+  onDownloadSlip,
+}) {
   return (
     <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
       <p className="text-xs font-bold text-blue-600">계근 상세정보</p>
@@ -34,8 +41,23 @@ export default function WeighingDetail({ weighing }) {
         <DetailItem label="금액">{formatAmount(weighing.amount, weighing.currency)}</DetailItem>
         <DetailItem label="비고">{weighing.memo}</DetailItem>
       </dl>
+      <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-blue-100 pt-3">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={slipDownloadDisabled}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDownloadSlip(weighing);
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          {slipDownloading ? "계근표 만드는 중..." : "계근표 출력"}
+        </Button>
+        {slipError && <p className="text-xs font-medium text-red-600">{slipError}</p>}
+      </div>
       <dl className="mt-3 border-t border-blue-100 pt-3">
-        <DetailItem label="계근표">
+        <DetailItem label="계근 전표 (계근 PC)">
           {weighing.tickets?.length > 0 && (
             <span className="flex flex-wrap gap-x-4 gap-y-1">
               {weighing.tickets.map((ticket, index) => (
@@ -49,7 +71,7 @@ export default function WeighingDetail({ weighing }) {
                   onKeyDown={(event) => event.stopPropagation()}
                   className="font-bold text-blue-600 underline-offset-2 hover:underline"
                 >
-                  {ticket.fileName || `계근표 ${index + 1}`} 다운로드
+                  {ticket.fileName || `계근 전표 ${index + 1}`} 다운로드
                 </a>
               ))}
             </span>

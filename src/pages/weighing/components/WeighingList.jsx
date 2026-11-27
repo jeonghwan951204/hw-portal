@@ -28,6 +28,9 @@ export default function WeighingList({
   expandedId,
   onToggleDetail,
   onRetry,
+  slipDownloadingId,
+  slipError,
+  onDownloadSlip,
 }) {
   if (loading) {
     return (
@@ -123,7 +126,13 @@ export default function WeighingList({
                   {expanded && (
                     <tr>
                       <td colSpan={11} className="px-3 pb-3 pt-1">
-                        <WeighingDetail weighing={weighing} />
+                        <WeighingDetail
+                    weighing={weighing}
+                    slipDownloading={slipDownloadingId === weighing.id}
+                    slipDownloadDisabled={slipDownloadingId != null}
+                    slipError={slipError?.id === weighing.id ? slipError.message : ""}
+                    onDownloadSlip={onDownloadSlip}
+                  />
                       </td>
                     </tr>
                   )}
@@ -173,7 +182,13 @@ export default function WeighingList({
               </dl>
               {expanded && (
                 <div className="mt-3" onClick={(event) => event.stopPropagation()}>
-                  <WeighingDetail weighing={weighing} />
+                  <WeighingDetail
+                    weighing={weighing}
+                    slipDownloading={slipDownloadingId === weighing.id}
+                    slipDownloadDisabled={slipDownloadingId != null}
+                    slipError={slipError?.id === weighing.id ? slipError.message : ""}
+                    onDownloadSlip={onDownloadSlip}
+                  />
                 </div>
               )}
             </article>

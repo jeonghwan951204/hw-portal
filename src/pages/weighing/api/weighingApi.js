@@ -83,6 +83,13 @@ export const fetchWeighings = async ({
   };
 };
 
+// 계근표 PDF는 서버가 요청할 때마다 새로 만든다. 성공하면 PDF Blob, 실패하면 ErrorResponse 메시지로 오류를 던진다.
+export const fetchWeighingSlip = async (weighingRecordId) => {
+  const response = await apiFetch(`/api/weighing-records/${weighingRecordId}/slip`);
+  if (!response.ok) await asJson(response);
+  return response.blob();
+};
+
 const SYNC_REQUESTS_PATH = "/api/weighing-sync/sync-requests";
 
 export const fetchWeighingSyncRequests = async (page, signal) => {

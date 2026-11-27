@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getDateRangeLimits, normalizeDateRangeChange } from "../../../utils/validate";
 import { fetchWeighings } from "../api/weighingApi";
+import { useWeighingSlipDownload } from "./useWeighingSlipDownload";
 import {
   getLocalDateString,
   OWNER_COMPANY_OPTIONS,
@@ -26,6 +27,7 @@ export function useWeighingList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
+  const slip = useWeighingSlipDownload();
 
   useEffect(() => {
     let alive = true;
@@ -136,6 +138,9 @@ export function useWeighingList() {
       expandedId,
       onToggleDetail: (id) => setExpandedId((current) => (current === id ? null : id)),
       onRetry: () => setRetryCount((current) => current + 1),
+      slipDownloadingId: slip.downloadingId,
+      slipError: slip.error,
+      onDownloadSlip: slip.download,
     },
     pagination: {
       currentPage: page,
