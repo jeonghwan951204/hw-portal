@@ -140,7 +140,11 @@ export function useWeighingList() {
       onRetry: () => setRetryCount((current) => current + 1),
       slipDownloadingId: slip.downloadingId,
       slipError: slip.error,
-      onDownloadSlip: slip.download,
+      onDownloadSlip: (weighing) =>
+        slip.download(
+          weighing.id,
+          `계근표_${weighing.weighedAt}_${String(weighing.dailySequence ?? "").padStart(4, "0")}.pdf`,
+        ),
     },
     pagination: {
       currentPage: page,

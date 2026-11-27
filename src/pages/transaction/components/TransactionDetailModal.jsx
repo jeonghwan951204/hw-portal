@@ -240,10 +240,14 @@ function ItemTable({
   onSave,
   onMap,
   onSettlement,
+  slipDownloadingId,
+  slipError,
+  onDownloadSlip,
 }) {
   const colCount = (isWeighing ? 7 : 5) + (settlementEditable ? 1 : 0);
   return (
     <div className="space-y-2">
+      {slipError && <p className="text-sm text-red-600">계근표 출력 실패: {slipError}</p>}
       <div className="overflow-x-auto rounded-xl border border-slate-200">
         <table className={`w-full text-[13px] ${isWeighing ? "min-w-[46rem]" : "min-w-[34rem]"}`}>
           <thead className="bg-slate-50 text-xs text-slate-400">
@@ -269,7 +273,22 @@ function ItemTable({
               return (
                 <Fragment key={row.key}>
                   <tr className={row.draft ? "bg-blue-50/40" : split ? "bg-slate-50/70" : isSale && row.unitPrice == null ? "bg-red-50/60" : ""}>
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.vehicleNumber || "-"}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                      <span className="flex items-center gap-1.5">
+                        {row.vehicleNumber || "-"}
+                        {row.isWeighing && row.source.weighingRecordId != null && (
+                          <button
+                            type="button"
+                            onClick={() => onDownloadSlip(row)}
+                            disabled={slipDownloadingId != null}
+                            title="이 계근의 계근표 PDF를 내려받습니다"
+                            className="shrink-0 rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {slipDownloadingId === row.source.weighingRecordId ? "만드는 중..." : "계근표"}
+                          </button>
+                        )}
+                      </span>
+                    </td>
                     <td className="px-3 py-2 text-slate-700">
                       <span className="flex items-center gap-1.5">
                         <MappedName name={row.itemName} mapped={row.mapped} emptyLabel="품목 미입력" />

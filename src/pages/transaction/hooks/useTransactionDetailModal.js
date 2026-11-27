@@ -22,6 +22,7 @@ import {
 } from "../constants";
 import { useSettlementLines } from "./useSettlementLines";
 import { useWeighingMapping } from "./useWeighingMapping";
+import { useWeighingSlipDownload } from "../../weighing/hooks/useWeighingSlipDownload";
 
 const PAYMENT_STATUS_OPTIONS = Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -161,6 +162,7 @@ export function useTransactionDetailModal(transactionId, onChanged) {
         };
       });
   const dirtyRows = rows.filter((row) => row.draft);
+  const slip = useWeighingSlipDownload();
   // 총 중량은 인수량 합계 — 인수량이 없는 항목은 합계에서 빠지므로 누락 여부를 함께 표시한다
   const accepted = sumWithMissing(rows.map((row) => row.acceptedWeightKg));
   const actualDelivery = sumWithMissing(rows.map((row) => row.actualDeliveryWeightKg));
@@ -380,6 +382,14 @@ export function useTransactionDetailModal(transactionId, onChanged) {
       // 품목 나누기·반품 — 매핑과 같은 이유로 직접 입력한 값이 있으면 먼저 저장하게 한다
       settlementEditable,
       onSettlement: openSettlement,
+      // 계근표 출력 — 결제 완료 뒤에도 출력할 수 있다. 수기 품목에는 계근이 없어 버튼이 없다
+      slipDownloadingId: slip.downloadingId,
+      slipError: slip.error?.message ?? "",
+      onDownloadSlip: (row) =>
+        slip.download(
+          row.source.weighingRecordId,
+          `계근표_${row.source.weighingDate}_${row.vehicleNumber || row.source.weighingRecordId}.pdf`,
+        ),
       onMap: (row) =>
         openMapping({
           weighingRecordId: row.source.weighingRecordId,
