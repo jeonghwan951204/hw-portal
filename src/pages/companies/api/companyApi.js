@@ -1,6 +1,4 @@
 import { apiFetch } from "../../../utils/api";
-import { USE_MOCK } from "../../../utils/env";
-import * as companyMock from "./companyMock";
 
 const asJson = async (response) => {
   if (!response.ok) {
@@ -124,7 +122,6 @@ const createCompanyBody = (form, fileIds) => ({
 });
 
 export const fetchCompanyDetail = async (companyId) => {
-  if (USE_MOCK) return companyMock.fetchCompanyDetail(companyId);
   return mapCompanyDetail(await asJson(await apiFetch(`/api/companies/${companyId}`)));
 };
 
@@ -146,23 +143,18 @@ const fetchCompanySummaries = async () =>
 
 // 목록은 관리 목록 API 한 번으로 구성한다. 상세는 행을 펼칠 때 fetchCompanyDetail 로 따로 조회한다.
 export const fetchCompanies = async () => {
-  if (USE_MOCK) return companyMock.fetchCompanies();
   return fetchCompanySummaries();
 };
 
 // 회사명·활성 별칭 부분검색(대소문자 무시) → 일치하는 거래처 id 배열.
 // 관리 목록 API 에는 검색 파라미터가 없어 셀렉트용 검색 API 로 id 를 받아 목록을 거른다.
 export const fetchCompanySearchIds = async (keyword) => {
-  if (USE_MOCK) return companyMock.fetchCompanySearchIds(keyword);
-
   const params = new URLSearchParams({ keyword });
   const options = await asJson(await apiFetch(`/api/companies/options?${params}`));
   return options.map((option) => option.id);
 };
 
 export const fetchCompanyForEdit = async (companyId) => {
-  if (USE_MOCK) return companyMock.fetchCompanyForEdit(companyId);
-
   const [detail, summaries] = await Promise.all([
     fetchCompanyDetail(companyId),
     fetchCompanySummaries(),
@@ -208,8 +200,6 @@ const resolveFileIds = async (attachments) => {
 };
 
 export const createCompany = async (form) => {
-  if (USE_MOCK) return companyMock.createCompany(form);
-
   const fileIds = await resolveFileIds(form.attachments);
   return asJson(
     await apiFetch("/api/companies", {
@@ -221,8 +211,6 @@ export const createCompany = async (form) => {
 };
 
 export const updateCompany = async (companyId, form) => {
-  if (USE_MOCK) return companyMock.updateCompany(companyId, form);
-
   const fileIds = await resolveFileIds(form.attachments);
   return asJson(
     await apiFetch(`/api/companies/${companyId}`, {
@@ -234,6 +222,5 @@ export const updateCompany = async (companyId, form) => {
 };
 
 export const deleteCompany = async (companyId) => {
-  if (USE_MOCK) return companyMock.deleteCompany(companyId);
   return asJson(await apiFetch(`/api/companies/${companyId}`, { method: "DELETE" }));
 };

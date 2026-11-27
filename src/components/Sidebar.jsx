@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { getRole } from "../utils/auth";
-import { USE_MOCK } from "../utils/env";
 
 // 메뉴 아이콘 (heroicons outline 경로)
 const ICON_PATHS = {
@@ -81,8 +80,7 @@ export default function Sidebar({ onNavigate, onClose }) {
   const { pathname } = useLocation();
   const role = getRole();
   const roleNavItems = filterNavItemsByRole(NAV_ITEMS, role);
-  // 목업 모드에서는 RequireAuth 와 같이 권한 검사를 건너뛰고 관리자 메뉴도 보여 준다.
-  const navItems = role === "ADMIN" || USE_MOCK ? [...roleNavItems, ADMIN_NAV_ITEM] : roleNavItems;
+  const navItems = role === "ADMIN" ? [...roleNavItems, ADMIN_NAV_ITEM] : roleNavItems;
   const activeTo = getActiveTo(pathname, navItems);
 
   return (

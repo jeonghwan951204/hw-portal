@@ -1,6 +1,4 @@
 import { apiFetch } from "../../../utils/api";
-import { USE_MOCK } from "../../../utils/env";
-import * as itemMock from "./itemMock";
 
 const asJson = async (response) => {
   if (!response.ok) {
@@ -39,13 +37,11 @@ const createItemBody = (form) => ({
 // API 에 keyword 검색이 있지만 결과에 상위 품목이 함께 온다는 명세가 없어 계층을 그릴 수 없으므로,
 // 전체를 받아 화면에서 거른다.
 export const fetchItems = async () => {
-  if (USE_MOCK) return itemMock.fetchItems();
   return (await asJson(await apiFetch("/api/items"))).map(mapItem);
 };
 
 // 품목 등록 (POST /api/items) → { message, data: { itemId } }
 export const createItem = async (form) => {
-  if (USE_MOCK) return itemMock.createItem(createItemBody(form));
   return asJson(
     await apiFetch("/api/items", {
       method: "POST",
@@ -57,7 +53,6 @@ export const createItem = async (form) => {
 
 // 품목 수정 (PUT /api/items/{itemId}) — 품목명·상위 품목·별칭 전체 교체 → { message }
 export const updateItem = async (itemId, form) => {
-  if (USE_MOCK) return itemMock.updateItem(itemId, createItemBody(form));
   return asJson(
     await apiFetch(`/api/items/${itemId}`, {
       method: "PUT",
@@ -71,7 +66,6 @@ export const updateItem = async (itemId, form) => {
 // 서버가 1부터 다시 매긴다. 최상위 품목은 parentItemId 를 null 로 보낸다. → { message }
 export const updateItemSortOrder = async (parentItemId, itemIds) => {
   const body = { parentItemId, itemIds };
-  if (USE_MOCK) return itemMock.updateItemSortOrder(body);
   return asJson(
     await apiFetch("/api/items/sort-order", {
       method: "PUT",
@@ -83,6 +77,5 @@ export const updateItemSortOrder = async (parentItemId, itemIds) => {
 
 // 품목 삭제(비활성화) (DELETE /api/items/{itemId}) — 활성 하위 품목이 있으면 서버에서 거절한다. → { message }
 export const deleteItem = async (itemId) => {
-  if (USE_MOCK) return itemMock.deleteItem(itemId);
   return asJson(await apiFetch(`/api/items/${itemId}`, { method: "DELETE" }));
 };

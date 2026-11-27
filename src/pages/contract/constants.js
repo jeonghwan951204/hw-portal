@@ -31,23 +31,6 @@ export const PRICE_TYPE_STYLE = {
   원가: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-// ─── 셀렉트 옵션 임시 데이터 (TODO: API 연동 시 서버 목록으로 교체) ───────────
-export const MOCK_CUSTOMERS = [
-  "한국전선(주)",
-  "삼성전기(주)",
-  "LS전선(주)",
-  "포스코인터내셔널",
-  "동국제강(주)",
-];
-
-export const MOCK_FORMULAS = [
-  { id: "PERIOD_AVG", name: "산정기간 평균" },
-  { id: "MONTH_AVG", name: "월평균" },
-  { id: "FIXED", name: "고정값" },
-];
-
-export const MOCK_ITEM_NAMES = ["A동", "B동", "상동", "파동", "밀베리"];
-
 // ─── 표시 헬퍼 ────────────────────────────────────────────────────────────────
 // yyyy-MM-dd → yyyy.MM.dd
 export const formatDate = (iso) => (iso ? iso.replaceAll("-", ".") : "-");
