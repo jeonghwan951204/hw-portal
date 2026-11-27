@@ -4,6 +4,7 @@ import { useCompanySearch } from "../../contract/hooks/useCompanySearch";
 import { useItemOptions } from "../../transaction/hooks/useItemOptions";
 import { fetchPeriodTrades } from "../api/inventoryApi";
 import { getLocalDateString, OWNER_COMPANY_OPTIONS } from "../constants";
+import { usePeriodTradeWeighings } from "./usePeriodTradeWeighings";
 import { filterCollapsedRows, orderItemTree, parentIdsOf, sortStockItemsByItemOrder } from "../utils/itemTree";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -31,6 +32,7 @@ export function useInventoryPeriodTrades() {
   const companySearch = useCompanySearch();
   const items = useItemOptions();
   const itemOptions = useMemo(() => orderItemTree(items), [items]);
+  const weighings = usePeriodTradeWeighings();
 
   const requestKey = JSON.stringify([filters, reloadKey]);
   const loading = result.key !== requestKey;
@@ -68,6 +70,24 @@ export function useInventoryPeriodTrades() {
   // 품목 행은 재고 현황과 같이 품목 API(/api/items) 응답 순서를 따른다
   const rows = useMemo(() => sortStockItemsByItemOrder(data?.items ?? [], items), [data, items]);
   const parentIds = parentIdsOf(rows);
+
+  // 칸을 누르면 통계를 조회한 조건 그대로 계근 목록을 연다. 품목 행은 그 품목(하위 포함), 합계 행은 선택 품목 전체
+  const openWeighings = ({ itemId = null, label, tradeDirection, stat }) => {
+    if (!data) return;
+    weighings.open({
+      conditions: {
+        dateFrom: data.dateFrom,
+        dateTo: data.dateTo,
+        ownerCompany: filters.ownerCompany,
+        companyId: filters.companyId,
+      },
+      companyName: filters.companyName,
+      tradeDirection,
+      itemIds: itemId == null ? filters.itemIds : [itemId],
+      label,
+      stat,
+    });
+  };
 
   return {
     toolbar: {
@@ -110,6 +130,8 @@ export function useInventoryPeriodTrades() {
       onExpandAll: () => setCollapsedIds(new Set()),
       onCollapseAll: () => setCollapsedIds(new Set(parentIds)),
       onRetry: () => setReloadKey((current) => current + 1),
+      onOpenWeighings: openWeighings,
     },
+    weighingModal: weighings.modal,
   };
 }

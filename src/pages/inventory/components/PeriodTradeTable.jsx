@@ -2,28 +2,61 @@ import { formatAveragePrice, formatKg, formatKoreanDate } from "../constants";
 
 const hasQuantity = (stat) => Number(stat?.quantityKg ?? 0) !== 0;
 
+// 거래가 있는 칸은 눌러서 집계된 계근 목록을 연다
+function CellButton({ onClick, label, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`${label} 계근 목록 보기`}
+      className="w-full rounded-md px-1 py-0.5 text-right hover:bg-blue-50 hover:ring-1 hover:ring-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+    >
+      {children}
+    </button>
+  );
+}
+
 // 수량(kg) + 계근 건수. 거래가 없으면 '-'
-function QuantityCell({ stat }) {
+function QuantityCell({ stat, label, onOpen }) {
   if (!hasQuantity(stat)) return <td className="px-4 py-2 text-right text-slate-300">-</td>;
   return (
-    <td className="px-4 py-2 text-right tabular-nums">
-      <div>{formatKg(stat.quantityKg)}</div>
-      <div className="text-[11px] text-slate-400">{stat.weighingCount}건</div>
+    <td className="px-3 py-1.5 text-right tabular-nums">
+      <CellButton onClick={onOpen} label={label}>
+        <div>{formatKg(stat.quantityKg)}</div>
+        <div className="text-[11px] text-slate-400">{stat.weighingCount}건</div>
+      </CellButton>
     </td>
   );
 }
 
 // 평균 단가(원/kg) + 단가 없는 수량. 단가 없는 수량은 평균 계산에서 빠진다
-function PriceCell({ stat }) {
+function PriceCell({ stat, label, onOpen }) {
   if (!hasQuantity(stat)) return <td className="px-4 py-2 text-right text-slate-300">-</td>;
   const unpriced = Number(stat.unpricedQuantityKg ?? 0);
   return (
-    <td className="px-4 py-2 text-right tabular-nums">
-      <div className={stat.averageUnitPrice == null ? "text-slate-300" : "font-semibold text-slate-800"}>
-        {formatAveragePrice(stat.averageUnitPrice)}
-      </div>
-      {unpriced !== 0 && <div className="text-[11px] text-amber-600">단가 없음 {formatKg(unpriced)} kg</div>}
+    <td className="px-3 py-1.5 text-right tabular-nums">
+      <CellButton onClick={onOpen} label={label}>
+        <div className={stat.averageUnitPrice == null ? "text-slate-300" : "font-semibold text-slate-800"}>
+          {formatAveragePrice(stat.averageUnitPrice)}
+        </div>
+        {unpriced !== 0 && <div className="text-[11px] text-amber-600">단가 없음 {formatKg(unpriced)} kg</div>}
+      </CellButton>
     </td>
+  );
+}
+
+// 한 행의 매입·매출 네 칸. itemId 가 없으면 합계 행
+function TradeCells({ itemId = null, label, purchase, sale, onOpenWeighings }) {
+  const open = (tradeDirection, stat) => () => onOpenWeighings({ itemId, label, tradeDirection, stat });
+  const purchaseLabel = `${label} 매입`;
+  const saleLabel = `${label} 매출`;
+  return (
+    <>
+      <QuantityCell stat={purchase} label={purchaseLabel} onOpen={open("PURCHASE", purchase)} />
+      <PriceCell stat={purchase} label={purchaseLabel} onOpen={open("PURCHASE", purchase)} />
+      <QuantityCell stat={sale} label={saleLabel} onOpen={open("SALE", sale)} />
+      <PriceCell stat={sale} label={saleLabel} onOpen={open("SALE", sale)} />
+    </>
   );
 }
 
@@ -42,6 +75,7 @@ export default function PeriodTradeTable({
   onExpandAll,
   onCollapseAll,
   onRetry,
+  onOpenWeighings,
 }) {
   if (loading) {
     return (
@@ -78,7 +112,7 @@ export default function PeriodTradeTable({
           </h2>
           <p className="mt-0.5 text-xs text-slate-400">
             원본 계근데이터의 인수량 기준이며, 상위 품목은 하위 품목을 포함한 합계입니다. 평균 단가는 단가가 있는 계근의
-            인수량 가중 평균(원/kg)입니다.
+            인수량 가중 평균(원/kg)입니다. 수량·단가 칸을 누르면 집계된 계근 목록을 볼 수 있습니다.
           </p>
         </div>
         {parentIds.size > 0 && (
@@ -137,10 +171,13 @@ export default function PeriodTradeTable({
                         <span className={row.depth === 0 ? "font-semibold text-slate-800" : "text-slate-700"}>{row.itemName}</span>
                       </div>
                     </td>
-                    <QuantityCell stat={row.purchase} />
-                    <PriceCell stat={row.purchase} />
-                    <QuantityCell stat={row.sale} />
-                    <PriceCell stat={row.sale} />
+                    <TradeCells
+                      itemId={row.itemId}
+                      label={row.itemName}
+                      purchase={row.purchase}
+                      sale={row.sale}
+                      onOpenWeighings={onOpenWeighings}
+                    />
                   </tr>
                 );
               })}
@@ -148,10 +185,7 @@ export default function PeriodTradeTable({
             <tfoot className="border-t-2 border-slate-200 bg-slate-50 font-bold text-slate-800">
               <tr>
                 <td className="px-4 py-2.5">합계</td>
-                <QuantityCell stat={totalPurchase} />
-                <PriceCell stat={totalPurchase} />
-                <QuantityCell stat={totalSale} />
-                <PriceCell stat={totalSale} />
+                <TradeCells label="합계" purchase={totalPurchase} sale={totalSale} onOpenWeighings={onOpenWeighings} />
               </tr>
             </tfoot>
           </table>

@@ -9,6 +9,8 @@ import {
 export { formatDate, getLocalDateString, OWNER_COMPANY_OPTIONS, ownerCompanyLabelOf };
 
 export const MOVEMENT_PAGE_SIZE = 20;
+// 기간 통계 계근 목록 모달의 한 페이지 건수
+export const PERIOD_WEIGHING_PAGE_SIZE = 20;
 // 재고 현황의 '조정' 행은 하루치 보정 내역 — 한 번에 받아 표에 그린다
 export const DAILY_MOVEMENT_SIZE = 200;
 export const REASON_MAX_LENGTH = 500;

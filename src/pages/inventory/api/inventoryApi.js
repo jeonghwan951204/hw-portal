@@ -1,6 +1,4 @@
 import { apiFetch } from "../../../utils/api";
-import { USE_MOCK } from "../../../utils/env";
-import * as inventoryMock from "./inventoryMock";
 
 // 공통 응답 처리 — 실패 시 서버 메시지와 status·code 를 담아 throw
 const asJson = async (res) => {
@@ -44,7 +42,6 @@ const conditionParams = ({ ownerCompany, itemIds }) => {
 // excludeManualMovements=true 면 보정 내역(증가·감소·품목 이동)을 빼고 계근데이터만으로 계산한다(서버 기본 false)
 // → { asOfDate, ownerCompany, items[{ itemId, itemName, parentItemId, depth, ownQuantityKg, quantityKg }], totalQuantityKg, unmapped }
 export const fetchStock = async ({ asOfDate, ownerCompany = "", itemIds = [], excludeManualMovements = false }) => {
-  if (USE_MOCK) return inventoryMock.fetchStock({ asOfDate, ownerCompany, itemIds, excludeManualMovements });
   const params = conditionParams({ ownerCompany, itemIds });
   if (asOfDate) params.set("asOfDate", asOfDate);
   if (excludeManualMovements) params.set("excludeManualMovements", "true");
@@ -53,7 +50,6 @@ export const fetchStock = async ({ asOfDate, ownerCompany = "", itemIds = [], ex
 
 // 일자별 거래처·품목 거래량 (GET /api/inventory/stock/daily-trades) → { date, ownerCompany, purchase, sale }
 export const fetchDailyTrades = async ({ date, ownerCompany = "", itemIds = [] }) => {
-  if (USE_MOCK) return inventoryMock.fetchDailyTrades({ date, ownerCompany, itemIds });
   const params = conditionParams({ ownerCompany, itemIds });
   if (date) params.set("date", date);
   return asJson(await apiFetch(`/api/inventory/stock/daily-trades?${params}`));
@@ -65,12 +61,35 @@ export const fetchDailyTrades = async ({ date, ownerCompany = "", itemIds = [] }
 //     totalPurchase, totalSale, unmapped }
 // 통계 항목은 { quantityKg, weighingCount, averageUnitPrice(원/kg, 없으면 null), unpricedQuantityKg }
 export const fetchPeriodTrades = async ({ dateFrom = "", dateTo = "", ownerCompany = "", companyId = "", itemIds = [] }) => {
-  if (USE_MOCK) return inventoryMock.fetchPeriodTrades({ dateFrom, dateTo, ownerCompany, companyId, itemIds });
   const params = conditionParams({ ownerCompany, itemIds });
   if (dateFrom) params.set("dateFrom", dateFrom);
   if (dateTo) params.set("dateTo", dateTo);
   if (companyId) params.set("companyId", String(companyId));
   return asJson(await apiFetch(`/api/inventory/stock/period-trades?${params}`));
+};
+
+// 기간 통계 한 칸(품목 × 매입/매출)에 집계된 계근 목록 (GET /api/inventory/stock/period-trades/weighings) → 공통 페이지 형식
+// tradeDirection 필수(PURCHASE/SALE). itemIds 는 각 품목의 하위 품목까지 포함하며, 생략하면 매핑된 전체 품목
+// content[{ weighingRecordId, ownerCompany, weighingDate, secondWeighedAt, vehicleNumber, companyId, companyName,
+//           itemId, itemName, transactionId, netWeightKg, priceQuantityKg, unitPrice, amount, saleLineApplied }]
+export const fetchPeriodTradeWeighings = async ({
+  dateFrom = "",
+  dateTo = "",
+  ownerCompany = "",
+  companyId = "",
+  tradeDirection,
+  itemIds = [],
+  page = 1,
+  size = 20,
+}) => {
+  const params = conditionParams({ ownerCompany, itemIds });
+  params.set("tradeDirection", tradeDirection);
+  params.set("page", String(page));
+  params.set("size", String(size));
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+  if (companyId) params.set("companyId", String(companyId));
+  return asJson(await apiFetch(`/api/inventory/stock/period-trades/weighings?${params}`));
 };
 
 // 보정 내역 (GET /api/inventory/movements) → 공통 페이지 형식
@@ -85,9 +104,6 @@ export const fetchMovements = async ({
   page = 1,
   size = 20,
 }) => {
-  if (USE_MOCK) {
-    return inventoryMock.fetchMovements({ ownerCompany, dateFrom, dateTo, itemId, movementType, excludeCanceled, page, size });
-  }
   const params = new URLSearchParams({ page: String(page), size: String(size) });
   if (ownerCompany) params.set("ownerCompany", ownerCompany);
   if (dateFrom) params.set("dateFrom", dateFrom);
@@ -102,26 +118,22 @@ export const fetchMovements = async ({
 // body { ownerCompany, occurredDate, items[{ itemId, actualQuantityKg }], reason }
 // → { message, data: { occurredDate, items[{ itemId, bookQuantityKg, actualQuantityKg, differenceKg, movementId }] } }
 export const createStockCount = async (body) => {
-  if (USE_MOCK) return inventoryMock.createStockCount(body);
   return post("/api/inventory/movements/stock-counts", body);
 };
 
 // 품목 간 이동 (POST /api/inventory/movements/transfers)
 // body { ownerCompany, occurredDate, fromItemId, toItemId, quantityKg, reason } → { message, data: { movementId } }
 export const createTransfer = async (body) => {
-  if (USE_MOCK) return inventoryMock.createTransfer(body);
   return post("/api/inventory/movements/transfers", body);
 };
 
 // 재고 증감 (POST /api/inventory/movements/adjustments)
 // body { ownerCompany, occurredDate, itemId, direction, quantityKg, reason } → { message, data: { movementId } }
 export const createAdjustment = async (body) => {
-  if (USE_MOCK) return inventoryMock.createAdjustment(body);
   return post("/api/inventory/movements/adjustments", body);
 };
 
 // 보정 취소 (POST /api/inventory/movements/{movementId}/cancel) — 사유 생략 가능 → { message, data: { movementId } }
 export const cancelMovement = async (movementId, reason) => {
-  if (USE_MOCK) return inventoryMock.cancelMovement(movementId, reason);
   return post(`/api/inventory/movements/${movementId}/cancel`, { reason: reason || null });
 };

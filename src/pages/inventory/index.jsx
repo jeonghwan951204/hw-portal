@@ -13,6 +13,7 @@ import MovementList from "./components/MovementList";
 import MovementToolbar from "./components/MovementToolbar";
 import PeriodTradeTable from "./components/PeriodTradeTable";
 import PeriodTradeToolbar from "./components/PeriodTradeToolbar";
+import PeriodTradeWeighingModal from "./components/PeriodTradeWeighingModal";
 import StockSheet from "./components/StockSheet";
 import UnmappedWarning from "./components/UnmappedWarning";
 import { useInventoryMovements } from "./hooks/useInventoryMovements";
@@ -86,12 +87,13 @@ function MovementsTab() {
 
 // 기간 통계 탭 — 기간·자사·거래처·품목별 매입/매출 수량과 평균 단가
 function PeriodTradesTab() {
-  const { toolbar, unmapped, table } = useInventoryPeriodTrades();
+  const { toolbar, unmapped, table, weighingModal } = useInventoryPeriodTrades();
   return (
     <>
       <PeriodTradeToolbar {...toolbar} />
       <UnmappedWarning {...unmapped} />
       <PeriodTradeTable {...table} />
+      <PeriodTradeWeighingModal {...weighingModal} />
     </>
   );
 }
